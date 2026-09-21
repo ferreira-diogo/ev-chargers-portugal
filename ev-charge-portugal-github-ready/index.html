@@ -56,6 +56,12 @@ function markerColor(status){
   return '#2b7bd0';
 }
 
+function statusLabel(status){
+  if(status==='available')return 'Disponível';
+  if(status==='unavailable'||status==='offline')return 'Indisponível';
+  return 'Disponibilidade não comunicada';
+}
+
 function escapeHtml(value){
   return String(value??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 }
@@ -150,7 +156,7 @@ function renderStations(zoomToResults=true){
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
       const location=[s.address,s.city].filter(Boolean).join(', ')||'Localização não indicada';
       const marker=L.circleMarker([s.latitude,s.longitude],{radius:8,color:'#fff',weight:2,fillColor:markerColor(s.status),fillOpacity:1}).addTo(stationLayer);
-      marker.bindPopup(`<b>${escapeHtml(s.name||operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw??'—')} kW · ${escapeHtml(connectorText)}`);
+      marker.bindPopup(`<b>${escapeHtml(s.name||operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw??'—')} kW · ${escapeHtml(connectorText)}<br>● ${escapeHtml(statusLabel(s.status))}`);
       marker.on('click',()=>{document.getElementById('sn').textContent=s.name||operatorName});
       markerMap.set(s.id,marker);
     });
@@ -161,7 +167,7 @@ function renderStations(zoomToResults=true){
       const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Não indicado';
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
       const distance=s.distance_km!=null?`${s.distance_km.toFixed(1).replace('.',',')} km`:'Dados OCM';
-      return `<article class="card"><div class="rank">${index+1} <span class="tag">Dados reais</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● Estado: ${escapeHtml(s.status||'unknown')}</div><div class="metrics"><div class="metric"><b>${escapeHtml(s.max_power_kw)} kW</b>${escapeHtml(connectorText)}</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km!=null?'distância aproximada':'Preço não disponível'}</div></div><div class="cost"><b>Dados OCM</b></div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
+      return `<article class="card"><div class="rank">${index+1} <span class="tag">Dados reais</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● ${escapeHtml(statusLabel(s.status))}</div><div class="metrics"><div class="metric"><b>${escapeHtml(s.max_power_kw)} kW</b>${escapeHtml(connectorText)}</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km!=null?'distância aproximada':'Preço não disponível'}</div></div><div class="cost"><b>Dados OCM</b></div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
     }).join('');
     if(!best.length)cards.innerHTML='<article class="card"><div class="op">Sem resultados</div><div class="st">Altere a pesquisa ou os filtros selecionados.</div></article>';
     cards.querySelectorAll('button[data-station-id]').forEach(button=>button.addEventListener('click',()=>{
