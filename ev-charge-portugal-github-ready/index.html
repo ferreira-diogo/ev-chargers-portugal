@@ -16,13 +16,13 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 <body>
 <header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><div class="search">⌕<input id="global-search" placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active">🗺<br>Mapa</button><button>♜<br>Rotas</button><button>🚗<br>O meu veículo</button><button>☆<br>Favoritos</button><button>♙<br>Conta</button></nav></header>
 <div class="layout">
-<aside class="side"><div class="vehicle"><small>🚗 O meu veículo</small><div class="vehicle-row"><div class="car">🚘</div><div><b>Tesla Model 3 Highland RWD</b><small style="display:block;margin-top:4px">🔋 60 kWh · 147 Wh/km</small></div></div></div><h3>Onde quer carregar?</h3><div class="loc">⌖<input id="location-search" placeholder="Local, morada ou posto"></div>
+<aside class="side"><div class="vehicle"><small>🚗 O meu veículo</small><div class="vehicle-row"><div class="car">🚘</div><div><b>Tesla Model 3 Highland RWD</b><small style="display:block;margin-top:4px">🔋 60 kWh · 147 Wh/km</small></div></div></div><h3>Onde quer carregar?</h3><div class="loc">⌖<input id="location-search" placeholder="Cidade ou código postal em Portugal"></div>
 <div class="fg"><div class="label">Potência</div><div class="chips" id="power-filter"><button class="chip on" data-power="all">Todos</button><button class="chip" data-power="0-50">Até 50</button><button class="chip" data-power="50-150">50–150</button><button class="chip" data-power="150-250">150–250</button><button class="chip" data-power="250+">250+ kW</button></div></div>
 <div class="fg"><div class="label">Conectores</div><label class="check"><input class="connector-filter" type="checkbox" value="CCS"> ⚡ CCS</label><label class="check"><input class="connector-filter" type="checkbox" value="Type 2"> ◉ Type 2</label><label class="check"><input class="connector-filter" type="checkbox" value="CHAdeMO"> CHAdeMO</label><label class="check"><input class="connector-filter" type="checkbox" value="Tesla"> Tesla</label></div>
 <div class="fg"><div class="label">Estado</div><label class="check"><input class="status-filter" type="checkbox" value="available" checked> 🟢 Disponível</label><label class="check"><input class="status-filter" type="checkbox" value="unavailable" checked> 🔴 Indisponível</label><label class="check"><input class="status-filter" type="checkbox" value="unknown" checked> 🔵 Desconhecido</label></div>
 <div class="fg"><div class="label">Operador</div><select id="operator-filter"><option value="all">Todos os operadores</option></select></div><button class="go" id="apply-filters">⌕ Procurar</button></aside>
 <main class="main"><div class="mapbox"><div id="map" style="height:100%"></div><div class="mapbadge">🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal</div><div class="legend"><div><i class="dot g"></i>Disponível</div><div><i class="dot r"></i>Indisponível</div><div><i class="dot b"></i>Estado desconhecido</div>⚡ 50 · 150 · 250+ kW</div></div>
-<div class="head"><h2>Melhores opções para o seu veículo</h2><select class="sort" id="sort-filter"><option value="power-desc">Maior potência</option><option value="name-asc">Nome A–Z</option><option value="operator-asc">Operador A–Z</option></select></div>
+<div class="head"><h2>Melhores opções para o seu veículo</h2><select class="sort" id="sort-filter"><option value="power-desc">Maior potência</option><option value="distance-asc">Mais próximo</option><option value="name-asc">Nome A–Z</option><option value="operator-asc">Operador A–Z</option></select></div>
 <div class="cards" id="station-cards">
 <article class="card"><div class="rank">1 <span class="tag">Mais económico</span></div><div class="op">Galp</div><div class="st">Galp Electric · Leiria</div><div class="avail">● Disponível · 3/4</div><div class="metrics"><div class="metric"><b>150 kW</b>CCS · Type 2</div><div class="metric"><b>0,29 €/kWh</b>energia</div></div><div class="cost"><b>≈ 10,44 €</b> · ~30 min</div><button onclick="pick('Galp Electric · Leiria','10,44','~30 min')">Ver detalhes</button></article><article class="card"><div class="rank">2 <span class="tag">Mais rápido</span></div><div class="op">Tesla Supercharger</div><div class="st">Torres Vedras · A8 km 45</div><div class="avail">● Disponível · 6/8</div><div class="metrics"><div class="metric"><b>250 kW</b>CCS · Type 2</div><div class="metric"><b>0,32 €/kWh</b>energia</div></div><div class="cost"><b>≈ 11,52 €</b> · ~25 min</div><button onclick="pick('Torres Vedras · A8 km 45','11,52','~25 min')">Ver detalhes</button></article><article class="card"><div class="rank">3 <span class="tag">Equilíbrio</span></div><div class="op">Electrão</div><div class="st">Atalaia · A8 km 84</div><div class="avail">● Disponível · 4/6</div><div class="metrics"><div class="metric"><b>175 kW</b>CCS · Type 2</div><div class="metric"><b>0,31 €/kWh</b>energia</div></div><div class="cost"><b>≈ 11,16 €</b> · ~25 min</div><button onclick="pick('Atalaia · A8 km 84','11,16','~25 min')">Ver detalhes</button></article><article class="card"><div class="rank">4 <span class="tag">Disponível</span></div><div class="op">PRIO</div><div class="st">Torres Vedras · A8 km 39</div><div class="avail">● Disponível · 2/4</div><div class="metrics"><div class="metric"><b>150 kW</b>CCS · Type 2</div><div class="metric"><b>0,34 €/kWh</b>energia</div></div><div class="cost"><b>≈ 12,24 €</b> · ~32 min</div><button onclick="pick('Torres Vedras · A8 km 39','12,24','~32 min')">Ver detalhes</button></article></div>
 <div class="quickgrid"><div class="quick"><b>🧭 Planeador de viagens</b><p>Encontre as melhores paragens para a sua rota, com custos e tempos estimados.</p></div><div class="quick"><b>⚖️ Comparador de preços</b><p>Compare o custo com diferentes operadores e cartões de carregamento.</p></div><div class="quick"><b>📊 Histórico</b><p>Acompanhe preços, disponibilidade e fiabilidade dos postos.</p></div></div></main>
@@ -34,11 +34,15 @@ const SUPABASE_KEY='sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_';
 const API_HEADERS={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
 const map=L.map('map').setView([39.55,-8],6.5);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
 const stationLayer=L.layerGroup().addTo(map);
+const searchLayer=L.layerGroup().addTo(map);
 let allStations=[];
 let connectorMap=new Map();
 let operatorMap=new Map();
 let markerMap=new Map();
 let selectedPower='all';
+let searchPosition=null;
+let lastGeocodeAt=0;
+const geocodeCache=new Map();
 
 async function getRows(table,query){
   const response=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`,{headers:API_HEADERS});
@@ -54,6 +58,25 @@ function markerColor(status){
 
 function escapeHtml(value){
   return String(value??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+function connectorCategory(value){
+  const type=String(value||'').toLowerCase();
+  if(type.includes('chademo'))return 'CHAdeMO';
+  if(type.includes('tesla')||type.includes('nacs'))return 'Tesla';
+  if(type.includes('ccs')||type.includes('combo'))return 'CCS';
+  if(type.includes('type 2')||type.includes('mennekes')||type.includes('iec 62196-2'))return 'Type 2';
+  return String(value||'Outro');
+}
+
+function distanceKm(a,b){
+  const rad=value=>value*Math.PI/180;
+  const dLat=rad(Number(b.lat)-Number(a.lat));
+  const dLon=rad(Number(b.lon)-Number(a.lon));
+  const lat1=rad(Number(a.lat));
+  const lat2=rad(Number(b.lat));
+  const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
 }
 
 async function loadRealStations(){
@@ -95,7 +118,7 @@ function matchesPower(power){
 function renderStations(zoomToResults=true){
   const badge=document.getElementById('station-count');
   const cards=document.getElementById('station-cards');
-  const search=(document.getElementById('location-search').value||document.getElementById('global-search').value).trim().toLocaleLowerCase('pt');
+  const search=document.getElementById('global-search').value.trim().toLocaleLowerCase('pt');
   const connectors=selectedValues('.connector-filter');
   const statuses=selectedValues('.status-filter');
   const selectedOperator=document.getElementById('operator-filter').value;
@@ -104,11 +127,17 @@ function renderStations(zoomToResults=true){
     const stationConnectors=connectorMap.get(s.id)||[];
     const operatorName=operatorMap.get(s.operator_id)||'';
     const haystack=[s.name,s.address,s.city,operatorName].filter(Boolean).join(' ').toLocaleLowerCase('pt');
-    const connectorMatch=!connectors.length||stationConnectors.some(c=>connectors.some(selected=>String(c.type).toLowerCase().includes(selected.toLowerCase())));
+    const connectorMatch=!connectors.length||stationConnectors.some(c=>connectors.includes(connectorCategory(c.type)));
     const statusMatch=!statuses.length||statuses.includes(s.status||'unknown');
     return (!search||haystack.includes(search))&&matchesPower(s.max_power_kw)&&connectorMatch&&statusMatch&&(selectedOperator==='all'||operatorName===selectedOperator);
   });
+  if(searchPosition){
+    filtered=filtered.map(s=>({...s,distance_km:distanceKm(searchPosition,{lat:s.latitude,lon:s.longitude})}));
+    const nearby=filtered.filter(s=>s.distance_km<=75);
+    filtered=nearby.length?nearby:filtered.sort((a,b)=>a.distance_km-b.distance_km).slice(0,20);
+  }
   filtered.sort((a,b)=>{
+    if(sort==='distance-asc'&&searchPosition)return (a.distance_km??Infinity)-(b.distance_km??Infinity);
     if(sort==='name-asc')return String(a.name||'').localeCompare(String(b.name||''),'pt');
     if(sort==='operator-asc')return String(operatorMap.get(a.operator_id)||'').localeCompare(String(operatorMap.get(b.operator_id)||''),'pt');
     return (Number(b.max_power_kw)||0)-(Number(a.max_power_kw)||0);
@@ -131,7 +160,8 @@ function renderStations(zoomToResults=true){
       const stationConnectors=connectorMap.get(s.id)||[];
       const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Não indicado';
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
-      return `<article class="card"><div class="rank">${index+1} <span class="tag">Dados reais</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● Estado: ${escapeHtml(s.status||'unknown')}</div><div class="metrics"><div class="metric"><b>${escapeHtml(s.max_power_kw)} kW</b>${escapeHtml(connectorText)}</div><div class="metric"><b>—</b>Preço não disponível</div></div><div class="cost"><b>Dados OCM</b></div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
+      const distance=s.distance_km!=null?`${s.distance_km.toFixed(1).replace('.',',')} km`:'Dados OCM';
+      return `<article class="card"><div class="rank">${index+1} <span class="tag">Dados reais</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● Estado: ${escapeHtml(s.status||'unknown')}</div><div class="metrics"><div class="metric"><b>${escapeHtml(s.max_power_kw)} kW</b>${escapeHtml(connectorText)}</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km!=null?'distância aproximada':'Preço não disponível'}</div></div><div class="cost"><b>Dados OCM</b></div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
     }).join('');
     if(!best.length)cards.innerHTML='<article class="card"><div class="op">Sem resultados</div><div class="st">Altere a pesquisa ou os filtros selecionados.</div></article>';
     cards.querySelectorAll('button[data-station-id]').forEach(button=>button.addEventListener('click',()=>{
@@ -140,12 +170,42 @@ function renderStations(zoomToResults=true){
     }));
 }
 
+async function searchPortugal(){
+  const input=document.getElementById('location-search');
+  const button=document.getElementById('apply-filters');
+  const query=input.value.trim();
+  if(!query){searchPosition=null;searchLayer.clearLayers();renderStations();return}
+  const cacheKey=query.toLocaleLowerCase('pt');
+  try{
+    button.disabled=true;button.textContent='A pesquisar…';
+    let place=geocodeCache.get(cacheKey);
+    if(!place){
+      const wait=Math.max(0,1000-(Date.now()-lastGeocodeAt));
+      if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
+      const params=new URLSearchParams({q:`${query}, Portugal`,format:'jsonv2',countrycodes:'pt',limit:'1'});
+      const response=await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+      lastGeocodeAt=Date.now();
+      if(!response.ok)throw new Error(`Pesquisa geográfica HTTP ${response.status}`);
+      const results=await response.json();
+      if(!results.length)throw new Error('Local não encontrado em Portugal');
+      place=results[0];geocodeCache.set(cacheKey,place);
+    }
+    searchPosition={lat:Number(place.lat),lon:Number(place.lon),label:place.display_name};
+    searchLayer.clearLayers();
+    L.marker([searchPosition.lat,searchPosition.lon]).addTo(searchLayer).bindPopup(`<b>Pesquisa</b><br>${escapeHtml(place.display_name)}`).openPopup();
+    document.getElementById('sort-filter').value='distance-asc';
+    renderStations(true);
+  }catch(error){
+    console.error(error);alert(error.message||'Não foi possível pesquisar este local.');
+  }finally{button.disabled=false;button.textContent='⌕ Procurar'}
+}
+
 loadRealStations();
 function pick(n,c,t){sn.textContent=n;price.textContent='≈ '+c+' €';mins.textContent=t}function sim(){let a=+from.value,b=+to.value;if(b<=a)b=Math.min(100,a+5);fv.textContent=a+'%';tv.textContent=b+'%';let k=(b-a)*.6;energy.textContent='~'+Math.round(k)+' kWh';price.textContent='≈ '+(k*.32).toFixed(2).replace('.',',')+' €';mins.textContent='~'+Math.max(5,Math.round((b-a)*.42))+' min'}from.oninput=to.oninput=sim;
 document.querySelectorAll('#power-filter .chip').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('#power-filter .chip').forEach(other=>other.classList.remove('on'));button.classList.add('on');selectedPower=button.dataset.power;renderStations()}));
-document.getElementById('apply-filters').addEventListener('click',()=>renderStations());
-document.getElementById('location-search').addEventListener('keydown',event=>{if(event.key==='Enter')renderStations()});
-document.getElementById('global-search').addEventListener('input',event=>{document.getElementById('location-search').value=event.target.value;renderStations(false)});
+document.getElementById('apply-filters').addEventListener('click',searchPortugal);
+document.getElementById('location-search').addEventListener('keydown',event=>{if(event.key==='Enter')searchPortugal()});
+document.getElementById('global-search').addEventListener('input',()=>renderStations(false));
 document.querySelectorAll('.connector-filter,.status-filter').forEach(input=>input.addEventListener('change',()=>renderStations(false)));
 document.getElementById('operator-filter').addEventListener('change',()=>renderStations());
 document.getElementById('sort-filter').addEventListener('change',()=>renderStations(false));
