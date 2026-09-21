@@ -14,15 +14,15 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 @media(max-width:1180px){.layout{grid-template-columns:250px 1fr}.right{display:none}.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:780px){.top{height:auto;flex-wrap:wrap;padding:10px}.brand{min-width:0}.brand small{display:none}.search{order:3;flex-basis:100%}.nav{display:none}.layout{display:block}.side{display:none}.mapbox{height:52vh}.cards{grid-template-columns:1fr 1fr}.quickgrid{grid-template-columns:1fr}.main{padding-bottom:20px}}@media(max-width:480px){.cards{grid-template-columns:1fr}}
 </style></head>
 <body>
-<header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><div class="search">⌕<input placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active">🗺<br>Mapa</button><button>♜<br>Rotas</button><button>🚗<br>O meu veículo</button><button>☆<br>Favoritos</button><button>♙<br>Conta</button></nav></header>
+<header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><div class="search">⌕<input id="global-search" placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active">🗺<br>Mapa</button><button>♜<br>Rotas</button><button>🚗<br>O meu veículo</button><button>☆<br>Favoritos</button><button>♙<br>Conta</button></nav></header>
 <div class="layout">
-<aside class="side"><div class="vehicle"><small>🚗 O meu veículo</small><div class="vehicle-row"><div class="car">🚘</div><div><b>Tesla Model 3 Highland RWD</b><small style="display:block;margin-top:4px">🔋 60 kWh · 147 Wh/km</small></div></div></div><h3>Onde quer carregar?</h3><div class="loc">⌖<input value="Lisboa, Portugal"></div>
-<div class="fg"><div class="label">Potência</div><div class="chips"><button class="chip on">Todos</button><button class="chip">Até 50</button><button class="chip">50–150</button><button class="chip">150–250</button><button class="chip">250+ kW</button></div></div>
-<div class="fg"><div class="label">Conectores</div><label class="check"><input type="checkbox" checked> ⚡ CCS</label><label class="check"><input type="checkbox" checked> ◉ Type 2</label><label class="check"><input type="checkbox"> CHAdeMO</label><label class="check"><input type="checkbox"> Tesla (NACS)</label></div>
-<div class="fg"><div class="label">Estado</div><label class="check"><input type="checkbox" checked> 🟢 Disponível</label><label class="check"><input type="checkbox"> 🔴 Ocupado</label><label class="check"><input type="checkbox"> 🔵 Desconhecido</label></div>
-<div class="fg"><div class="label">Operador</div><select><option>Todos os operadores</option><option>Tesla</option><option>Galp</option><option>PRIO</option><option>IONITY</option></select></div><button class="go" onclick="alert('Protótipo: aqui entra a pesquisa real na API/base de dados.')">⌕ Procurar</button></aside>
+<aside class="side"><div class="vehicle"><small>🚗 O meu veículo</small><div class="vehicle-row"><div class="car">🚘</div><div><b>Tesla Model 3 Highland RWD</b><small style="display:block;margin-top:4px">🔋 60 kWh · 147 Wh/km</small></div></div></div><h3>Onde quer carregar?</h3><div class="loc">⌖<input id="location-search" placeholder="Local, morada ou posto"></div>
+<div class="fg"><div class="label">Potência</div><div class="chips" id="power-filter"><button class="chip on" data-power="all">Todos</button><button class="chip" data-power="0-50">Até 50</button><button class="chip" data-power="50-150">50–150</button><button class="chip" data-power="150-250">150–250</button><button class="chip" data-power="250+">250+ kW</button></div></div>
+<div class="fg"><div class="label">Conectores</div><label class="check"><input class="connector-filter" type="checkbox" value="CCS"> ⚡ CCS</label><label class="check"><input class="connector-filter" type="checkbox" value="Type 2"> ◉ Type 2</label><label class="check"><input class="connector-filter" type="checkbox" value="CHAdeMO"> CHAdeMO</label><label class="check"><input class="connector-filter" type="checkbox" value="Tesla"> Tesla</label></div>
+<div class="fg"><div class="label">Estado</div><label class="check"><input class="status-filter" type="checkbox" value="available" checked> 🟢 Disponível</label><label class="check"><input class="status-filter" type="checkbox" value="unavailable" checked> 🔴 Indisponível</label><label class="check"><input class="status-filter" type="checkbox" value="unknown" checked> 🔵 Desconhecido</label></div>
+<div class="fg"><div class="label">Operador</div><select id="operator-filter"><option value="all">Todos os operadores</option></select></div><button class="go" id="apply-filters">⌕ Procurar</button></aside>
 <main class="main"><div class="mapbox"><div id="map" style="height:100%"></div><div class="mapbadge">🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal</div><div class="legend"><div><i class="dot g"></i>Disponível</div><div><i class="dot r"></i>Indisponível</div><div><i class="dot b"></i>Estado desconhecido</div>⚡ 50 · 150 · 250+ kW</div></div>
-<div class="head"><h2>Melhores opções para o seu veículo</h2><select class="sort"><option>Melhor relação preço/tempo</option><option>Mais barato</option><option>Mais rápido</option><option>Mais próximo</option></select></div>
+<div class="head"><h2>Melhores opções para o seu veículo</h2><select class="sort" id="sort-filter"><option value="power-desc">Maior potência</option><option value="name-asc">Nome A–Z</option><option value="operator-asc">Operador A–Z</option></select></div>
 <div class="cards" id="station-cards">
 <article class="card"><div class="rank">1 <span class="tag">Mais económico</span></div><div class="op">Galp</div><div class="st">Galp Electric · Leiria</div><div class="avail">● Disponível · 3/4</div><div class="metrics"><div class="metric"><b>150 kW</b>CCS · Type 2</div><div class="metric"><b>0,29 €/kWh</b>energia</div></div><div class="cost"><b>≈ 10,44 €</b> · ~30 min</div><button onclick="pick('Galp Electric · Leiria','10,44','~30 min')">Ver detalhes</button></article><article class="card"><div class="rank">2 <span class="tag">Mais rápido</span></div><div class="op">Tesla Supercharger</div><div class="st">Torres Vedras · A8 km 45</div><div class="avail">● Disponível · 6/8</div><div class="metrics"><div class="metric"><b>250 kW</b>CCS · Type 2</div><div class="metric"><b>0,32 €/kWh</b>energia</div></div><div class="cost"><b>≈ 11,52 €</b> · ~25 min</div><button onclick="pick('Torres Vedras · A8 km 45','11,52','~25 min')">Ver detalhes</button></article><article class="card"><div class="rank">3 <span class="tag">Equilíbrio</span></div><div class="op">Electrão</div><div class="st">Atalaia · A8 km 84</div><div class="avail">● Disponível · 4/6</div><div class="metrics"><div class="metric"><b>175 kW</b>CCS · Type 2</div><div class="metric"><b>0,31 €/kWh</b>energia</div></div><div class="cost"><b>≈ 11,16 €</b> · ~25 min</div><button onclick="pick('Atalaia · A8 km 84','11,16','~25 min')">Ver detalhes</button></article><article class="card"><div class="rank">4 <span class="tag">Disponível</span></div><div class="op">PRIO</div><div class="st">Torres Vedras · A8 km 39</div><div class="avail">● Disponível · 2/4</div><div class="metrics"><div class="metric"><b>150 kW</b>CCS · Type 2</div><div class="metric"><b>0,34 €/kWh</b>energia</div></div><div class="cost"><b>≈ 12,24 €</b> · ~32 min</div><button onclick="pick('Torres Vedras · A8 km 39','12,24','~32 min')">Ver detalhes</button></article></div>
 <div class="quickgrid"><div class="quick"><b>🧭 Planeador de viagens</b><p>Encontre as melhores paragens para a sua rota, com custos e tempos estimados.</p></div><div class="quick"><b>⚖️ Comparador de preços</b><p>Compare o custo com diferentes operadores e cartões de carregamento.</p></div><div class="quick"><b>📊 Histórico</b><p>Acompanhe preços, disponibilidade e fiabilidade dos postos.</p></div></div></main>
@@ -34,6 +34,11 @@ const SUPABASE_KEY='sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_';
 const API_HEADERS={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
 const map=L.map('map').setView([39.55,-8],6.5);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
 const stationLayer=L.layerGroup().addTo(map);
+let allStations=[];
+let connectorMap=new Map();
+let operatorMap=new Map();
+let markerMap=new Map();
+let selectedPower='all';
 
 async function getRows(table,query){
   const response=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`,{headers:API_HEADERS});
@@ -60,31 +65,15 @@ async function loadRealStations(){
       getRows('connectors','select=station_id,type,power_kw,quantity,status'),
       getRows('operators','select=id,name')
     ]);
-    const connectorMap=new Map();
+    connectorMap=new Map();
     connectors.forEach(c=>{const list=connectorMap.get(c.station_id)||[];list.push(c);connectorMap.set(c.station_id,list)});
-    const operatorMap=new Map(operators.map(o=>[o.id,o.name]));
-    badge.textContent=stations.length.toLocaleString('pt-PT');
-    stationLayer.clearLayers();
-    stations.forEach(s=>{
-      const stationConnectors=connectorMap.get(s.id)||[];
-      const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Conector não indicado';
-      const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
-      const location=[s.address,s.city].filter(Boolean).join(', ')||'Localização não indicada';
-      const marker=L.circleMarker([s.latitude,s.longitude],{radius:8,color:'#fff',weight:2,fillColor:markerColor(s.status),fillOpacity:1}).addTo(stationLayer);
-      marker.bindPopup(`<b>${escapeHtml(s.name||operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw??'—')} kW · ${escapeHtml(connectorText)}`);
-      marker.on('click',()=>{document.getElementById('sn').textContent=s.name||operatorName});
+    operatorMap=new Map(operators.map(o=>[o.id,o.name]));
+    allStations=stations;
+    const operatorSelect=document.getElementById('operator-filter');
+    [...new Set(stations.map(s=>operatorMap.get(s.operator_id)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt')).forEach(name=>{
+      const option=document.createElement('option');option.value=name;option.textContent=name;operatorSelect.appendChild(option);
     });
-    const best=stations.filter(s=>s.max_power_kw).slice(0,4);
-    cards.innerHTML=best.map((s,index)=>{
-      const stationConnectors=connectorMap.get(s.id)||[];
-      const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Não indicado';
-      const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
-      return `<article class="card"><div class="rank">${index+1} <span class="tag">Dados reais</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● Estado: ${escapeHtml(s.status||'unknown')}</div><div class="metrics"><div class="metric"><b>${escapeHtml(s.max_power_kw)} kW</b>${escapeHtml(connectorText)}</div><div class="metric"><b>—</b>Preço não disponível</div></div><div class="cost"><b>Dados OCM</b></div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
-    }).join('');
-    cards.querySelectorAll('button[data-station-id]').forEach(button=>button.addEventListener('click',()=>{
-      const station=stations.find(s=>s.id===button.dataset.stationId);
-      if(station){map.setView([station.latitude,station.longitude],15);document.getElementById('sn').textContent=station.name||'Posto de carregamento'}
-    }));
+    renderStations(false);
   }catch(error){
     console.error(error);
     badge.textContent='erro';
@@ -92,7 +81,72 @@ async function loadRealStations(){
   }
 }
 
+function selectedValues(selector){return [...document.querySelectorAll(selector+':checked')].map(input=>input.value)}
+
+function matchesPower(power){
+  const value=Number(power)||0;
+  if(selectedPower==='0-50')return value<=50;
+  if(selectedPower==='50-150')return value>50&&value<=150;
+  if(selectedPower==='150-250')return value>150&&value<=250;
+  if(selectedPower==='250+')return value>250;
+  return true;
+}
+
+function renderStations(zoomToResults=true){
+  const badge=document.getElementById('station-count');
+  const cards=document.getElementById('station-cards');
+  const search=(document.getElementById('location-search').value||document.getElementById('global-search').value).trim().toLocaleLowerCase('pt');
+  const connectors=selectedValues('.connector-filter');
+  const statuses=selectedValues('.status-filter');
+  const selectedOperator=document.getElementById('operator-filter').value;
+  const sort=document.getElementById('sort-filter').value;
+  let filtered=allStations.filter(s=>{
+    const stationConnectors=connectorMap.get(s.id)||[];
+    const operatorName=operatorMap.get(s.operator_id)||'';
+    const haystack=[s.name,s.address,s.city,operatorName].filter(Boolean).join(' ').toLocaleLowerCase('pt');
+    const connectorMatch=!connectors.length||stationConnectors.some(c=>connectors.some(selected=>String(c.type).toLowerCase().includes(selected.toLowerCase())));
+    const statusMatch=!statuses.length||statuses.includes(s.status||'unknown');
+    return (!search||haystack.includes(search))&&matchesPower(s.max_power_kw)&&connectorMatch&&statusMatch&&(selectedOperator==='all'||operatorName===selectedOperator);
+  });
+  filtered.sort((a,b)=>{
+    if(sort==='name-asc')return String(a.name||'').localeCompare(String(b.name||''),'pt');
+    if(sort==='operator-asc')return String(operatorMap.get(a.operator_id)||'').localeCompare(String(operatorMap.get(b.operator_id)||''),'pt');
+    return (Number(b.max_power_kw)||0)-(Number(a.max_power_kw)||0);
+  });
+  badge.textContent=filtered.length.toLocaleString('pt-PT');
+  stationLayer.clearLayers();markerMap.clear();
+  filtered.forEach(s=>{
+      const stationConnectors=connectorMap.get(s.id)||[];
+      const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Conector não indicado';
+      const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
+      const location=[s.address,s.city].filter(Boolean).join(', ')||'Localização não indicada';
+      const marker=L.circleMarker([s.latitude,s.longitude],{radius:8,color:'#fff',weight:2,fillColor:markerColor(s.status),fillOpacity:1}).addTo(stationLayer);
+      marker.bindPopup(`<b>${escapeHtml(s.name||operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw??'—')} kW · ${escapeHtml(connectorText)}`);
+      marker.on('click',()=>{document.getElementById('sn').textContent=s.name||operatorName});
+      markerMap.set(s.id,marker);
+    });
+    if(zoomToResults&&filtered.length){const bounds=L.latLngBounds(filtered.map(s=>[s.latitude,s.longitude]));map.fitBounds(bounds,{padding:[25,25],maxZoom:13})}
+    const best=filtered.filter(s=>s.max_power_kw).slice(0,4);
+    cards.innerHTML=best.map((s,index)=>{
+      const stationConnectors=connectorMap.get(s.id)||[];
+      const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Não indicado';
+      const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
+      return `<article class="card"><div class="rank">${index+1} <span class="tag">Dados reais</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● Estado: ${escapeHtml(s.status||'unknown')}</div><div class="metrics"><div class="metric"><b>${escapeHtml(s.max_power_kw)} kW</b>${escapeHtml(connectorText)}</div><div class="metric"><b>—</b>Preço não disponível</div></div><div class="cost"><b>Dados OCM</b></div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
+    }).join('');
+    if(!best.length)cards.innerHTML='<article class="card"><div class="op">Sem resultados</div><div class="st">Altere a pesquisa ou os filtros selecionados.</div></article>';
+    cards.querySelectorAll('button[data-station-id]').forEach(button=>button.addEventListener('click',()=>{
+      const station=allStations.find(s=>s.id===button.dataset.stationId);
+      if(station){map.setView([station.latitude,station.longitude],15);markerMap.get(station.id)?.openPopup();document.getElementById('sn').textContent=station.name||'Posto de carregamento'}
+    }));
+}
+
 loadRealStations();
 function pick(n,c,t){sn.textContent=n;price.textContent='≈ '+c+' €';mins.textContent=t}function sim(){let a=+from.value,b=+to.value;if(b<=a)b=Math.min(100,a+5);fv.textContent=a+'%';tv.textContent=b+'%';let k=(b-a)*.6;energy.textContent='~'+Math.round(k)+' kWh';price.textContent='≈ '+(k*.32).toFixed(2).replace('.',',')+' €';mins.textContent='~'+Math.max(5,Math.round((b-a)*.42))+' min'}from.oninput=to.oninput=sim;
-document.querySelectorAll('.chip').forEach(x=>x.onclick=()=>{document.querySelectorAll('.chip').forEach(y=>y.classList.remove('on'));x.classList.add('on')});
+document.querySelectorAll('#power-filter .chip').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('#power-filter .chip').forEach(other=>other.classList.remove('on'));button.classList.add('on');selectedPower=button.dataset.power;renderStations()}));
+document.getElementById('apply-filters').addEventListener('click',()=>renderStations());
+document.getElementById('location-search').addEventListener('keydown',event=>{if(event.key==='Enter')renderStations()});
+document.getElementById('global-search').addEventListener('input',event=>{document.getElementById('location-search').value=event.target.value;renderStations(false)});
+document.querySelectorAll('.connector-filter,.status-filter').forEach(input=>input.addEventListener('change',()=>renderStations(false)));
+document.getElementById('operator-filter').addEventListener('change',()=>renderStations());
+document.getElementById('sort-filter').addEventListener('change',()=>renderStations(false));
 </script></body></html>
