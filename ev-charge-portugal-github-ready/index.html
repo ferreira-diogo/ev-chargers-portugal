@@ -26,7 +26,7 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 <div class="cards" id="station-cards">
 <article class="card"><div class="rank">1 <span class="tag">Mais económico</span></div><div class="op">Galp</div><div class="st">Galp Electric · Leiria</div><div class="avail">● Disponível · 3/4</div><div class="metrics"><div class="metric"><b>150 kW</b>CCS · Type 2</div><div class="metric"><b>0,29 €/kWh</b>energia</div></div><div class="cost"><b>≈ 10,44 €</b> · ~30 min</div><button onclick="pick('Galp Electric · Leiria','10,44','~30 min')">Ver detalhes</button></article><article class="card"><div class="rank">2 <span class="tag">Mais rápido</span></div><div class="op">Tesla Supercharger</div><div class="st">Torres Vedras · A8 km 45</div><div class="avail">● Disponível · 6/8</div><div class="metrics"><div class="metric"><b>250 kW</b>CCS · Type 2</div><div class="metric"><b>0,32 €/kWh</b>energia</div></div><div class="cost"><b>≈ 11,52 €</b> · ~25 min</div><button onclick="pick('Torres Vedras · A8 km 45','11,52','~25 min')">Ver detalhes</button></article><article class="card"><div class="rank">3 <span class="tag">Equilíbrio</span></div><div class="op">Electrão</div><div class="st">Atalaia · A8 km 84</div><div class="avail">● Disponível · 4/6</div><div class="metrics"><div class="metric"><b>175 kW</b>CCS · Type 2</div><div class="metric"><b>0,31 €/kWh</b>energia</div></div><div class="cost"><b>≈ 11,16 €</b> · ~25 min</div><button onclick="pick('Atalaia · A8 km 84','11,16','~25 min')">Ver detalhes</button></article><article class="card"><div class="rank">4 <span class="tag">Disponível</span></div><div class="op">PRIO</div><div class="st">Torres Vedras · A8 km 39</div><div class="avail">● Disponível · 2/4</div><div class="metrics"><div class="metric"><b>150 kW</b>CCS · Type 2</div><div class="metric"><b>0,34 €/kWh</b>energia</div></div><div class="cost"><b>≈ 12,24 €</b> · ~32 min</div><button onclick="pick('Torres Vedras · A8 km 39','12,24','~32 min')">Ver detalhes</button></article></div>
 <div class="quickgrid"><div class="quick"><b>🧭 Planeador de viagens</b><p>Encontre as melhores paragens para a sua rota, com custos e tempos estimados.</p></div><div class="quick"><b>⚖️ Comparador de preços</b><p>Compare o custo com diferentes operadores e cartões de carregamento.</p></div><div class="quick"><b>📊 Histórico</b><p>Acompanhe preços, disponibilidade e fiabilidade dos postos.</p></div></div></main>
-<aside class="right"><div class="panel"><div class="photo">⚡</div><div class="pbody"><div class="stationtitle"><h2 id="sn">IONITY Extremadura · A1</h2><span class="badge">IONITY</span></div><div class="meta">⌖ A1, km 81 (sentido Sul) · Alenquer, Lisboa<br>⌖ Cerca de 200 km</div><div class="status">● Disponível · 4/6 postos</div><div class="specs"><div class="spec"><b>300 kW</b>Máx.</div><div class="spec"><b>CCS</b>6 tomadas</div><div class="spec"><b>Type 2</b>2 tomadas</div><div class="spec"><b>WC</b>Restaurante</div></div></div></div>
+<aside class="right"><div class="panel"><div class="photo">⚡</div><div class="pbody"><div class="stationtitle"><h2 id="sn">Selecione um posto no mapa</h2><span class="badge" id="station-operator">—</span></div><div class="meta" id="station-meta">Os detalhes reais aparecerão aqui.</div><div class="status" id="station-status">● Estado ainda não selecionado</div><div class="specs"><div class="spec"><b id="station-power">—</b>Potência máx.</div><div class="spec"><b id="station-connectors">—</b>Conectores</div><div class="spec"><b id="station-points">—</b>Tomadas</div><div class="spec"><b id="station-live">—</b>Disponibilidade</div></div></div></div>
 <div class="panel"><div class="pbody"><div class="sim"><h3>Simulador de carregamento</h3><div class="tabs"><button class="on">Por energia</button><button>Por tempo</button></div><div class="srow"><span>Estado atual da bateria</span><b id="fv">20%</b></div><input class="slider" id="from" type="range" min="5" max="90" value="20"><div class="srow"><span>Carregar até</span><b id="tv">80%</b></div><input class="slider" id="to" type="range" min="20" max="100" value="80"><div class="res"><b id="energy">~36 kWh</b>Energia necessária</div><div class="res"><b id="price">≈ 11,52 €</b>Custo estimado</div><div class="res"><b id="mins">~25 min</b>Tempo estimado</div><div class="note">Valores demonstrativos. O preço final poderá depender do operador, cartão, ativação, tempo e condições reais.</div><button class="primary">Ver rota</button><button class="secondary">☆ Adicionar aos favoritos</button></div></div></div></aside></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
 const SUPABASE_URL='https://ftnmdgiftdgaycotjixr.supabase.co';
@@ -52,6 +52,18 @@ async function getRows(table,query){
   const response=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`,{headers:API_HEADERS});
   if(!response.ok)throw new Error(`${table}: HTTP ${response.status} - ${await response.text()}`);
   return response.json();
+}
+
+async function getAllRows(table,query,pageSize=1000){
+  const rows=[];
+  let offset=0;
+  while(true){
+    const page=await getRows(table,`${query}&limit=${pageSize}&offset=${offset}`);
+    rows.push(...page);
+    if(page.length<pageSize)break;
+    offset+=pageSize;
+  }
+  return rows;
 }
 
 function markerColor(status){
@@ -110,7 +122,21 @@ function applyVehicle(vehicleId){
 
 function selectStation(station,operatorName){
   selectedStationPower=Number(station.max_power_kw)||null;
+  const stationConnectors=connectorMap.get(station.id)||[];
+  const connectorTypes=[...new Set(stationConnectors.map(connector=>connectorCategory(connector.type)))];
+  const totalPoints=stationConnectors.reduce((total,connector)=>total+(Number(connector.quantity)||1),0);
+  const connectorsWithAvailability=stationConnectors.filter(connector=>connector.available_count!=null);
+  const availablePoints=connectorsWithAvailability.reduce((total,connector)=>total+(Number(connector.available_count)||0),0);
+  const location=[station.address,station.city].filter(Boolean).join(', ')||'Morada não comunicada';
+  const liveText=connectorsWithAvailability.length?`${availablePoints}/${totalPoints}`:'Não comunicada';
   document.getElementById('sn').textContent=station.name||operatorName||'Posto de carregamento';
+  document.getElementById('station-operator').textContent=operatorName||'Operador não indicado';
+  document.getElementById('station-meta').textContent=`⌖ ${location} · OCM ${station.external_id||'—'}`;
+  document.getElementById('station-status').textContent=`● ${statusLabel(station.status)}`;
+  document.getElementById('station-power').textContent=station.max_power_kw?`${station.max_power_kw} kW`:'—';
+  document.getElementById('station-connectors').textContent=connectorTypes.join(' · ')||'—';
+  document.getElementById('station-points').textContent=totalPoints||'—';
+  document.getElementById('station-live').textContent=liveText;
   sim();
 }
 
@@ -119,8 +145,8 @@ async function loadRealStations(){
   const cards=document.getElementById('station-cards');
   try{
     const [stations,connectors,operators,vehicles]=await Promise.all([
-      getRows('charging_stations','select=id,external_id,name,address,city,latitude,longitude,max_power_kw,status,operator_id&source=eq.openchargemap&order=max_power_kw.desc.nullslast&limit=1000'),
-      getRows('connectors','select=station_id,type,power_kw,quantity,status'),
+      getAllRows('charging_stations','select=id,external_id,name,address,city,latitude,longitude,max_power_kw,status,operator_id&source=eq.openchargemap&order=max_power_kw.desc.nullslast'),
+      getAllRows('connectors','select=station_id,type,power_kw,quantity,status'),
       getRows('operators','select=id,name'),
       getRows('vehicle_models','select=id,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types&active=eq.true&order=make.asc,model.asc')
     ]);
