@@ -1,0 +1,67 @@
+name: NAP DATEX II audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Validate only or upload to protected staging"
+        required: true
+        default: "dry-run"
+        type: choice
+        options:
+          - dry-run
+          - stage
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nap-datex-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NAP_SOURCE_URL: https://ev-nap.mobie.pt/integration/nap/evChargingInfra
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NAP_MIN_SITES: "8000"
+      NAP_MIN_CONNECTORS: "17000"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
+
+      - name: Install pinned dependencies
+        run: npm ci
+        working-directory: ev-charge-portugal-github-ready
+
+      - name: Validate and stage changed NAP feed
+        if: github.event_name == 'schedule' || inputs.mode == 'stage'
+        run: npm run nap:stage | tee nap-result.json
+        working-directory: ev-charge-portugal-github-ready
+
+      - name: Validate NAP feed without database writes
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        run: npm run nap:check | tee nap-result.json
+        working-directory: ev-charge-portugal-github-ready
+
+      - name: Publish run summary
+        if: always()
+        run: |
+          echo '## NAP DATEX II audit' >> "$GITHUB_STEP_SUMMARY"
+          if test -f ev-charge-portugal-github-ready/nap-result.json; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 80 ev-charge-portugal-github-ready/nap-result.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'The importer stopped before producing a result.' >> "$GITHUB_STEP_SUMMARY"
+          fi

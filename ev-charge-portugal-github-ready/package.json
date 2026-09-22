@@ -1,1 +1,18 @@
-{"name":"ev-charge-portugal","version":"0.1.0","private":true,"scripts":{"dev":"python3 -m http.server 8080"}}
+{
+  "name": "ev-charge-portugal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 8080",
+    "nap:check": "node scripts/import-nap-datex.mjs --dry-run",
+    "nap:stage": "node scripts/import-nap-datex.mjs --stage"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.116.0",
+    "saxes": "6.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
