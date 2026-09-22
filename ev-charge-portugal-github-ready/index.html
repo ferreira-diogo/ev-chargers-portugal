@@ -91,7 +91,9 @@ function connectorCategory(value){
   return String(value||'Outro');
 }
 
-function isOfficialTeslaStation(station){return station?.amenities?.tesla_official_supercharger===true}\n\nfunction distanceKm(a,b){
+function isOfficialTeslaStation(station){return station?.amenities?.tesla_official_supercharger===true}
+
+function distanceKm(a,b){
   const rad=value=>value*Math.PI/180;
   const dLat=rad(Number(b.lat)-Number(a.lat));
   const dLon=rad(Number(b.lon)-Number(a.lon));
@@ -225,7 +227,8 @@ function renderStations(zoomToResults=true){
       const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Não indicado';
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
       const distance=s.distance_km!=null?`${s.distance_km.toFixed(1).replace('.',',')} km`:(isOfficialTeslaStation(s)?'Tesla oficial':s.source==='nap'?'NAP oficial':'Dados comunitários');
-      const totalPoints=stationConnectors.reduce((total,connector)=>total+(Number(connector.quantity)||1),0);\n      const effectivePower=currentVehicle?.max_dc_power_kw?Math.min(Number(s.max_power_kw)||0,Number(currentVehicle.max_dc_power_kw)):Number(s.max_power_kw)||0;
+      const totalPoints=stationConnectors.reduce((total,connector)=>total+(Number(connector.quantity)||1),0);
+      const effectivePower=currentVehicle?.max_dc_power_kw?Math.min(Number(s.max_power_kw)||0,Number(currentVehicle.max_dc_power_kw)):Number(s.max_power_kw)||0;
       return `<article class="card"><div class="rank">${index+1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● ${escapeHtml(isOfficialTeslaStation(s)?'Disponibilidade em tempo real na app Tesla':statusLabel(s.status))}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower||'—')} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km!=null?'distância aproximada':escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto</div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
     }).join('');
     if(!best.length)cards.innerHTML='<article class="card"><div class="op">Sem resultados</div><div class="st">Altere a pesquisa ou os filtros selecionados.</div></article>';
