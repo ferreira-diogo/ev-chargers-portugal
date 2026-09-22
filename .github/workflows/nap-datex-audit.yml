@@ -1,6 +1,14 @@
 name: NAP DATEX II audit
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/nap-datex-audit.yml"
+      - "ev-charge-portugal-github-ready/package.json"
+      - "ev-charge-portugal-github-ready/package-lock.json"
+      - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
   pull_request:
     paths:
       - ".github/workflows/nap-datex-audit.yml"
@@ -56,7 +64,7 @@ jobs:
         working-directory: ev-charge-portugal-github-ready
 
       - name: Validate and stage changed NAP feed
-        if: github.event_name == 'schedule' || inputs.mode == 'stage'
+        if: github.event_name == 'push' || github.event_name == 'schedule' || inputs.mode == 'stage'
         run: npm run nap:stage | tee nap-result.json
         working-directory: ev-charge-portugal-github-ready
 
