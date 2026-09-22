@@ -210,6 +210,7 @@ function renderStations(zoomToResults=true){
   filtered.forEach(s=>{
       const stationConnectors=connectorMap.get(s.id)||[];
       const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Conector não indicado';
+      const totalPoints=stationConnectors.reduce((total,connector)=>total+(Number(connector.quantity)||1),0);
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
       const location=[s.address,s.city].filter(Boolean).join(', ')||'Localização não indicada';
       const marker=L.circleMarker([s.latitude,s.longitude],{radius:8,color:'#fff',weight:2,fillColor:markerColor(s.status),fillOpacity:1}).addTo(stationLayer);
