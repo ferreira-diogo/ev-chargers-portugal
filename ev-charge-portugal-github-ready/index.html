@@ -27,7 +27,7 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 <article class="card"><div class="op">A carregar postos reais…</div><div class="st">A consultar a base de dados nacional.</div></article></div>
 <div class="quickgrid"><div class="quick" id="open-route-planner" role="button" tabindex="0"><b>🧭 Planeador de viagens</b><p>Encontre paragens compatíveis, tempos e um Plano B para cada paragem.</p></div><div class="quick"><b>⚖️ Comparador de preços</b><p>Em preparação: cartão, tarifa do posto e taxas num único preço final.</p></div><div class="quick"><b>📊 Histórico</b><p>Será calculado a partir de disponibilidade real observada ao longo do tempo.</p></div></div></main>
 <aside class="right"><div class="panel"><div class="photo">⚡</div><div class="pbody"><div class="stationtitle"><h2 id="sn">Selecione um posto no mapa</h2><span class="badge" id="station-operator">—</span></div><div class="meta" id="station-meta">Os detalhes reais aparecerão aqui.</div><div class="status" id="station-status">● Estado ainda não selecionado</div><div class="specs"><div class="spec"><b id="station-power">—</b>Potência máx.</div><div class="spec"><b id="station-connectors">—</b>Conectores</div><div class="spec"><b id="station-points">—</b>Tomadas</div><div class="spec"><b id="station-live">—</b>Disponibilidade</div></div></div></div>
-<div class="panel"><div class="pbody"><div class="sim"><h3>Simulador de carregamento</h3><div class="tabs"><button class="on">Por energia</button><button>Por tempo</button></div><div class="srow"><span>Estado atual da bateria</span><b id="fv">20%</b></div><input class="slider" id="from" type="range" min="5" max="90" value="20"><div class="srow"><span>Carregar até</span><b id="tv">80%</b></div><input class="slider" id="to" type="range" min="20" max="100" value="80"><div class="res"><b id="energy">~36 kWh</b>Energia necessária</div><div class="res"><b id="price">Selecione um posto</b>Melhor custo oficial estimado</div><div class="res"><b id="mins">~25 min</b>Tempo estimado</div><div class="price-head"><b>Top 5 cartões de referência</b><select id="price-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></div><div class="price-list" id="price-comparison"><div class="price-empty">Selecione um posto oficial MOBI.E/NAP com pelo menos 22 kW.</div></div><div class="note">Estimativa com tarifa CEME, OPC oficial, TAR quando aplicável, EGME, IEC e IVA. Benefícios pessoais e promoções condicionais não são deduzidos.</div><button class="primary" id="route-selected-station" disabled>Selecione um posto para criar rota</button><button class="secondary">☆ Adicionar aos favoritos</button></div></div></div></aside></div>
+<div class="panel"><div class="pbody"><div class="sim"><h3>Simulador de carregamento</h3><div class="tabs"><button class="on">Por energia</button><button>Por tempo</button></div><div class="srow"><span>Estado atual da bateria</span><b id="fv">20%</b></div><input class="slider" id="from" type="range" min="5" max="90" value="20"><div class="srow"><span>Carregar até</span><b id="tv">80%</b></div><input class="slider" id="to" type="range" min="20" max="100" value="80"><div class="res"><b id="energy">~36 kWh</b>Energia necessária</div><div class="res"><b id="price">Selecione um posto</b>Melhor custo oficial estimado</div><div class="res"><b id="mins">~25 min</b>Tempo estimado</div><div class="price-head"><b>Comparador de cartões e apps</b><select id="price-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></div><div class="price-list" id="price-comparison"><div class="price-empty">Selecione um posto oficial MOBI.E/NAP com pelo menos 22 kW.</div></div><div class="note">Compara tarifas CEME com OPC, TAR, IEC e IVA, e campanhas de preço final sem duplicar taxas. Benefícios futuros são mostrados separadamente.</div><button class="primary" id="route-selected-station" disabled>Selecione um posto para criar rota</button><button class="secondary">☆ Adicionar aos favoritos</button></div></div></div></aside></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
 const SUPABASE_URL='https://ftnmdgiftdgaycotjixr.supabase.co';
 const SUPABASE_KEY='sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_';
@@ -235,6 +235,13 @@ function calculateCardPrice(card,opc,scenario,period){
   const vehiclePower=Number(currentVehicle?.max_dc_power_kw)||Number(opc.power_kw)||22;
   const optionPower=Math.max(1,Math.min(Number(opc.power_kw)||1,vehiclePower));
   const minutes=Math.max(5,Math.ceil(energy/optionPower*60/.75));
+  if(card.pricing_mode==='final_fixed'){
+    const total=Number(card.energy_price_eur_kwh)*energy;
+    const operator=String(operatorMap.get(selectedStation?.operator_id)||selectedStation?.name||'').toLowerCase();
+    const ownNetwork=operator.includes('atlante');
+    const cashbackRate=Number(ownNetwork?card.cashback_own_rate:card.cashback_other_rate)||0;
+    return {card,opc,total,ceme:total,tar:0,opcCost:0,iec:0,minutes,effectiveKwh:Number(card.energy_price_eur_kwh),finalFixed:true,cashback:total*cashbackRate,cashbackRate};
+  }
   const opcCost=Number(opc.activation_fee_eur||0)+Number(opc.energy_price_eur_kwh||0)*energy+Number(opc.time_price_eur_min||0)*minutes;
   const tar=card.includes_tar?0:networkTariff(opc.voltage_level,period)*energy;
   const ceme=Number(card.energy_price_eur_kwh)*energy+Number(card.session_fee_eur||0);
@@ -262,12 +269,13 @@ function renderPriceComparison(){
   const period=document.getElementById('price-period').value;
   const tariffs=compatibleOfficialTariffs();
   const comparisons=cemeCards.map(card=>{
-    const options=tariffs.map(opc=>calculateCardPrice(card,opc,scenario,period));
+    const eligibleTariffs=card.pricing_mode==='final_fixed'?tariffs.filter(opc=>Number(opc.power_kw)>=50):tariffs;
+    const options=eligibleTariffs.map(opc=>calculateCardPrice(card,opc,scenario,period));
     return options.sort((a,b)=>a.total-b.total)[0];
   }).filter(Boolean).sort((a,b)=>a.total-b.total);
   if(!comparisons.length){container.innerHTML='<div class="price-empty">Não foi possível calcular os cartões de referência.</div>';return}
   headline.textContent=`≈ ${comparisons[0].total.toFixed(2).replace('.',',')} €`;
-  container.innerHTML=comparisons.map((item,index)=>`<div class="price-card"><span class="price-rank">${index+1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index===0?'<span class="official-price">MENOR ESTIMATIVA</span>':''}<span class="price-breakdown">CEME ${item.ceme.toFixed(2).replace('.',',')} € · OPC ${item.opcCost.toFixed(2).replace('.',',')} €${item.tar?` · TAR ${item.tar.toFixed(2).replace('.',',')} €`:''} · taxas + IVA</span></div><div class="price-total">${item.total.toFixed(2).replace('.',',')} €<small>${item.effectiveKwh.toFixed(3).replace('.',',')} €/kWh final</small></div></div>`).join('')+`<div class="price-empty">Cenário: ${scenario.energyKwh.toFixed(1).replace('.',',')} kWh · ~${comparisons[0].minutes} min · tomada ${escapeHtml(comparisons[0].opc.connector_type||'compatível')} ${escapeHtml(comparisons[0].opc.power_kw)} kW. Fonte OPC: MOBI.E.</div>`;
+  container.innerHTML=comparisons.map((item,index)=>`<div class="price-card"><span class="price-rank">${index+1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index===0?'<span class="official-price">MENOR ESTIMATIVA</span>':''}<span class="price-breakdown">${item.finalFixed?`Preço final promocional · taxas incluídas${item.cashbackRate?` · ${Math.round(item.cashbackRate*100)}% em Green Gems (~${item.cashback.toFixed(2).replace('.',',')} €) para uso futuro`:''}`:`CEME ${item.ceme.toFixed(2).replace('.',',')} € · OPC ${item.opcCost.toFixed(2).replace('.',',')} €${item.tar?` · TAR ${item.tar.toFixed(2).replace('.',',')} €`:''} · taxas + IVA`}</span></div><div class="price-total">${item.total.toFixed(2).replace('.',',')} €<small>${item.effectiveKwh.toFixed(3).replace('.',',')} €/kWh final</small></div></div>`).join('')+`<div class="price-empty">Cenário: ${scenario.energyKwh.toFixed(1).replace('.',',')} kWh · ~${comparisons[0].minutes} min · tomada ${escapeHtml(comparisons[0].opc.connector_type||'compatível')} ${escapeHtml(comparisons[0].opc.power_kw)} kW. Fonte OPC: MOBI.E. Campanhas só aparecem durante a respetiva validade.</div>`;
 }
 
 async function loadStationPricing(station){
@@ -296,13 +304,14 @@ async function loadRealStations(){
       getAllRows('connectors','select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source'),
       getRows('operators','select=id,name'),
       getRows('vehicle_models','select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc'),
-      getRows('ceme_cards','select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url&active=eq.true')
+      getRows('ceme_cards','select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true')
     ]);
     connectorMap=new Map();
     connectors.forEach(c=>{const list=connectorMap.get(c.station_id)||[];list.push(c);connectorMap.set(c.station_id,list)});
     operatorMap=new Map(operators.map(o=>[o.id,o.name]));
     allStations=stations;
-    cemeCards=cards;
+    const today=new Date().toISOString().slice(0,10);
+    cemeCards=cards.filter(card=>(!card.valid_from||card.valid_from<=today)&&(!card.valid_to||card.valid_to>=today));
     populateVehicles(vehicles);
     const operatorSelect=document.getElementById('operator-filter');
     [...new Set(stations.map(s=>operatorMap.get(s.operator_id)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt')).forEach(name=>{
