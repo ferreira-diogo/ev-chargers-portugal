@@ -2,6 +2,8 @@
 <html lang="pt-PT"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EV Charge Portugal</title>
+<meta name="theme-color" content="#071b31"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg"><link rel="apple-touch-icon" href="./icon.svg">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--n:#071b31;--g:#18b978;--g2:#45e09c;--bg:#edf2f6;--line:#dce5ec;--mut:#708294}
@@ -13,10 +15,10 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 .right{background:#f5f8fa;padding:10px}.panel{overflow:hidden;margin-bottom:10px;box-shadow:0 2px 8px #071b3108}.photo{height:145px;background:linear-gradient(135deg,#6e8d78,#d5c38c 50%,#91a4b1);display:grid;place-items:center;font-size:64px;color:#fff8}.pbody{padding:13px}.stationtitle{display:flex;justify-content:space-between}.stationtitle h2{font-size:16px;margin:0}.badge{background:#1464c2;color:white;border-radius:6px;padding:6px;font-size:9px}.meta{font-size:10px;color:var(--mut);line-height:1.7;margin:5px 0}.status{font-size:10px;color:#078052;font-weight:700}.specs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);margin:11px -13px 0}.spec{padding:10px 5px;text-align:center;border-right:1px solid var(--line);font-size:8px}.spec b{display:block;font-size:11px}.sim h3{font-size:13px;margin:0 0 11px}.tabs{display:flex;background:#f1f5f7;padding:3px;border-radius:7px}.tabs button{flex:1;border:0;background:transparent;padding:7px;font-size:9px}.tabs .on{background:#fff;border-radius:5px;color:#078052;font-weight:700}.slider{width:100%;accent-color:#16b978}.srow{display:flex;justify-content:space-between;font-size:10px;margin:10px 0 3px}.res{padding:9px 0;border-bottom:1px solid #edf1f4;font-size:9px;color:var(--mut)}.res b{display:block;color:#10263d;font-size:12px}.primary{width:100%;border:0;background:#0eaf72;color:#fff;padding:10px;border-radius:7px;font-weight:800;margin-top:11px}.note{font-size:8px;color:#8796a3;line-height:1.4;margin-top:9px}.price-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px}.price-head b{font-size:12px}.price-head select{border:1px solid var(--line);border-radius:6px;padding:5px;font-size:9px;background:#fff}.price-list{margin-top:7px}.price-card{display:grid;grid-template-columns:22px 1fr auto;gap:7px;align-items:center;padding:8px 0;border-top:1px solid #edf1f4}.price-rank{width:20px;height:20px;border-radius:50%;background:#e2faef;color:#08794f;display:grid;place-items:center;font-size:9px;font-weight:900}.price-name{font-size:10px;font-weight:800}.price-breakdown{display:block;color:var(--mut);font-size:8px;font-weight:400;margin-top:2px}.price-total{text-align:right;font-size:12px;font-weight:900}.price-total small{display:block;color:var(--mut);font-size:7px;font-weight:500}.price-empty{padding:10px 0;color:var(--mut);font-size:9px;line-height:1.45}.official-price{display:inline-block;background:#e8f2ff;color:#14569b;border-radius:8px;padding:2px 5px;font-size:7px;font-weight:800}
 .quick{cursor:pointer}.quick:hover{border-color:#9bdcbf;box-shadow:0 5px 18px #071b3112}.mobile-controls,.drawer-close{display:none}.route-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.route-actions button{border:0;border-radius:7px;background:#1464c2;color:#fff;padding:8px 11px;font-weight:800;font-size:10px}.route-actions button:first-child{background:#0eaf72}.modal{display:none;position:fixed;inset:0;z-index:3000;background:#071b31aa;padding:20px;align-items:center;justify-content:center}.modal.open{display:flex}.modal-card{width:min(560px,100%);max-height:80vh;overflow:auto;background:#fff;border-radius:14px;padding:18px;box-shadow:0 20px 70px #0005}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.modal-head h2{font-size:17px;margin:0}.modal-close{border:0;background:#edf2f6;border-radius:50%;width:32px;height:32px;cursor:pointer}.favorite-row{border-top:1px solid var(--line);padding:11px 0;display:grid;grid-template-columns:1fr auto;gap:8px}.favorite-row small{display:block;color:var(--mut);margin-top:3px}.favorite-row button{border:0;border-radius:6px;background:#e2faef;color:#08794f;padding:7px 9px;font-weight:800}.car img{width:100%;height:100%;object-fit:contain}.vehicle-image-credit{font-size:7px;color:#a9c3d5;text-align:center;margin-top:2px}.fav-on{background:#fff1c7!important;border-color:#f0c04a!important;color:#8a6100!important}
 @media(max-width:1180px){.layout{grid-template-columns:250px 1fr}.right{display:grid;grid-column:1/-1;grid-template-columns:1fr 1fr;gap:10px}.right .panel{margin-bottom:0}.cards{grid-template-columns:repeat(2,1fr)}.routeform{grid-template-columns:1fr 1fr .6fr .6fr}.routeform button{grid-column:1/-1}}@media(max-width:780px){body{padding-bottom:61px}.top{height:auto;flex-wrap:wrap;padding:10px;gap:10px;position:sticky;top:0;z-index:900}.brand{min-width:0;flex:1}.brand small{display:none}.search{order:3;flex-basis:100%;max-width:none}.mobile-controls{display:block;border:0;background:#45e09c;color:#06283c;border-radius:8px;padding:9px 11px;font-weight:900}.nav{display:flex;position:fixed;z-index:1800;bottom:0;left:0;right:0;height:61px;margin:0;background:#071b31;justify-content:space-around;gap:0;padding:4px}.nav button{flex:1;font-size:9px}.nav button:last-child{display:none}.layout{display:block}.side{display:none;position:fixed;inset:0 12% 0 0;z-index:2200;overflow:auto;box-shadow:15px 0 40px #0007;padding-top:54px}.side.mobile-open{display:block}.drawer-close{display:block;position:absolute;right:12px;top:10px;border:0;background:#fff;color:#071b31;border-radius:50%;width:34px;height:34px;font-size:18px}.main{padding:8px}.right{display:block;padding:0 8px 14px}.right .panel{margin-bottom:10px}.routeform{grid-template-columns:1fr}.routeform input,.routeform button{grid-column:1!important;min-height:44px}.mapbox{height:43vh;min-height:310px}.mapbadge{top:8px;left:8px;padding:8px 10px}.legend{font-size:8px;right:7px;bottom:7px}.cards{grid-template-columns:1fr}.quickgrid{grid-template-columns:1fr}.quick{min-height:74px}.specs{grid-template-columns:repeat(2,1fr)}.photo{height:105px}.price-card{grid-template-columns:22px minmax(0,1fr)}.price-total{grid-column:2;text-align:left}.route-summary{display:grid;grid-template-columns:1fr 1fr}.route-actions button{flex:1;min-width:130px}.modal{padding:10px}.modal-card{max-height:88vh}}@media(max-width:380px){.brand b{font-size:16px}.bolt{font-size:27px}.mapbox{height:38vh}.route-summary{grid-template-columns:1fr}.stationtitle{display:block}.badge{display:inline-block;margin-top:6px}}
-.nav #nav-account{display:none}
+.nav-icon{display:block;font-size:18px;line-height:1.05;margin-bottom:2px}.nav button+button{border-left:1px solid #ffffff24}@media(max-width:780px){.nav button:last-child{display:block}.nav-icon{font-size:25px;margin-bottom:4px}.nav button{font-size:9px;line-height:1.1}}
 </style></head>
 <body>
-<header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><button class="mobile-controls" id="mobile-filters">☰ Filtros</button><div class="search">⌕<input id="global-search" placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active" id="nav-map">🗺<br>Mapa</button><button id="nav-routes">🧭<br>Rotas</button><button id="nav-vehicle">🚗<br>Veículo</button><button id="nav-favorites">☆<br>Favoritos</button><button id="nav-account">♙<br>Conta</button></nav></header>
+<header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><button class="mobile-controls" id="mobile-filters">☰ Filtros</button><div class="search">⌕<input id="global-search" placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active" id="nav-map"><span class="nav-icon">🗺</span>Mapa</button><button id="nav-routes"><span class="nav-icon">🧭</span>Rotas</button><button id="nav-vehicle"><span class="nav-icon">🚗</span>Veículo</button><button id="nav-favorites"><span class="nav-icon">☆</span>Favoritos</button><button id="nav-account"><span class="nav-icon">♙</span><span id="account-label">Entrar</span></button></nav></header>
 <div class="layout">
 <aside class="side"><button class="drawer-close" id="close-mobile-filters" aria-label="Fechar filtros">×</button><div class="vehicle"><small>🚗 O meu veículo</small><div class="vehicle-row"><div class="car" id="vehicle-image" aria-hidden="true">🚘</div><div class="vehicle-data"><select id="vehicle-brand"><option>Todas as marcas</option></select><select id="vehicle-select"><option>A carregar veículos…</option></select><small id="vehicle-specs">A obter dados da Supabase…</small></div></div><div class="vehicle-image-credit" id="vehicle-image-credit"></div><small class="vehicle-source">Catálogo: <a href="https://github.com/gaia-charge/evdb" target="_blank" rel="noopener">Gaia EVDB</a> · CC BY-SA 4.0</small></div><h3>Onde quer carregar?</h3><div class="loc">⌖<input id="location-search" placeholder="Cidade, código postal ou localização"><button id="use-location" title="Usar a minha localização">◎</button></div>
 <div class="fg"><div class="label">Potência</div><div class="chips" id="power-filter"><button class="chip on" data-power="all">Todos</button><button class="chip" data-power="0-50">Até 50</button><button class="chip" data-power="50-150">50–150</button><button class="chip" data-power="150-250">150–250</button><button class="chip" data-power="250+">250+ kW</button></div></div>
@@ -31,10 +33,11 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 <aside class="right"><div class="panel"><div class="photo">⚡</div><div class="pbody"><div class="stationtitle"><h2 id="sn">Selecione um posto no mapa</h2><span class="badge" id="station-operator">—</span></div><div class="meta" id="station-meta">Os detalhes reais aparecerão aqui.</div><div class="status" id="station-status">● Estado ainda não selecionado</div><div class="specs"><div class="spec"><b id="station-power">—</b>Potência máx.</div><div class="spec"><b id="station-connectors">—</b>Conectores</div><div class="spec"><b id="station-points">—</b>Tomadas</div><div class="spec"><b id="station-live">—</b>Disponibilidade</div></div></div></div>
 <div class="panel"><div class="pbody"><div class="sim"><h3>Simulador de carregamento</h3><div class="tabs"><button class="on">Por energia</button><button>Por tempo</button></div><div class="srow"><span>Estado atual da bateria</span><b id="fv">20%</b></div><input class="slider" id="from" type="range" min="5" max="90" value="20"><div class="srow"><span>Carregar até</span><b id="tv">80%</b></div><input class="slider" id="to" type="range" min="20" max="100" value="80"><div class="res"><b id="energy">~36 kWh</b>Energia necessária</div><div class="res"><b id="price">Selecione um posto</b>Melhor custo oficial estimado</div><div class="res"><b id="mins">~25 min</b>Tempo estimado</div><div class="price-head"><b>Comparador de cartões e apps</b><select id="price-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></div><div class="price-list" id="price-comparison"><div class="price-empty">Selecione um posto oficial MOBI.E/NAP com pelo menos 22 kW.</div></div><div class="note">Compara tarifas CEME com OPC, TAR, IEC e IVA, e campanhas de preço final sem duplicar taxas. Benefícios futuros são mostrados separadamente.</div><button class="primary" id="route-selected-station" disabled>Selecione um posto para criar rota</button><button class="secondary">☆ Adicionar aos favoritos</button></div></div></div></aside></div>
 <div class="modal" id="app-modal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><h2 id="modal-title">Detalhes</h2><button class="modal-close" id="modal-close" aria-label="Fechar">×</button></div><div id="modal-body"></div></div></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script><script>
 const SUPABASE_URL='https://ftnmdgiftdgaycotjixr.supabase.co';
 const SUPABASE_KEY='sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_';
 const API_HEADERS={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
+const authClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const map=L.map('map').setView([39.55,-8],6.5);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
 const stationLayer=L.layerGroup().addTo(map);
 const searchLayer=L.layerGroup().addTo(map);
@@ -58,6 +61,8 @@ let pricingRequest=0;
 let favoriteStationIds=new Set(JSON.parse(localStorage.getItem('ev-charge-favorites')||'[]'));
 let lastPlannedRoute=null;
 let vehicleImageRequest=0;
+let currentSession=null;
+let installPrompt=null;
 const geocodeCache=new Map();
 
 async function getRows(table,query){
@@ -236,11 +241,16 @@ function updateFavoriteButton(){
   button.classList.toggle('fav-on',Boolean(active));
   button.textContent=active?'★ Remover dos favoritos':'☆ Adicionar aos favoritos';
 }
-function toggleSelectedFavorite(){
+async function toggleSelectedFavorite(){
   if(!selectedStation)return;
-  if(favoriteStationIds.has(selectedStation.id))favoriteStationIds.delete(selectedStation.id);
+  const removing=favoriteStationIds.has(selectedStation.id);
+  if(removing)favoriteStationIds.delete(selectedStation.id);
   else favoriteStationIds.add(selectedStation.id);
   saveFavorites();updateFavoriteButton();
+  if(currentSession?.user){
+    const query=removing?authClient.from('user_favorites').delete().eq('station_id',selectedStation.id):authClient.from('user_favorites').upsert({user_id:currentSession.user.id,station_id:selectedStation.id},{onConflict:'user_id,station_id'});
+    const {error}=await query;if(error)console.error('Sincronização do favorito:',error);
+  }
 }
 function openModal(title,html){
   document.getElementById('modal-title').textContent=title;
@@ -249,17 +259,49 @@ function openModal(title,html){
   document.getElementById('app-modal').setAttribute('aria-hidden','false');
 }
 function closeModal(){document.getElementById('app-modal').classList.remove('open');document.getElementById('app-modal').setAttribute('aria-hidden','true')}
+async function signInWithGoogle(){
+  const redirectTo=window.location.origin+window.location.pathname;
+  const {error}=await authClient.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
+  if(error)openModal('Não foi possível entrar',`<p>${escapeHtml(error.message)}</p><p>Confirme se o fornecedor Google está ativo na Supabase e se este endereço está autorizado.</p>`);
+}
+async function signOutUser(){await authClient.auth.signOut();closeModal()}
+async function syncUserFavorites(){
+  if(!currentSession?.user)return;
+  const userId=currentSession.user.id;
+  const {data,error}=await authClient.from('user_favorites').select('station_id');
+  if(error){console.error('Favoritos:',error);return}
+  const remoteIds=(data||[]).map(item=>item.station_id);
+  const merged=new Set([...favoriteStationIds,...remoteIds]);
+  favoriteStationIds=merged;saveFavorites();
+  const missing=[...merged].filter(id=>!remoteIds.includes(id)).map(station_id=>({user_id:userId,station_id}));
+  if(missing.length)await authClient.from('user_favorites').upsert(missing,{onConflict:'user_id,station_id'});
+  updateFavoriteButton();
+}
+function updateAuthUI(){
+  const user=currentSession?.user;
+  document.getElementById('account-label').textContent=user?(user.user_metadata?.name?.split(' ')[0]||'Conta'):'Entrar';
+}
+async function showAccount(){
+  const user=currentSession?.user;
+  if(!user){openModal('Entrar',`<p>Entre para sincronizar favoritos e guardar o histórico das suas rotas em vários dispositivos.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button>${installPrompt?'<button class="secondary" onclick="installPwa()">Instalar aplicação</button>':''}`);return}
+  openModal('A minha conta',`<p><b>${escapeHtml(user.user_metadata?.full_name||user.user_metadata?.name||'Utilizador')}</b><br><small>${escapeHtml(user.email||'')}</small></p><p>Os favoritos e as novas rotas ficam associados a esta conta.</p>${installPrompt?'<button class="primary" onclick="installPwa()">Instalar aplicação</button>':''}<button class="secondary" onclick="signOutUser()">Terminar sessão</button>`);
+}
+async function installPwa(){if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;closeModal()}
 function showFavorites(){
   const stations=[...favoriteStationIds].map(id=>allStations.find(station=>station.id===id)).filter(Boolean);
   const html=stations.length?stations.map(station=>`<div class="favorite-row"><div><b>${escapeHtml(station.name||'Posto')}</b><small>${escapeHtml([station.address,station.city].filter(Boolean).join(', ')||'Localização não indicada')} · ${escapeHtml(station.max_power_kw||'—')} kW</small></div><button data-favorite-open="${escapeHtml(station.id)}">Ver</button></div>`).join(''):'<p>Ainda não adicionou postos aos favoritos. Selecione um posto e toque em “Adicionar aos favoritos”.</p>';
   openModal('☆ Postos favoritos',html);
   document.querySelectorAll('[data-favorite-open]').forEach(button=>button.addEventListener('click',()=>{const station=allStations.find(item=>item.id===button.dataset.favoriteOpen);if(station){closeModal();selectStation(station,operatorMap.get(station.operator_id));map.setView([station.latitude,station.longitude],15);document.querySelector('.right').scrollIntoView({behavior:'smooth'})}}));
 }
-function showHistory(){
-  if(!selectedStation){openModal('📊 Histórico e fiabilidade','<p>Selecione primeiro um posto no mapa. O histórico será apresentado para esse posto.</p>');return}
-  const connectors=connectorMap.get(selectedStation.id)||[];
-  const availability=stationAvailability(connectors);
-  openModal('📊 Histórico e fiabilidade',`<p><b>${escapeHtml(selectedStation.name||'Posto selecionado')}</b></p><p>Estado atual: <b>${escapeHtml(availability.label)}</b></p><p>A recolha histórica ainda não tem observações reais para este posto. O site não inventa uma percentagem de fiabilidade: ela só aparecerá depois de existirem snapshots provenientes de uma fonte live validada.</p>`);
+async function showHistory(){
+  let stationHtml='';
+  if(selectedStation){const availability=stationAvailability(connectorMap.get(selectedStation.id)||[]);stationHtml=`<p><b>${escapeHtml(selectedStation.name||'Posto selecionado')}</b><br>Estado atual: <b>${escapeHtml(availability.label)}</b></p><p><small>A fiabilidade do posto só será calculada depois de existirem snapshots provenientes de uma fonte live validada.</small></p>`}
+  if(!currentSession?.user){openModal('📊 Histórico',`${stationHtml}<p>Entre com Google para guardar e consultar o histórico das suas rotas.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button>`);return}
+  openModal('📊 Histórico','<p>A carregar as suas rotas…</p>');
+  const {data,error}=await authClient.from('user_route_history').select('id,origin_label,destination_label,distance_km,charging_minutes,created_at').order('created_at',{ascending:false}).limit(20);
+  if(error){openModal('📊 Histórico',`${stationHtml}<p>Não foi possível consultar o histórico.</p>`);return}
+  const routes=(data||[]).map(route=>`<div class="favorite-row"><div><b>${escapeHtml(route.origin_label)} → ${escapeHtml(route.destination_label)}</b><small>${route.distance_km?`${Number(route.distance_km).toFixed(0)} km · `:''}${route.charging_minutes??0} min a carregar · ${new Date(route.created_at).toLocaleDateString('pt-PT')}</small></div></div>`).join('');
+  openModal('📊 Histórico',`${stationHtml}${routes||'<p>Ainda não existem rotas guardadas nesta conta.</p>'}`);
 }
 
 function officialConnectorCategory(value){
@@ -653,6 +695,25 @@ async function sharePlannedRoute(){
     else{await navigator.clipboard.writeText(`${text}\n${url}`);alert('Ligação da rota copiada.');}
   }catch(error){if(error?.name!=='AbortError')window.open(url,'_blank','noopener')}
 }
+async function saveRouteToUserHistory(){
+  if(!currentSession?.user||!lastPlannedRoute)return;
+  const route=lastPlannedRoute;
+  const {error}=await authClient.from('user_route_history').insert({
+    user_id:currentSession.user.id,
+    origin_label:route.origin.label,
+    origin_lat:route.origin.lat,
+    origin_lon:route.origin.lon,
+    destination_label:route.destination.label,
+    destination_lat:route.destination.lat,
+    destination_lon:route.destination.lon,
+    vehicle_id:currentVehicle?.id||null,
+    stops:route.stops,
+    distance_km:route.distanceKm,
+    drive_minutes:Math.round(route.driveMinutes),
+    charging_minutes:Math.round(route.chargingMinutes)
+  });
+  if(error)console.error('Histórico da rota:',error);
+}
 
 async function planRoute(){
   const button=document.getElementById('plan-route');
@@ -727,7 +788,7 @@ async function planRoute(){
     const routeFeasible=batteryEnergy-finalLegKm*consumption>=reserveEnergy;
     const finalEnergy=Math.max(0,batteryEnergy-finalLegKm*consumption);
     const finalSoc=finalEnergy/capacity*100;
-    lastPlannedRoute={origin,destination,stops:suggested.map(station=>({latitude:station.latitude,longitude:station.longitude,name:station.name}))};
+    lastPlannedRoute={origin,destination,stops:suggested.map(station=>({latitude:station.latitude,longitude:station.longitude,name:station.name})),distanceKm:distance,driveMinutes:duration,chargingMinutes};
     routeLayer.clearLayers();
     const routeLine=L.geoJSON(route.geometry,{style:{color:'#1464c2',weight:5,opacity:.85}}).addTo(routeLayer);
     L.marker([origin.lat,origin.lon]).addTo(routeLayer).bindPopup(`<b>Origem</b><br>${escapeHtml(origin.label)}`);
@@ -742,11 +803,21 @@ async function planRoute(){
     const stopsHtml=chargeNeeded<=0?`<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`:suggested.length&&routeFeasible?`<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length===1?'paragem':'paragens'} · ${chargingMinutes} min a carregar.</b>${isTeslaVehicle()?'<br><small>Superchargers oficiais são priorizados quando não comprometem a autonomia nem criam um desvio excessivo.</small>':''}<ol class="route-stops">${suggested.map((station,index)=>`<li><b>${index+1}. ${escapeHtml(station.name||'Posto')}</b>${isOfficialTeslaStation(station)?' · <b>Supercharger Tesla</b>':''} — ao km ~${station.route_km.toFixed(0)}, chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace('.',',')} km${station.route_availability.kind==='live'?` · ${escapeHtml(station.route_availability.label)}`:''}${station.fallback?`<br><small><b>Plano B:</b> ${escapeHtml(station.fallback.name||'Posto alternativo')} · ${station.fallback.distance_from_primary.toFixed(1).replace('.',',')} km do principal · ${escapeHtml(station.fallback.max_power_kw||'—')} kW</small>`:'<br><small>Plano B: não foi encontrado outro posto alcançável nesta zona.</small>'}</li>`).join('')}</ol><b>Destino:</b> chegada estimada com ${finalSoc.toFixed(0)}%.`:suggested.length?`<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`:'<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>';
     result.innerHTML=`<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace('.',',')} kWh</b> estimados</span></div>${stopsHtml}<br><small>Estimativa para ${escapeHtml(currentVehicle?`${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant||''}`.trim():'o veículo selecionado')}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace('.',',')} km de desvios.</small><div class="route-actions"><button onclick="sharePlannedRoute()">↗ Partilhar rota</button><button onclick="openRouteInGoogleMaps()">Google Maps</button></div>`;
     result.classList.add('show');
+    saveRouteToUserHistory();
   }catch(error){
     console.error(error);result.innerHTML=`<b>Não foi possível calcular a rota.</b><br>${escapeHtml(error.message)}`;result.classList.add('show');
   }finally{button.disabled=false;button.textContent='🧭 Calcular rota'}
 }
 
+async function initAuth(){
+  const {data}=await authClient.auth.getSession();
+  currentSession=data.session;updateAuthUI();
+  if(currentSession)syncUserFavorites();
+  authClient.auth.onAuthStateChange((event,session)=>{currentSession=session;updateAuthUI();if(session)syncUserFavorites()});
+}
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event});
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(error=>console.error('PWA:',error)));
+initAuth();
 loadRealStations();
 function sim(){let a=+from.value,b=+to.value;if(b<=a)b=Math.min(100,a+5);fv.textContent=a+'%';tv.textContent=b+'%';const capacity=Number(currentVehicle?.battery_capacity_kwh)||60;const maxVehiclePower=Number(currentVehicle?.max_dc_power_kw)||50;const chargePower=Math.max(1,Math.min(selectedStationPower||maxVehiclePower,maxVehiclePower));let k=(b-a)*capacity/100;energy.textContent='~'+k.toFixed(1).replace('.',',')+' kWh';mins.textContent='~'+Math.max(5,Math.ceil(k/chargePower*60/0.75))+' min';renderPriceComparison()}from.oninput=to.oninput=sim;
 document.querySelectorAll('#power-filter .chip').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('#power-filter .chip').forEach(other=>other.classList.remove('on'));button.classList.add('on');selectedPower=button.dataset.power;renderStations()}));
@@ -773,7 +844,7 @@ document.getElementById('nav-map').addEventListener('click',()=>{
 });
 document.querySelector('.secondary').addEventListener('click',toggleSelectedFavorite);
 document.getElementById('nav-favorites').addEventListener('click',showFavorites);
-document.getElementById('nav-account').addEventListener('click',()=>openModal('Conta','<p>O início de sessão ainda não é necessário: o veículo e os favoritos ficam guardados apenas neste dispositivo. Quando existir sincronização segura entre dispositivos, a conta será ativada.</p>'));
+document.getElementById('nav-account').addEventListener('click',showAccount);
 document.getElementById('modal-close').addEventListener('click',closeModal);
 document.getElementById('app-modal').addEventListener('click',event=>{if(event.target.id==='app-modal')closeModal()});
 document.getElementById('mobile-filters').addEventListener('click',()=>document.querySelector('.side').classList.add('mobile-open'));
