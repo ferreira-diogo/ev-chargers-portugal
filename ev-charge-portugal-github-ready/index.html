@@ -524,6 +524,12 @@ async function searchPortugal(){
   const button=document.getElementById('apply-filters');
   const query=input.value.trim();
   if(!query){searchPosition=null;searchLayer.clearLayers();renderStations();return}
+  if(query.toLocaleLowerCase('pt-PT')==='a minha localização'){
+    if(!searchPosition||searchPosition.label!=='A minha localização')await useMyLocation();
+    else renderStations(true);
+    document.querySelector('.side').classList.remove('mobile-open');
+    return;
+  }
   try{
     button.disabled=true;button.textContent='A pesquisar…';
     const place=await geocodePortugal(query);
@@ -532,6 +538,7 @@ async function searchPortugal(){
     L.marker([searchPosition.lat,searchPosition.lon]).addTo(searchLayer).bindPopup(`<b>Pesquisa</b><br>${escapeHtml(place.label)}`).openPopup();
     document.getElementById('sort-filter').value='distance-asc';
     renderStations(true);
+    document.querySelector('.side').classList.remove('mobile-open');
   }catch(error){
     console.error(error);alert(error.message||'Não foi possível pesquisar este local.');
   }finally{button.disabled=false;button.textContent='⌕ Procurar'}
