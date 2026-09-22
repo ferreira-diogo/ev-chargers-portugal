@@ -131,7 +131,7 @@ function selectStation(station,operatorName){
   const liveText=connectorsWithAvailability.length?`${availablePoints}/${totalPoints}`:'Não comunicada';
   document.getElementById('sn').textContent=station.name||operatorName||'Posto de carregamento';
   document.getElementById('station-operator').textContent=operatorName||'Operador não indicado';
-  document.getElementById('station-meta').textContent=`⌖ ${location} · OCM ${station.external_id||'—'}`;
+  document.getElementById('station-meta').textContent=`⌖ ${location} · ${station.source==='nap'?'NAP oficial':station.source==='openchargemap'?'OpenChargeMap':station.source||'Fonte'} ${station.external_id||'—'}`;
   document.getElementById('station-status').textContent=`● ${statusLabel(station.status)}`;
   document.getElementById('station-power').textContent=station.max_power_kw?`${station.max_power_kw} kW`:'—';
   document.getElementById('station-connectors').textContent=connectorTypes.join(' · ')||'—';
@@ -145,7 +145,7 @@ async function loadRealStations(){
   const cards=document.getElementById('station-cards');
   try{
     const [stations,connectors,operators,vehicles]=await Promise.all([
-      getAllRows('charging_stations','select=id,external_id,name,address,city,latitude,longitude,max_power_kw,status,operator_id&source=eq.openchargemap&order=max_power_kw.desc.nullslast'),
+      getAllRows('charging_stations','select=id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id&order=max_power_kw.desc.nullslast'),
       getAllRows('connectors','select=station_id,type,power_kw,quantity,status'),
       getRows('operators','select=id,name'),
       getRows('vehicle_models','select=id,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types&active=eq.true&order=make.asc,model.asc')
@@ -223,7 +223,7 @@ function renderStations(zoomToResults=true){
       const stationConnectors=connectorMap.get(s.id)||[];
       const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Não indicado';
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
-      const distance=s.distance_km!=null?`${s.distance_km.toFixed(1).replace('.',',')} km`:'Dados OCM';
+      const distance=s.distance_km!=null?`${s.distance_km.toFixed(1).replace('.',',')} km`:(s.source==='nap'?'NAP oficial':'Dados comunitários');
       const effectivePower=currentVehicle?.max_dc_power_kw?Math.min(Number(s.max_power_kw)||0,Number(currentVehicle.max_dc_power_kw)):Number(s.max_power_kw)||0;
       return `<article class="card"><div class="rank">${index+1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● ${escapeHtml(statusLabel(s.status))}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower||'—')} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km!=null?'distância aproximada':escapeHtml(connectorText)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto</div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
     }).join('');
@@ -360,7 +360,7 @@ async function planRoute(){
     const durationText=`${Math.floor(duration/60)} h ${Math.round(duration%60)} min`;
     const totalMinutes=duration+chargingMinutes;
     const totalTimeText=`${Math.floor(totalMinutes/60)} h ${Math.round(totalMinutes%60)} min`;
-    const stopsHtml=chargeNeeded<=0?`<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`:suggested.length&&routeFeasible?`<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length===1?'paragem':'paragens'} · ${chargingMinutes} min de carregamento.</b><ol class="route-stops">${suggested.map((station,index)=>`<li><b>${index+1}. ${escapeHtml(station.name||'Posto')}</b> ao km ~${station.route_km.toFixed(0)} — chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace('.',',')} km</li>`).join('')}</ol>Chegada estimada ao destino: ${finalSoc.toFixed(0)}%.`:suggested.length?`<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas os 100 postos importados ainda não permitem completar esta rota mantendo ${reserve}% de reserva.</b>`:'<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota nos dados importados.</b>';
+    const stopsHtml=chargeNeeded<=0?`<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`:suggested.length&&routeFeasible?`<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length===1?'paragem':'paragens'} · ${chargingMinutes} min de carregamento.</b><ol class="route-stops">${suggested.map((station,index)=>`<li><b>${index+1}. ${escapeHtml(station.name||'Posto')}</b> ao km ~${station.route_km.toFixed(0)} — chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace('.',',')} km</li>`).join('')}</ol>Chegada estimada ao destino: ${finalSoc.toFixed(0)}%.`:suggested.length?`<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas os postos disponíveis ainda não permitem completar esta rota mantendo ${reserve}% de reserva.</b>`:'<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota nos dados importados.</b>';
     result.innerHTML=`<b>${distance.toFixed(0)} km</b> · condução ${durationText} · total estimado <b>${totalTimeText}</b> · consumo <b>${requiredEnergy.toFixed(1).replace('.',',')} kWh</b> · ${startBattery}% → reserva ${reserve}%<br>${stopsHtml}<br><small>Estimativa com margem de 15%; o tempo inclui perdas de carregamento, curva média e 4 minutos de operação por paragem.</small>`;
     result.classList.add('show');
   }catch(error){
