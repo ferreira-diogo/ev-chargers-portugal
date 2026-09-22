@@ -18,7 +18,7 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 <div class="layout">
 <aside class="side"><div class="vehicle"><small>🚗 O meu veículo</small><div class="vehicle-row"><div class="car">🚘</div><div class="vehicle-data"><select id="vehicle-select"><option>A carregar veículos…</option></select><small id="vehicle-specs">A obter dados da Supabase…</small></div></div></div><h3>Onde quer carregar?</h3><div class="loc">⌖<input id="location-search" placeholder="Cidade ou código postal em Portugal"></div>
 <div class="fg"><div class="label">Potência</div><div class="chips" id="power-filter"><button class="chip on" data-power="all">Todos</button><button class="chip" data-power="0-50">Até 50</button><button class="chip" data-power="50-150">50–150</button><button class="chip" data-power="150-250">150–250</button><button class="chip" data-power="250+">250+ kW</button></div></div>
-<div class="fg"><div class="label">Conectores</div><label class="check"><input class="connector-filter" type="checkbox" value="CCS"> ⚡ CCS</label><label class="check"><input class="connector-filter" type="checkbox" value="Type 2"> ◉ Type 2</label><label class="check"><input class="connector-filter" type="checkbox" value="CHAdeMO"> CHAdeMO</label><label class="check"><input class="connector-filter" type="checkbox" value="Tesla"> Tesla</label></div>
+<div class="fg"><div class="label">Conectores</div><label class="check"><input class="connector-filter" type="checkbox" value="CCS"> ⚡ CCS</label><label class="check"><input class="connector-filter" type="checkbox" value="Type 2"> ◉ Type 2</label><label class="check"><input class="connector-filter" type="checkbox" value="CHAdeMO"> CHAdeMO</label><label class="check"><input class="connector-filter" type="checkbox" value="Tesla"> Tesla Supercharger oficial</label></div>
 <div class="fg"><div class="label">Estado</div><label class="check"><input class="status-filter" type="checkbox" value="available" checked> 🟢 Disponível</label><label class="check"><input class="status-filter" type="checkbox" value="unavailable" checked> 🔴 Indisponível</label><label class="check"><input class="status-filter" type="checkbox" value="unknown" checked> 🔵 Desconhecido</label></div>
 <div class="fg"><div class="label">Operador</div><select id="operator-filter"><option value="all">Todos os operadores</option></select></div><button class="go" id="apply-filters">⌕ Procurar</button></aside>
 <main class="main"><section class="routeplanner"><div class="routeform"><input id="route-origin" placeholder="Origem em Portugal"><input id="route-destination" placeholder="Destino em Portugal"><input id="route-battery" type="number" min="5" max="100" value="80" title="Bateria inicial (%)" placeholder="Bateria %"><input id="route-reserve" type="number" min="5" max="40" value="15" title="Reserva à chegada (%)" placeholder="Reserva %"><button id="plan-route">🧭 Calcular rota</button></div><div class="routeresult" id="route-result"></div></section><div class="mapbox"><div id="map" style="height:100%"></div><div class="mapbadge">🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal</div><div class="legend"><div><i class="dot g"></i>Disponível</div><div><i class="dot r"></i>Indisponível</div><div><i class="dot b"></i>Estado desconhecido</div>⚡ 50 · 150 · 250+ kW</div></div>
@@ -91,7 +91,7 @@ function connectorCategory(value){
   return String(value||'Outro');
 }
 
-function distanceKm(a,b){
+function isOfficialTeslaStation(station){return station?.amenities?.tesla_official_supercharger===true}\n\nfunction distanceKm(a,b){
   const rad=value=>value*Math.PI/180;
   const dLat=rad(Number(b.lat)-Number(a.lat));
   const dLon=rad(Number(b.lon)-Number(a.lon));
@@ -131,7 +131,7 @@ function selectStation(station,operatorName){
   const liveText=connectorsWithAvailability.length?`${availablePoints}/${totalPoints}`:'Não comunicada';
   document.getElementById('sn').textContent=station.name||operatorName||'Posto de carregamento';
   document.getElementById('station-operator').textContent=operatorName||'Operador não indicado';
-  document.getElementById('station-meta').textContent=`⌖ ${location} · ${station.source==='nap'?'NAP oficial':station.source==='openchargemap'?'OpenChargeMap':station.source||'Fonte'} ${station.external_id||'—'}`;
+  document.getElementById('station-meta').textContent=`⌖ ${location} · ${isOfficialTeslaStation(station)?'Tesla oficial':station.source==='nap'?'NAP oficial':station.source==='openchargemap'?'OpenChargeMap':station.source||'Fonte'} ${station.external_id||'—'}`;
   document.getElementById('station-status').textContent=`● ${statusLabel(station.status)}`;
   document.getElementById('station-power').textContent=station.max_power_kw?`${station.max_power_kw} kW`:'—';
   document.getElementById('station-connectors').textContent=connectorTypes.join(' · ')||'—';
@@ -145,7 +145,7 @@ async function loadRealStations(){
   const cards=document.getElementById('station-cards');
   try{
     const [stations,connectors,operators,vehicles]=await Promise.all([
-      getAllRows('charging_stations','select=id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id&order=max_power_kw.desc.nullslast'),
+      getAllRows('charging_stations','select=id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id,amenities&order=max_power_kw.desc.nullslast'),
       getAllRows('connectors','select=station_id,type,power_kw,quantity,status'),
       getRows('operators','select=id,name'),
       getRows('vehicle_models','select=id,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types&active=eq.true&order=make.asc,model.asc')
@@ -190,7 +190,7 @@ function renderStations(zoomToResults=true){
     const stationConnectors=connectorMap.get(s.id)||[];
     const operatorName=operatorMap.get(s.operator_id)||'';
     const haystack=[s.name,s.address,s.city,operatorName].filter(Boolean).join(' ').toLocaleLowerCase('pt');
-    const connectorMatch=!connectors.length||stationConnectors.some(c=>connectors.includes(connectorCategory(c.type)));
+    const connectorMatch=!connectors.length||connectors.some(filter=>filter==='Tesla'?isOfficialTeslaStation(s):stationConnectors.some(c=>connectorCategory(c.type)===filter));
     const statusMatch=!statuses.length||statuses.includes(s.status||'unknown');
     return (!search||haystack.includes(search))&&matchesPower(s.max_power_kw)&&connectorMatch&&statusMatch&&(selectedOperator==='all'||operatorName===selectedOperator);
   });
@@ -213,7 +213,7 @@ function renderStations(zoomToResults=true){
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
       const location=[s.address,s.city].filter(Boolean).join(', ')||'Localização não indicada';
       const marker=L.circleMarker([s.latitude,s.longitude],{radius:8,color:'#fff',weight:2,fillColor:markerColor(s.status),fillOpacity:1}).addTo(stationLayer);
-      marker.bindPopup(`<b>${escapeHtml(s.name||operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw??'—')} kW · ${escapeHtml(connectorText)}<br>● ${escapeHtml(statusLabel(s.status))}`);
+      marker.bindPopup(`<b>${escapeHtml(s.name||operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw??'—')} kW · ${escapeHtml(totalPoints)} tomadas · ${escapeHtml(connectorText)}<br>● ${escapeHtml(isOfficialTeslaStation(s)?'Disponibilidade em tempo real na app Tesla':statusLabel(s.status))}`);
       marker.on('click',()=>selectStation(s,operatorName));
       markerMap.set(s.id,marker);
     });
@@ -223,9 +223,9 @@ function renderStations(zoomToResults=true){
       const stationConnectors=connectorMap.get(s.id)||[];
       const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Não indicado';
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
-      const distance=s.distance_km!=null?`${s.distance_km.toFixed(1).replace('.',',')} km`:(s.source==='nap'?'NAP oficial':'Dados comunitários');
-      const effectivePower=currentVehicle?.max_dc_power_kw?Math.min(Number(s.max_power_kw)||0,Number(currentVehicle.max_dc_power_kw)):Number(s.max_power_kw)||0;
-      return `<article class="card"><div class="rank">${index+1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● ${escapeHtml(statusLabel(s.status))}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower||'—')} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km!=null?'distância aproximada':escapeHtml(connectorText)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto</div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
+      const distance=s.distance_km!=null?`${s.distance_km.toFixed(1).replace('.',',')} km`:(isOfficialTeslaStation(s)?'Tesla oficial':s.source==='nap'?'NAP oficial':'Dados comunitários');
+      const totalPoints=stationConnectors.reduce((total,connector)=>total+(Number(connector.quantity)||1),0);\n      const effectivePower=currentVehicle?.max_dc_power_kw?Math.min(Number(s.max_power_kw)||0,Number(currentVehicle.max_dc_power_kw)):Number(s.max_power_kw)||0;
+      return `<article class="card"><div class="rank">${index+1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name||'Posto de carregamento')}</div><div class="avail">● ${escapeHtml(isOfficialTeslaStation(s)?'Disponibilidade em tempo real na app Tesla':statusLabel(s.status))}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower||'—')} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km!=null?'distância aproximada':escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto</div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
     }).join('');
     if(!best.length)cards.innerHTML='<article class="card"><div class="op">Sem resultados</div><div class="st">Altere a pesquisa ou os filtros selecionados.</div></article>';
     cards.querySelectorAll('button[data-station-id]').forEach(button=>button.addEventListener('click',()=>{
