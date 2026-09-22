@@ -115,6 +115,7 @@ function connectorCategory(value){
 }
 
 function isOfficialTeslaStation(station){return station?.amenities?.tesla_official_supercharger===true}
+function isTeslaVehicle(){return String(currentVehicle?.make||'').toLowerCase()==='tesla'}
 
 function distanceKm(a,b){
   const rad=value=>value*Math.PI/180;
@@ -245,7 +246,7 @@ function renderStations(zoomToResults=true){
       markerMap.set(s.id,marker);
     });
     if(zoomToResults&&filtered.length){const bounds=L.latLngBounds(filtered.map(s=>[s.latitude,s.longitude]));map.fitBounds(bounds,{padding:[25,25],maxZoom:13})}
-    const best=filtered.filter(s=>s.max_power_kw).slice(0,4);
+    const best=filtered.filter(s=>s.max_power_kw).slice(0,5);
     cards.innerHTML=best.map((s,index)=>{
       const stationConnectors=connectorMap.get(s.id)||[];
       const connectorText=[...new Set(stationConnectors.map(c=>c.type))].join(' · ')||'Não indicado';
@@ -354,6 +355,38 @@ function stationCompatibleWithVehicle(station){
   return (connectorMap.get(station.id)||[]).some(connector=>vehicleConnectors.has(connectorCategory(connector.type)));
 }
 
+function routeAvailabilityPenalty(station){
+  const availability=station.route_availability;
+  if(availability.kind==='live')return availability.available>0?-.15:.8;
+  if(availability.kind==='stale')return .08;
+  return 0;
+}
+
+function teslaRouteBonus(station){
+  return isTeslaVehicle()&&isOfficialTeslaStation(station)?-.55:0;
+}
+
+function routeCandidateScore(station,targetKm,reachableKm,maxVehiclePower){
+  const power=Math.min(Number(station.max_power_kw)||0,maxVehiclePower);
+  return Math.abs(station.route_km-targetKm)/Math.max(reachableKm,1)+station.distance/20-power/500+routeAvailabilityPenalty(station)+teslaRouteBonus(station);
+}
+
+function findFallbackStation(primary,reachable,usedStations,maxVehiclePower){
+  const alternatives=reachable.filter(station=>station.id!==primary.id&&!usedStations.has(station.id)&&Math.abs(station.route_km-primary.route_km)<=35);
+  alternatives.sort((a,b)=>{
+    const distanceA=distanceKm({lat:primary.latitude,lon:primary.longitude},{lat:a.latitude,lon:a.longitude});
+    const distanceB=distanceKm({lat:primary.latitude,lon:primary.longitude},{lat:b.latitude,lon:b.longitude});
+    const powerA=Math.min(Number(a.max_power_kw)||0,maxVehiclePower);
+    const powerB=Math.min(Number(b.max_power_kw)||0,maxVehiclePower);
+    const scoreA=distanceA/20+a.distance/25-powerA/650+routeAvailabilityPenalty(a)+teslaRouteBonus(a);
+    const scoreB=distanceB/20+b.distance/25-powerB/650+routeAvailabilityPenalty(b)+teslaRouteBonus(b);
+    return scoreA-scoreB;
+  });
+  const fallback=alternatives[0];
+  if(!fallback)return null;
+  return {...fallback,distance_from_primary:distanceKm({lat:primary.latitude,lon:primary.longitude},{lat:fallback.latitude,lon:fallback.longitude})};
+}
+
 async function planRoute(){
   const button=document.getElementById('plan-route');
   const result=document.getElementById('route-result');
@@ -403,16 +436,11 @@ async function planRoute(){
         return !usedStations.has(station.id)&&station.route_km>currentKm+5&&legKm<=reachableKm&&station.route_km<distance-5;
       });
       reachable.sort((a,b)=>{
-        const powerA=Math.min(Number(a.max_power_kw)||0,maxVehiclePower);
-        const powerB=Math.min(Number(b.max_power_kw)||0,maxVehiclePower);
-        const availabilityA=a.route_availability.kind==='live'?(a.route_availability.available>0?-.15:.8):0;
-        const availabilityB=b.route_availability.kind==='live'?(b.route_availability.available>0?-.15:.8):0;
-        const scoreA=Math.abs(a.route_km-targetKm)/Math.max(reachableKm,1)+a.distance/20-powerA/500+availabilityA;
-        const scoreB=Math.abs(b.route_km-targetKm)/Math.max(reachableKm,1)+b.distance/20-powerB/500+availabilityB;
-        return scoreA-scoreB;
+        return routeCandidateScore(a,targetKm,reachableKm,maxVehiclePower)-routeCandidateScore(b,targetKm,reachableKm,maxVehiclePower);
       });
       const station=reachable[0];
       if(!station)break;
+      const fallback=findFallbackStation(station,reachable,usedStations,maxVehiclePower);
       const legKm=currentDetourKm+(station.route_km-currentKm)+station.distance;
       batteryEnergy=Math.max(0,batteryEnergy-legKm*consumption);
       const arrivalSoc=batteryEnergy/capacity*100;
@@ -421,7 +449,7 @@ async function planRoute(){
       const effectivePower=Math.max(1,Math.min(Number(station.max_power_kw)||1,maxVehiclePower));
       const chargeMinutes=chargingTimeMinutes(energyToCharge,effectivePower);
       chargingMinutes+=chargeMinutes;
-      suggested.push({...station,arrival_soc:arrivalSoc,departure_soc:80,energy_to_charge:energyToCharge,effective_power:effectivePower,charge_minutes:chargeMinutes,leg_km:legKm});
+      suggested.push({...station,arrival_soc:arrivalSoc,departure_soc:80,energy_to_charge:energyToCharge,effective_power:effectivePower,charge_minutes:chargeMinutes,leg_km:legKm,fallback});
       usedStations.add(station.id);
       batteryEnergy=targetEnergy;
       detourKm+=station.distance*2;
@@ -436,11 +464,14 @@ async function planRoute(){
     const routeLine=L.geoJSON(route.geometry,{style:{color:'#1464c2',weight:5,opacity:.85}}).addTo(routeLayer);
     L.marker([origin.lat,origin.lon]).addTo(routeLayer).bindPopup(`<b>Origem</b><br>${escapeHtml(origin.label)}`);
     L.marker([destination.lat,destination.lon]).addTo(routeLayer).bindPopup(`<b>Destino</b><br>${escapeHtml(destination.label)}`);
-    suggested.forEach((station,index)=>L.circleMarker([station.latitude,station.longitude],{radius:10,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).addTo(routeLayer).bindPopup(`<b>Paragem ${index+1}</b><br>${escapeHtml(station.name)}<br>Chegada: ${station.arrival_soc.toFixed(0)}% · carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh<br>~${station.charge_minutes} min a ${station.effective_power} kW`));
+    suggested.forEach((station,index)=>{
+      L.circleMarker([station.latitude,station.longitude],{radius:10,color:'#fff',weight:3,fillColor:isOfficialTeslaStation(station)?'#e82127':'#f59e0b',fillOpacity:1}).addTo(routeLayer).bindPopup(`<b>Paragem ${index+1}${isOfficialTeslaStation(station)?' · Supercharger Tesla':''}</b><br>${escapeHtml(station.name)}<br>Chegada: ${station.arrival_soc.toFixed(0)}% · carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh<br>~${station.charge_minutes} min a ${station.effective_power} kW`);
+      if(station.fallback)L.circleMarker([station.fallback.latitude,station.fallback.longitude],{radius:7,color:'#475569',weight:2,fillColor:'#fff',fillOpacity:1}).addTo(routeLayer).bindPopup(`<b>Plano B da paragem ${index+1}</b><br>${escapeHtml(station.fallback.name||'Posto alternativo')}<br>${station.fallback.distance_from_primary.toFixed(1).replace('.',',')} km do posto principal · ${escapeHtml(station.fallback.max_power_kw||'—')} kW`);
+    });
     map.fitBounds(routeLine.getBounds(),{padding:[30,30]});
     const detourMinutes=detourKm;
     const totalMinutes=duration+detourMinutes+chargingMinutes;
-    const stopsHtml=chargeNeeded<=0?`<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`:suggested.length&&routeFeasible?`<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length===1?'paragem':'paragens'} · ${chargingMinutes} min a carregar.</b><ol class="route-stops">${suggested.map((station,index)=>`<li><b>${index+1}. ${escapeHtml(station.name||'Posto')}</b> — ao km ~${station.route_km.toFixed(0)}, chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace('.',',')} km${station.route_availability.kind==='live'?` · ${escapeHtml(station.route_availability.label)}`:''}</li>`).join('')}</ol><b>Destino:</b> chegada estimada com ${finalSoc.toFixed(0)}%.`:suggested.length?`<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`:'<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>';
+    const stopsHtml=chargeNeeded<=0?`<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`:suggested.length&&routeFeasible?`<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length===1?'paragem':'paragens'} · ${chargingMinutes} min a carregar.</b>${isTeslaVehicle()?'<br><small>Superchargers oficiais são priorizados quando não comprometem a autonomia nem criam um desvio excessivo.</small>':''}<ol class="route-stops">${suggested.map((station,index)=>`<li><b>${index+1}. ${escapeHtml(station.name||'Posto')}</b>${isOfficialTeslaStation(station)?' · <b>Supercharger Tesla</b>':''} — ao km ~${station.route_km.toFixed(0)}, chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace('.',',')} km${station.route_availability.kind==='live'?` · ${escapeHtml(station.route_availability.label)}`:''}${station.fallback?`<br><small><b>Plano B:</b> ${escapeHtml(station.fallback.name||'Posto alternativo')} · ${station.fallback.distance_from_primary.toFixed(1).replace('.',',')} km do principal · ${escapeHtml(station.fallback.max_power_kw||'—')} kW</small>`:'<br><small>Plano B: não foi encontrado outro posto alcançável nesta zona.</small>'}</li>`).join('')}</ol><b>Destino:</b> chegada estimada com ${finalSoc.toFixed(0)}%.`:suggested.length?`<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`:'<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>';
     result.innerHTML=`<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace('.',',')} kWh</b> estimados</span></div>${stopsHtml}<br><small>Estimativa para ${escapeHtml(currentVehicle?`${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant||''}`.trim():'o veículo selecionado')}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace('.',',')} km de desvios.</small>`;
     result.classList.add('show');
   }catch(error){
