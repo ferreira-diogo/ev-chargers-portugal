@@ -1,6 +1,12 @@
 name: NAP DATEX II audit
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/nap-datex-audit.yml"
+      - "ev-charge-portugal-github-ready/package.json"
+      - "ev-charge-portugal-github-ready/package-lock.json"
+      - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
   workflow_dispatch:
     inputs:
       mode:
@@ -40,6 +46,11 @@ jobs:
           cache: npm
           cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
 
+      - name: Verify required secrets are configured
+        run: |
+          test -n "$SUPABASE_URL" || { echo "SUPABASE_URL is missing"; exit 1; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "SUPABASE_SERVICE_ROLE_KEY is missing"; exit 1; }
+
       - name: Install pinned dependencies
         run: npm ci
         working-directory: ev-charge-portugal-github-ready
@@ -50,7 +61,7 @@ jobs:
         working-directory: ev-charge-portugal-github-ready
 
       - name: Validate NAP feed without database writes
-        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run')
         run: npm run nap:check | tee nap-result.json
         working-directory: ev-charge-portugal-github-ready
 
