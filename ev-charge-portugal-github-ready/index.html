@@ -97,25 +97,41 @@ function statusLabel(status){
 
 function stationAvailability(connectors){
   const total=connectors.reduce((sum,c)=>sum+(Number(c.quantity)||1),0);
-  const readings=connectors.filter(c=>c.available_count!=null&&c.availability_updated_at);
-  if(!readings.length)return {kind:'none',total,label:'Disponibilidade não comunicada',detail:'Não comunicada'};
-  const newest=Math.max(...readings.map(c=>new Date(c.availability_updated_at).getTime()).filter(Number.isFinite));
-  const ageMinutes=Math.max(0,Math.floor((Date.now()-newest)/60000));
-  const available=readings.reduce((sum,c)=>sum+(Number(c.available_count)||0),0);
-  const complete=readings.length===connectors.length;
+  const now=Date.now();
+  const valid=connectors.filter(c=>{
+    const age=now-Date.parse(c.availability_updated_at);
+    return c.availability_source==='mobie_nap'&&Number.isInteger(c.available_count)&&
+      c.available_count>=0&&c.available_count<=Number(c.quantity)&&Number.isFinite(age)&&age>=-300000;
+  });
+  const fresh=valid.filter(c=>now-Date.parse(c.availability_updated_at)<=20*60000);
+  const recent=valid.filter(c=>now-Date.parse(c.availability_updated_at)<=45*60000);
+  const readings=fresh.length?fresh:recent;
+  if(!readings.length)return {kind:valid.length?'expired':'none',total,label:valid.length?'Disponibilidade desatualizada':'Disponibilidade não comunicada',detail:'Sem leitura atual'};
+  const oldest=Math.min(...readings.map(c=>Date.parse(c.availability_updated_at)));
+  const ageMinutes=Math.max(0,Math.floor((now-oldest)/60000));
+  const available=readings.reduce((sum,c)=>sum+c.available_count,0);
+  const knownTotal=readings.reduce((sum,c)=>sum+Number(c.quantity),0);
+  const complete=knownTotal===total;
   const byType=new Map();
-  readings.forEach(c=>{const type=connectorCategory(c.type);byType.set(type,(byType.get(type)||0)+(Number(c.available_count)||0))});
+  readings.forEach(c=>{const type=connectorCategory(c.type);byType.set(type,(byType.get(type)||0)+c.available_count)});
   const types=[...byType].map(([type,count])=>`${count} ${type}`).join(' · ');
-  const suffix=complete?'':' (parcial)';
-  if(ageMinutes<=20)return {kind:'live',total,available,ageMinutes,label:`${available}/${total} livres${suffix}`,detail:`${available}/${total} · ${types}${suffix}`};
-  if(ageMinutes<=45)return {kind:'stale',total,available,ageMinutes,label:`${available}/${total} há ${ageMinutes} min${suffix}`,detail:`${available}/${total} · atualização há ${ageMinutes} min`};
-  return {kind:'expired',total,ageMinutes,label:'Disponibilidade desatualizada',detail:`Desatualizada (${ageMinutes} min)`};
+  const suffix=complete?'':` · ${total-knownTotal} sem leitura atual`;
+  const kind=fresh.length?'live':'stale';
+  const label=`${available}/${knownTotal} tomadas livres${kind==='stale'?' na última leitura':''}${suffix} · fonte há ${ageMinutes} min`;
+  return {kind,total,knownTotal,complete,available,ageMinutes,label,detail:types,publicationTime:new Date(oldest).toISOString()};
 }
 
 function availabilityHtml(info){
-  if(info.kind==='live')return `<span class="live-pill"><i></i>LIVE</span> ${escapeHtml(info.label)}`;
-  if(info.kind==='stale')return `<span class="stale-pill">RECENTE</span> ${escapeHtml(info.label)}`;
+  const title=escapeHtml(`MOBI.E NAP · publicação: ${info.publicationTime||'não comunicada'}. Estado por ponto de carregamento; tomadas do mesmo equipamento podem partilhar capacidade.`);
+  if(info.kind==='live')return `<span class="live-pill" title="${title}"><i></i>LIVE</span> ${escapeHtml(info.label)}<br><small>${escapeHtml(info.detail)}</small>`;
+  if(info.kind==='stale')return `<span class="stale-pill" title="${title}">ANTERIOR</span> ${escapeHtml(info.label)}`;
   return escapeHtml(info.label);
+}
+
+function effectiveStationStatus(station){
+  const info=stationAvailability(connectorMap.get(station.id)||[]);
+  if(info.kind==='live')return info.available>0?'available':info.complete?'unavailable':'unknown';
+  return station.status==='unavailable'||station.status==='offline'?'unavailable':'unknown';
 }
 
 function escapeHtml(value){
@@ -219,7 +235,7 @@ function selectStation(station,operatorName){
   document.getElementById('sn').textContent=station.name||operatorName||'Posto de carregamento';
   document.getElementById('station-operator').textContent=operatorName||'Operador não indicado';
   document.getElementById('station-meta').textContent=`⌖ ${location} · ${isOfficialTeslaStation(station)?'Tesla oficial':station.source==='nap'?'NAP oficial':station.source==='openchargemap'?'OpenChargeMap':station.source||'Fonte'} ${station.external_id||'—'}`;
-  document.getElementById('station-status').textContent=`● ${statusLabel(station.status)}`;
+  document.getElementById('station-status').innerHTML=availabilityHtml(availability);
   document.getElementById('station-power').textContent=station.max_power_kw?`${station.max_power_kw} kW`:'—';
   document.getElementById('station-connectors').textContent=connectorTypes.join(' · ')||'—';
   document.getElementById('station-points').textContent=totalPoints||'—';
@@ -407,7 +423,7 @@ async function loadRealStations(){
   try{
     const [stations,connectors,operators,vehicles,cards]=await Promise.all([
       getAllRows('charging_stations','select=id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id,amenities&order=max_power_kw.desc.nullslast'),
-      getAllRows('connectors','select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source'),
+      getAllRows('connectors','select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&order=id.asc'),
       getRows('operators','select=id,name'),
       getRows('vehicle_models','select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc'),
       getRows('ceme_cards','select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true')
@@ -455,7 +471,7 @@ function renderStations(zoomToResults=true){
     const operatorName=operatorMap.get(s.operator_id)||'';
     const haystack=[s.name,s.address,s.city,operatorName].filter(Boolean).join(' ').toLocaleLowerCase('pt');
     const connectorMatch=!connectors.length||connectors.some(filter=>filter==='Tesla'?isOfficialTeslaStation(s):stationConnectors.some(c=>connectorCategory(c.type)===filter));
-    const statusMatch=!statuses.length||statuses.includes(s.status||'unknown');
+    const statusMatch=!statuses.length||statuses.includes(effectiveStationStatus(s));
     return (!search||haystack.includes(search))&&matchesPower(s.max_power_kw)&&connectorMatch&&statusMatch&&(selectedOperator==='all'||operatorName===selectedOperator);
   });
   if(searchPosition){
@@ -478,7 +494,7 @@ function renderStations(zoomToResults=true){
       const availability=stationAvailability(stationConnectors);
       const operatorName=operatorMap.get(s.operator_id)||'Operador não indicado';
       const location=[s.address,s.city].filter(Boolean).join(', ')||'Localização não indicada';
-      const marker=L.circleMarker([s.latitude,s.longitude],{radius:8,color:'#fff',weight:2,fillColor:markerColor(s.status),fillOpacity:1}).addTo(stationLayer);
+      const marker=L.circleMarker([s.latitude,s.longitude],{radius:8,color:'#fff',weight:2,fillColor:markerColor(effectiveStationStatus(s)),fillOpacity:1}).addTo(stationLayer);
       marker.bindPopup(`<b>${escapeHtml(s.name||operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw??'—')} kW · ${escapeHtml(totalPoints)} tomadas · ${escapeHtml(connectorText)}<br>● ${escapeHtml(availability.kind==='none'&&isOfficialTeslaStation(s)?'Disponibilidade na app Tesla':availability.label)}<br><button onclick="routeToStationById('${escapeHtml(s.id)}')" style="margin-top:7px;border:0;border-radius:6px;padding:6px 9px;background:#0eaf72;color:#fff;font-weight:700;cursor:pointer">🧭 Criar rota</button>`);
       marker.on('click',()=>selectStation(s,operatorName));
       markerMap.set(s.id,marker);
@@ -826,6 +842,29 @@ window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();ins
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(error=>console.error('PWA:',error)));
 initAuth();
 loadRealStations();
+let availabilityRefreshBusy=false;
+async function refreshAvailability(){
+  if(document.hidden||availabilityRefreshBusy||!allStations.length)return;
+  availabilityRefreshBusy=true;
+  try{
+    const connectors=await getAllRows('connectors','select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&order=id.asc');
+    const next=new Map();
+    connectors.forEach(c=>{const list=next.get(c.station_id)||[];list.push(c);next.set(c.station_id,list)});
+    connectorMap=next;
+  }catch(error){console.warn('Não foi possível atualizar a disponibilidade');}
+  finally{
+    availabilityRefreshBusy=false;
+    renderStations(false);
+    if(selectedStation){
+      const info=stationAvailability(connectorMap.get(selectedStation.id)||[]);
+      document.getElementById('station-live').innerHTML=availabilityHtml(info);
+      document.getElementById('station-status').innerHTML=availabilityHtml(info);
+    }
+  }
+}
+setInterval(refreshAvailability,5*60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAvailability()});
+
 function sim(){let a=+from.value,b=+to.value;if(b<=a)b=Math.min(100,a+5);fv.textContent=a+'%';tv.textContent=b+'%';const capacity=Number(currentVehicle?.battery_capacity_kwh)||60;const maxVehiclePower=Number(currentVehicle?.max_dc_power_kw)||50;const chargePower=Math.max(1,Math.min(selectedStationPower||maxVehiclePower,maxVehiclePower));let k=(b-a)*capacity/100;energy.textContent='~'+k.toFixed(1).replace('.',',')+' kWh';mins.textContent='~'+Math.max(5,Math.ceil(k/chargePower*60/0.75))+' min';renderPriceComparison()}from.oninput=to.oninput=sim;
 document.querySelectorAll('#power-filter .chip').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('#power-filter .chip').forEach(other=>other.classList.remove('on'));button.classList.add('on');selectedPower=button.dataset.power;renderStations()}));
 document.getElementById('apply-filters').addEventListener('click',searchPortugal);
