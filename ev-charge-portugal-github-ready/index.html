@@ -137,8 +137,9 @@ function populateVehicles(vehicles){
   brandSelect.innerHTML='<option value="all">Todas as marcas</option>'+brands.map(brand=>`<option value="${escapeHtml(brand)}">${escapeHtml(brand)}</option>`).join('');
   const saved=localStorage.getItem('ev-charge-vehicle');
   const savedVehicle=vehicles.find(vehicle=>vehicle.id===saved);
-  if(savedVehicle)brandSelect.value=savedVehicle.make;
-  renderVehicleOptions(brandSelect.value,savedVehicle?.id);
+  const defaultVehicle=savedVehicle||vehicles.find(vehicle=>vehicle.source==='manual'&&vehicle.make==='Tesla'&&vehicle.model==='Model 3')||vehicles[0];
+  if(defaultVehicle)brandSelect.value=defaultVehicle.make;
+  renderVehicleOptions(brandSelect.value,defaultVehicle?.id);
 }
 
 function renderVehicleOptions(brand='all',preferredId=null){
