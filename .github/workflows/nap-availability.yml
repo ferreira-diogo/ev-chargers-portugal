@@ -1,0 +1,49 @@
+name: NAP availability
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nap-availability.yml'
+      - 'ev-charge-portugal-github-ready/scripts/import-nap-availability.mjs'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Import or database dry-run
+        default: dry-run
+        type: choice
+        options: [dry-run, apply]
+  schedule:
+    - cron: '8,23,38,53 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: nap-availability
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: ev-charge-portugal-github-ready
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Validate XML parser
+        run: node --test scripts/import-nap-availability.test.mjs
+      - name: Fetch and validate or apply availability
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'dry-run' }}
+        run: |
+          if [ "$MODE" = 'apply' ]; then
+            node scripts/import-nap-availability.mjs --apply
+          else
+            node scripts/import-nap-availability.mjs --check-db
+          fi
