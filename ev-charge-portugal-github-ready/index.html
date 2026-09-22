@@ -6,26 +6,26 @@
 <style>
 :root{--n:#071b31;--g:#18b978;--g2:#45e09c;--bg:#edf2f6;--line:#dce5ec;--mut:#708294}
 *{box-sizing:border-box}body{margin:0;font:14px system-ui,-apple-system,Segoe UI,sans-serif;color:#10263d;background:var(--bg)}
-button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115deg,#06192d,#0e3457);color:white;display:flex;align-items:center;gap:24px;padding:0 20px}.brand{display:flex;gap:10px;align-items:center;min-width:290px}.bolt{font-size:35px}.brand b{font-size:19px}.brand small{display:block;color:#bfd1df}.search{height:45px;background:white;color:#123;border-radius:9px;display:flex;align-items:center;padding:0 14px;flex:1;max-width:620px}.search input{border:0;outline:0;width:100%;padding-left:8px}.nav{margin-left:auto;display:flex;gap:20px}.nav button{border:0;background:transparent;color:#e5f0f7;font-size:11px}.nav .active{color:#48e09d}
+button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115deg,#06192d,#0e3457);color:white;display:flex;align-items:center;gap:24px;padding:0 20px}.brand{display:flex;gap:10px;align-items:center;min-width:290px}.bolt{font-size:35px}.brand b{font-size:19px}.brand small{display:block;color:#bfd1df}.search{height:45px;background:white;color:#123;border-radius:9px;display:flex;align-items:center;padding:0 14px;flex:1;max-width:620px}.search input{border:0;outline:0;width:100%;padding-left:8px}.nav{margin-left:auto;display:flex;gap:20px}.nav button{border:0;background:transparent;color:#e5f0f7;font-size:11px;cursor:pointer}.nav .active{color:#48e09d}
 .layout{display:grid;grid-template-columns:285px 1fr 360px;min-height:calc(100vh - 74px)}.side{background:var(--n);color:white;padding:16px}.vehicle,.panel,.card,.quick{background:white;border:1px solid var(--line);border-radius:9px}.vehicle{background:#103a60;border-color:#285c82;padding:12px}.vehicle-row{display:flex;gap:12px;align-items:center;margin-top:10px}.vehicle-data{min-width:0;flex:1}.vehicle-data select{margin-bottom:5px}.vehicle-data small{display:block;color:#d8e7f1;line-height:1.4}.car{width:64px;height:45px;flex:0 0 64px;background:#e7edf2;border-radius:12px;display:grid;place-items:center;font-size:28px}.side h3{font-size:14px;margin:18px 2px 9px}.loc{background:white;color:#24384b;border-radius:8px;padding:10px;display:flex;gap:8px}.loc input{border:0;outline:0;width:100%}.fg{border-top:1px solid #1f3d59;margin-top:14px;padding-top:13px}.label{font-size:10px;color:#b9cad7;margin-bottom:8px}.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{background:#0e2b47;color:#dbe7f0;border:1px solid #365570;border-radius:16px;padding:7px 9px;font-size:10px}.chip.on{background:var(--g2);border-color:var(--g2);color:#06283c;font-weight:700}.check{display:block;font-size:11px;margin:9px 0;color:#dbe7f0}.side select{width:100%;padding:8px;background:#0e2b47;color:white;border:1px solid #365570;border-radius:7px}.go{width:100%;margin-top:16px;border:0;background:var(--g2);color:#06283c;font-weight:800;padding:12px;border-radius:8px}
-.main{padding:10px;min-width:0}.routeplanner{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px;box-shadow:0 3px 14px #071b310d}.routeform{display:grid;grid-template-columns:1.5fr 1.5fr .7fr .7fr auto;gap:7px}.routeform input{min-width:0;border:1px solid var(--line);border-radius:7px;padding:9px}.routeform button{border:0;border-radius:7px;background:#0eaf72;color:#fff;font-weight:800;padding:9px 14px}.routeresult{display:none;margin-top:9px;padding:9px;border-radius:7px;background:#f0faf6;font-size:11px;line-height:1.55}.routeresult.show{display:block}.route-stops{margin:5px 0 0;padding-left:18px}.mapbox{height:515px;border-radius:10px;overflow:hidden;position:relative;box-shadow:0 8px 28px #071b3117}.mapbadge,.legend{position:absolute;z-index:500;background:white;border-radius:9px;box-shadow:0 4px 16px #0002}.mapbadge{top:14px;left:14px;padding:11px 14px;font-size:12px}.legend{right:12px;bottom:12px;padding:10px;font-size:10px;line-height:1.8}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.g{background:#18b978}.r{background:#ed6464}.b{background:#2b7bd0}
+.main{padding:10px;min-width:0}.routeplanner{scroll-margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 3px 14px #071b310d}.routehead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}.routehead b{font-size:13px}.routehead small{display:block;color:var(--mut);font-size:9px;margin-top:2px}.routeform{display:grid;grid-template-columns:1.5fr 1.5fr .7fr .7fr auto;gap:7px}.routeform input{min-width:0;border:1px solid var(--line);border-radius:7px;padding:9px}.routeform button{border:0;border-radius:7px;background:#0eaf72;color:#fff;font-weight:800;padding:9px 14px}.routeresult{display:none;margin-top:9px;padding:10px;border-radius:7px;background:#f0faf6;font-size:11px;line-height:1.55}.routeresult.show{display:block}.route-summary{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.route-summary span{background:#fff;border:1px solid #cfe9dc;border-radius:7px;padding:5px 7px}.route-stops{margin:7px 0 3px;padding-left:20px}.route-stops li{margin:7px 0}.routeplanner.flash{animation:routeflash 1.1s ease}@keyframes routeflash{50%{box-shadow:0 0 0 4px #45e09c66}}.mapbox{height:515px;border-radius:10px;overflow:hidden;position:relative;box-shadow:0 8px 28px #071b3117}.mapbadge,.legend{position:absolute;z-index:500;background:white;border-radius:9px;box-shadow:0 4px 16px #0002}.mapbadge{top:14px;left:14px;padding:11px 14px;font-size:12px}.legend{right:12px;bottom:12px;padding:10px;font-size:10px;line-height:1.8}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.g{background:#18b978}.r{background:#ed6464}.b{background:#2b7bd0}
 .head{display:flex;align-items:center;justify-content:space-between;margin:16px 4px 9px}.head h2{font-size:17px;margin:0}.sort{border:1px solid var(--line);background:#fff;padding:8px;border-radius:7px;font-size:11px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.card{padding:11px;box-shadow:0 2px 8px #071b3108}.rank{font-size:9px;color:#587087}.tag{float:right;background:#e2faef;color:#08794f;padding:3px 6px;border-radius:10px;font-size:8px;font-weight:700}.op{font-weight:800;font-size:12px;margin-top:7px}.st{font-size:10px;color:var(--mut);margin:3px 0 8px}.avail{font-size:9px;color:#078052}.live-pill{display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#08794f;border:1px solid #86efac;border-radius:10px;padding:2px 6px;font-size:8px;font-weight:900;letter-spacing:.5px}.live-pill i{width:6px;height:6px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 0 #22c55e99;animation:livepulse 1.5s infinite}@keyframes livepulse{70%{box-shadow:0 0 0 6px #22c55e00}100%{box-shadow:0 0 0 0 #22c55e00}}.stale-pill{display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:10px;padding:2px 6px;font-size:8px;font-weight:800}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.metric{border-top:1px solid #edf1f4;padding-top:6px;font-size:9px;color:var(--mut)}.metric b{display:block;color:#10263d;font-size:11px}.cost{margin-top:9px}.cost b{font-size:17px}.card button,.secondary{width:100%;margin-top:9px;padding:7px;border-radius:6px;background:#e9fbf3;border:1px solid #a0e9ca;color:#08774f;font-weight:700;font-size:10px}.quickgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0 20px}.quick{padding:13px}.quick b{font-size:11px}.quick p{font-size:9px;color:var(--mut);line-height:1.5}
 .right{background:#f5f8fa;padding:10px}.panel{overflow:hidden;margin-bottom:10px;box-shadow:0 2px 8px #071b3108}.photo{height:145px;background:linear-gradient(135deg,#6e8d78,#d5c38c 50%,#91a4b1);display:grid;place-items:center;font-size:64px;color:#fff8}.pbody{padding:13px}.stationtitle{display:flex;justify-content:space-between}.stationtitle h2{font-size:16px;margin:0}.badge{background:#1464c2;color:white;border-radius:6px;padding:6px;font-size:9px}.meta{font-size:10px;color:var(--mut);line-height:1.7;margin:5px 0}.status{font-size:10px;color:#078052;font-weight:700}.specs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);margin:11px -13px 0}.spec{padding:10px 5px;text-align:center;border-right:1px solid var(--line);font-size:8px}.spec b{display:block;font-size:11px}.sim h3{font-size:13px;margin:0 0 11px}.tabs{display:flex;background:#f1f5f7;padding:3px;border-radius:7px}.tabs button{flex:1;border:0;background:transparent;padding:7px;font-size:9px}.tabs .on{background:#fff;border-radius:5px;color:#078052;font-weight:700}.slider{width:100%;accent-color:#16b978}.srow{display:flex;justify-content:space-between;font-size:10px;margin:10px 0 3px}.res{padding:9px 0;border-bottom:1px solid #edf1f4;font-size:9px;color:var(--mut)}.res b{display:block;color:#10263d;font-size:12px}.primary{width:100%;border:0;background:#0eaf72;color:#fff;padding:10px;border-radius:7px;font-weight:800;margin-top:11px}.note{font-size:8px;color:#8796a3;line-height:1.4;margin-top:9px}
 @media(max-width:1180px){.layout{grid-template-columns:250px 1fr}.right{display:none}.cards{grid-template-columns:repeat(2,1fr)}.routeform{grid-template-columns:1fr 1fr .6fr .6fr}.routeform button{grid-column:1/-1}}@media(max-width:780px){.top{height:auto;flex-wrap:wrap;padding:10px}.brand{min-width:0}.brand small{display:none}.search{order:3;flex-basis:100%}.nav{display:none}.layout{display:block}.side{display:none}.routeform{grid-template-columns:1fr 1fr}.routeform input:nth-child(-n+2){grid-column:1/-1}.mapbox{height:52vh}.cards{grid-template-columns:1fr 1fr}.quickgrid{grid-template-columns:1fr}.main{padding-bottom:20px}}@media(max-width:480px){.cards{grid-template-columns:1fr}.routeform{grid-template-columns:1fr}.routeform input,.routeform button{grid-column:1!important}}
 </style></head>
 <body>
-<header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><div class="search">⌕<input id="global-search" placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active">🗺<br>Mapa</button><button>♜<br>Rotas</button><button>🚗<br>O meu veículo</button><button>☆<br>Favoritos</button><button>♙<br>Conta</button></nav></header>
+<header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><div class="search">⌕<input id="global-search" placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active" id="nav-map">🗺<br>Mapa</button><button id="nav-routes">🧭<br>Rotas</button><button>🚗<br>O meu veículo</button><button>☆<br>Favoritos</button><button>♙<br>Conta</button></nav></header>
 <div class="layout">
 <aside class="side"><div class="vehicle"><small>🚗 O meu veículo</small><div class="vehicle-row"><div class="car">🚘</div><div class="vehicle-data"><select id="vehicle-select"><option>A carregar veículos…</option></select><small id="vehicle-specs">A obter dados da Supabase…</small></div></div></div><h3>Onde quer carregar?</h3><div class="loc">⌖<input id="location-search" placeholder="Cidade ou código postal em Portugal"></div>
 <div class="fg"><div class="label">Potência</div><div class="chips" id="power-filter"><button class="chip on" data-power="all">Todos</button><button class="chip" data-power="0-50">Até 50</button><button class="chip" data-power="50-150">50–150</button><button class="chip" data-power="150-250">150–250</button><button class="chip" data-power="250+">250+ kW</button></div></div>
 <div class="fg"><div class="label">Conectores</div><label class="check"><input class="connector-filter" type="checkbox" value="CCS"> ⚡ CCS</label><label class="check"><input class="connector-filter" type="checkbox" value="Type 2"> ◉ Type 2</label><label class="check"><input class="connector-filter" type="checkbox" value="CHAdeMO"> CHAdeMO</label><label class="check"><input class="connector-filter" type="checkbox" value="Tesla"> Tesla Supercharger oficial</label></div>
 <div class="fg"><div class="label">Estado</div><label class="check"><input class="status-filter" type="checkbox" value="available" checked> 🟢 Disponível</label><label class="check"><input class="status-filter" type="checkbox" value="unavailable" checked> 🔴 Indisponível</label><label class="check"><input class="status-filter" type="checkbox" value="unknown" checked> 🔵 Desconhecido</label></div>
 <div class="fg"><div class="label">Operador</div><select id="operator-filter"><option value="all">Todos os operadores</option></select></div><button class="go" id="apply-filters">⌕ Procurar</button></aside>
-<main class="main"><section class="routeplanner"><div class="routeform"><input id="route-origin" placeholder="Origem em Portugal"><input id="route-destination" placeholder="Destino em Portugal"><input id="route-battery" type="number" min="5" max="100" value="80" title="Bateria inicial (%)" placeholder="Bateria %"><input id="route-reserve" type="number" min="5" max="40" value="15" title="Reserva à chegada (%)" placeholder="Reserva %"><button id="plan-route">🧭 Calcular rota</button></div><div class="routeresult" id="route-result"></div></section><div class="mapbox"><div id="map" style="height:100%"></div><div class="mapbadge">🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal</div><div class="legend"><div><i class="dot g"></i>Disponível</div><div><i class="dot r"></i>Indisponível</div><div><i class="dot b"></i>Estado desconhecido</div>⚡ 50 · 150 · 250+ kW</div></div>
+<main class="main"><section class="routeplanner" id="route-planner"><div class="routehead"><div><b>🧭 Planeador de viagens</b><small>Sugere paragens compatíveis, energia necessária e tempo até 80%.</small></div></div><div class="routeform"><input id="route-origin" placeholder="Origem em Portugal"><input id="route-destination" placeholder="Destino em Portugal"><input id="route-battery" type="number" min="5" max="100" value="80" title="Bateria inicial (%)" placeholder="Bateria %"><input id="route-reserve" type="number" min="5" max="40" value="15" title="Reserva à chegada (%)" placeholder="Reserva %"><button id="plan-route">🧭 Calcular rota</button></div><div class="routeresult" id="route-result" aria-live="polite"></div></section><div class="mapbox" id="map-section"><div id="map" style="height:100%"></div><div class="mapbadge">🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal</div><div class="legend"><div><i class="dot g"></i>Disponível</div><div><i class="dot r"></i>Indisponível</div><div><i class="dot b"></i>Estado desconhecido</div>⚡ 50 · 150 · 250+ kW</div></div>
 <div class="head"><h2>Melhores opções para o seu veículo</h2><select class="sort" id="sort-filter"><option value="power-desc">Maior potência</option><option value="distance-asc">Mais próximo</option><option value="name-asc">Nome A–Z</option><option value="operator-asc">Operador A–Z</option></select></div>
 <div class="cards" id="station-cards">
 <article class="card"><div class="rank">1 <span class="tag">Mais económico</span></div><div class="op">Galp</div><div class="st">Galp Electric · Leiria</div><div class="avail">● Disponível · 3/4</div><div class="metrics"><div class="metric"><b>150 kW</b>CCS · Type 2</div><div class="metric"><b>0,29 €/kWh</b>energia</div></div><div class="cost"><b>≈ 10,44 €</b> · ~30 min</div><button onclick="pick('Galp Electric · Leiria','10,44','~30 min')">Ver detalhes</button></article><article class="card"><div class="rank">2 <span class="tag">Mais rápido</span></div><div class="op">Tesla Supercharger</div><div class="st">Torres Vedras · A8 km 45</div><div class="avail">● Disponível · 6/8</div><div class="metrics"><div class="metric"><b>250 kW</b>CCS · Type 2</div><div class="metric"><b>0,32 €/kWh</b>energia</div></div><div class="cost"><b>≈ 11,52 €</b> · ~25 min</div><button onclick="pick('Torres Vedras · A8 km 45','11,52','~25 min')">Ver detalhes</button></article><article class="card"><div class="rank">3 <span class="tag">Equilíbrio</span></div><div class="op">Electrão</div><div class="st">Atalaia · A8 km 84</div><div class="avail">● Disponível · 4/6</div><div class="metrics"><div class="metric"><b>175 kW</b>CCS · Type 2</div><div class="metric"><b>0,31 €/kWh</b>energia</div></div><div class="cost"><b>≈ 11,16 €</b> · ~25 min</div><button onclick="pick('Atalaia · A8 km 84','11,16','~25 min')">Ver detalhes</button></article><article class="card"><div class="rank">4 <span class="tag">Disponível</span></div><div class="op">PRIO</div><div class="st">Torres Vedras · A8 km 39</div><div class="avail">● Disponível · 2/4</div><div class="metrics"><div class="metric"><b>150 kW</b>CCS · Type 2</div><div class="metric"><b>0,34 €/kWh</b>energia</div></div><div class="cost"><b>≈ 12,24 €</b> · ~32 min</div><button onclick="pick('Torres Vedras · A8 km 39','12,24','~32 min')">Ver detalhes</button></article></div>
-<div class="quickgrid"><div class="quick"><b>🧭 Planeador de viagens</b><p>Encontre as melhores paragens para a sua rota, com custos e tempos estimados.</p></div><div class="quick"><b>⚖️ Comparador de preços</b><p>Compare o custo com diferentes operadores e cartões de carregamento.</p></div><div class="quick"><b>📊 Histórico</b><p>Acompanhe preços, disponibilidade e fiabilidade dos postos.</p></div></div></main>
+<div class="quickgrid"><div class="quick" id="open-route-planner" role="button" tabindex="0"><b>🧭 Planeador de viagens</b><p>Encontre as melhores paragens para a sua rota, com custos e tempos estimados.</p></div><div class="quick"><b>⚖️ Comparador de preços</b><p>Compare o custo com diferentes operadores e cartões de carregamento.</p></div><div class="quick"><b>📊 Histórico</b><p>Acompanhe preços, disponibilidade e fiabilidade dos postos.</p></div></div></main>
 <aside class="right"><div class="panel"><div class="photo">⚡</div><div class="pbody"><div class="stationtitle"><h2 id="sn">Selecione um posto no mapa</h2><span class="badge" id="station-operator">—</span></div><div class="meta" id="station-meta">Os detalhes reais aparecerão aqui.</div><div class="status" id="station-status">● Estado ainda não selecionado</div><div class="specs"><div class="spec"><b id="station-power">—</b>Potência máx.</div><div class="spec"><b id="station-connectors">—</b>Conectores</div><div class="spec"><b id="station-points">—</b>Tomadas</div><div class="spec"><b id="station-live">—</b>Disponibilidade</div></div></div></div>
 <div class="panel"><div class="pbody"><div class="sim"><h3>Simulador de carregamento</h3><div class="tabs"><button class="on">Por energia</button><button>Por tempo</button></div><div class="srow"><span>Estado atual da bateria</span><b id="fv">20%</b></div><input class="slider" id="from" type="range" min="5" max="90" value="20"><div class="srow"><span>Carregar até</span><b id="tv">80%</b></div><input class="slider" id="to" type="range" min="20" max="100" value="80"><div class="res"><b id="energy">~36 kWh</b>Energia necessária</div><div class="res"><b id="price">≈ 11,52 €</b>Custo estimado</div><div class="res"><b id="mins">~25 min</b>Tempo estimado</div><div class="note">Valores demonstrativos. O preço final poderá depender do operador, cartão, ativação, tempo e condições reais.</div><button class="primary">Ver rota</button><button class="secondary">☆ Adicionar aos favoritos</button></div></div></div></aside></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
@@ -298,15 +298,54 @@ async function searchPortugal(){
   }finally{button.disabled=false;button.textContent='⌕ Procurar'}
 }
 
-function stationRoutePosition(station,coordinates){
-  const step=Math.max(1,Math.floor(coordinates.length/160));
-  let best={distance:Infinity,progress:0};
+function buildRouteProfile(coordinates,routeDistanceKm){
+  const cumulative=[0];
+  for(let index=1;index<coordinates.length;index++){
+    const previous=coordinates[index-1];
+    const point=coordinates[index];
+    cumulative[index]=cumulative[index-1]+distanceKm({lat:previous[1],lon:previous[0]},{lat:point[1],lon:point[0]});
+  }
+  const geometryDistance=cumulative[cumulative.length-1]||routeDistanceKm||1;
+  const scale=routeDistanceKm/geometryDistance;
+  return {coordinates,cumulative,scale};
+}
+
+function stationRoutePosition(station,profile){
+  const {coordinates,cumulative,scale}=profile;
+  const step=Math.max(1,Math.floor(coordinates.length/240));
+  let best={distance:Infinity,route_km:0};
   for(let index=0;index<coordinates.length;index+=step){
     const point=coordinates[index];
     const distance=distanceKm({lat:station.latitude,lon:station.longitude},{lat:point[1],lon:point[0]});
-    if(distance<best.distance)best={distance,progress:index/(coordinates.length-1)};
+    if(distance<best.distance)best={distance,route_km:cumulative[index]*scale};
   }
+  const lastIndex=coordinates.length-1;
+  const lastPoint=coordinates[lastIndex];
+  const lastDistance=distanceKm({lat:station.latitude,lon:station.longitude},{lat:lastPoint[1],lon:lastPoint[0]});
+  if(lastDistance<best.distance)best={distance:lastDistance,route_km:cumulative[lastIndex]*scale};
   return best;
+}
+
+function chargingTimeMinutes(energyKwh,effectivePowerKw){
+  const curveFactor=effectivePowerKw>150?.65:effectivePowerKw>50?.75:.88;
+  return Math.max(5,Math.ceil(energyKwh/(effectivePowerKw*curveFactor)*60+4));
+}
+
+function formatDuration(minutes){
+  const rounded=Math.max(0,Math.round(minutes));
+  const hours=Math.floor(rounded/60);
+  const remainder=rounded%60;
+  return hours?`${hours} h ${remainder} min`:`${remainder} min`;
+}
+
+function openRoutePlanner(){
+  const planner=document.getElementById('route-planner');
+  document.querySelectorAll('.nav button').forEach(button=>button.classList.remove('active'));
+  document.getElementById('nav-routes')?.classList.add('active');
+  planner.scrollIntoView({behavior:'smooth',block:'start'});
+  planner.classList.remove('flash');
+  requestAnimationFrame(()=>planner.classList.add('flash'));
+  setTimeout(()=>document.getElementById('route-origin').focus(),350);
 }
 
 function stationCompatibleWithVehicle(station){
@@ -337,48 +376,61 @@ async function planRoute(){
     const coordinates=route.geometry.coordinates;
     const distance=route.distance/1000;
     const duration=route.duration/60;
+    const routeProfile=buildRouteProfile(coordinates,distance);
     const capacity=Number(currentVehicle?.battery_capacity_kwh)||60;
     const consumption=(Number(currentVehicle?.consumption_wh_km)||170)/1000*1.15;
     const requiredEnergy=distance*consumption;
     const usableEnergy=capacity*(startBattery-reserve)/100;
     const chargeNeeded=Math.max(0,requiredEnergy-usableEnergy);
-    let candidates=allStations.filter(station=>stationCompatibleWithVehicle(station)&&Number(station.max_power_kw)>0).map(station=>({...station,...stationRoutePosition(station,coordinates)})).filter(station=>station.distance<=15&&station.progress>.04&&station.progress<.96);
-    candidates=candidates.map(station=>({...station,route_km:station.progress*distance}));
+    let candidates=allStations.filter(station=>stationCompatibleWithVehicle(station)&&Number(station.max_power_kw)>0).map(station=>{
+      const availability=stationAvailability(connectorMap.get(station.id)||[]);
+      return {...station,...stationRoutePosition(station,routeProfile),route_availability:availability};
+    }).filter(station=>station.distance<=15&&station.route_km>distance*.04&&station.route_km<distance*.96);
     const reserveEnergy=capacity*reserve/100;
     const maxVehiclePower=Number(currentVehicle?.max_dc_power_kw)||50;
     let batteryEnergy=capacity*startBattery/100;
     let currentKm=0;
+    let currentDetourKm=0;
     let chargingMinutes=0;
+    let detourKm=0;
     const suggested=[];
     const usedStations=new Set();
-    while(batteryEnergy-(distance-currentKm)*consumption<reserveEnergy&&suggested.length<5){
+    while(batteryEnergy-(currentDetourKm+distance-currentKm)*consumption<reserveEnergy&&suggested.length<5){
       const reachableKm=Math.max(0,(batteryEnergy-reserveEnergy)/consumption);
       const targetKm=currentKm+reachableKm*.82;
-      const reachable=candidates.filter(station=>!usedStations.has(station.id)&&station.route_km>currentKm+5&&station.route_km<=currentKm+reachableKm&&station.route_km<distance-5);
+      const reachable=candidates.filter(station=>{
+        const legKm=currentDetourKm+(station.route_km-currentKm)+station.distance;
+        return !usedStations.has(station.id)&&station.route_km>currentKm+5&&legKm<=reachableKm&&station.route_km<distance-5;
+      });
       reachable.sort((a,b)=>{
         const powerA=Math.min(Number(a.max_power_kw)||0,maxVehiclePower);
         const powerB=Math.min(Number(b.max_power_kw)||0,maxVehiclePower);
-        const scoreA=Math.abs(a.route_km-targetKm)/Math.max(reachableKm,1)+a.distance/30-powerA/600;
-        const scoreB=Math.abs(b.route_km-targetKm)/Math.max(reachableKm,1)+b.distance/30-powerB/600;
+        const availabilityA=a.route_availability.kind==='live'?(a.route_availability.available>0?-.15:.8):0;
+        const availabilityB=b.route_availability.kind==='live'?(b.route_availability.available>0?-.15:.8):0;
+        const scoreA=Math.abs(a.route_km-targetKm)/Math.max(reachableKm,1)+a.distance/20-powerA/500+availabilityA;
+        const scoreB=Math.abs(b.route_km-targetKm)/Math.max(reachableKm,1)+b.distance/20-powerB/500+availabilityB;
         return scoreA-scoreB;
       });
       const station=reachable[0];
       if(!station)break;
-      const legKm=station.route_km-currentKm;
+      const legKm=currentDetourKm+(station.route_km-currentKm)+station.distance;
       batteryEnergy=Math.max(0,batteryEnergy-legKm*consumption);
       const arrivalSoc=batteryEnergy/capacity*100;
       const targetEnergy=capacity*.80;
       const energyToCharge=Math.max(0,targetEnergy-batteryEnergy);
       const effectivePower=Math.max(1,Math.min(Number(station.max_power_kw)||1,maxVehiclePower));
-      const chargeMinutes=Math.ceil(energyToCharge/effectivePower*60/.72+4);
+      const chargeMinutes=chargingTimeMinutes(energyToCharge,effectivePower);
       chargingMinutes+=chargeMinutes;
-      suggested.push({...station,arrival_soc:arrivalSoc,departure_soc:80,energy_to_charge:energyToCharge,effective_power:effectivePower,charge_minutes:chargeMinutes});
+      suggested.push({...station,arrival_soc:arrivalSoc,departure_soc:80,energy_to_charge:energyToCharge,effective_power:effectivePower,charge_minutes:chargeMinutes,leg_km:legKm});
       usedStations.add(station.id);
       batteryEnergy=targetEnergy;
+      detourKm+=station.distance*2;
+      currentDetourKm=station.distance;
       currentKm=station.route_km;
     }
-    const routeFeasible=batteryEnergy-(distance-currentKm)*consumption>=reserveEnergy;
-    const finalEnergy=Math.max(0,batteryEnergy-(distance-currentKm)*consumption);
+    const finalLegKm=currentDetourKm+(distance-currentKm);
+    const routeFeasible=batteryEnergy-finalLegKm*consumption>=reserveEnergy;
+    const finalEnergy=Math.max(0,batteryEnergy-finalLegKm*consumption);
     const finalSoc=finalEnergy/capacity*100;
     routeLayer.clearLayers();
     const routeLine=L.geoJSON(route.geometry,{style:{color:'#1464c2',weight:5,opacity:.85}}).addTo(routeLayer);
@@ -386,11 +438,10 @@ async function planRoute(){
     L.marker([destination.lat,destination.lon]).addTo(routeLayer).bindPopup(`<b>Destino</b><br>${escapeHtml(destination.label)}`);
     suggested.forEach((station,index)=>L.circleMarker([station.latitude,station.longitude],{radius:10,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).addTo(routeLayer).bindPopup(`<b>Paragem ${index+1}</b><br>${escapeHtml(station.name)}<br>Chegada: ${station.arrival_soc.toFixed(0)}% · carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh<br>~${station.charge_minutes} min a ${station.effective_power} kW`));
     map.fitBounds(routeLine.getBounds(),{padding:[30,30]});
-    const durationText=`${Math.floor(duration/60)} h ${Math.round(duration%60)} min`;
-    const totalMinutes=duration+chargingMinutes;
-    const totalTimeText=`${Math.floor(totalMinutes/60)} h ${Math.round(totalMinutes%60)} min`;
-    const stopsHtml=chargeNeeded<=0?`<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`:suggested.length&&routeFeasible?`<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length===1?'paragem':'paragens'} · ${chargingMinutes} min de carregamento.</b><ol class="route-stops">${suggested.map((station,index)=>`<li><b>${index+1}. ${escapeHtml(station.name||'Posto')}</b> ao km ~${station.route_km.toFixed(0)} — chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace('.',',')} km</li>`).join('')}</ol>Chegada estimada ao destino: ${finalSoc.toFixed(0)}%.`:suggested.length?`<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas os postos disponíveis ainda não permitem completar esta rota mantendo ${reserve}% de reserva.</b>`:'<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota nos dados importados.</b>';
-    result.innerHTML=`<b>${distance.toFixed(0)} km</b> · condução ${durationText} · total estimado <b>${totalTimeText}</b> · consumo <b>${requiredEnergy.toFixed(1).replace('.',',')} kWh</b> · ${startBattery}% → reserva ${reserve}%<br>${stopsHtml}<br><small>Estimativa com margem de 15%; o tempo inclui perdas de carregamento, curva média e 4 minutos de operação por paragem.</small>`;
+    const detourMinutes=detourKm;
+    const totalMinutes=duration+detourMinutes+chargingMinutes;
+    const stopsHtml=chargeNeeded<=0?`<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`:suggested.length&&routeFeasible?`<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length===1?'paragem':'paragens'} · ${chargingMinutes} min a carregar.</b><ol class="route-stops">${suggested.map((station,index)=>`<li><b>${index+1}. ${escapeHtml(station.name||'Posto')}</b> — ao km ~${station.route_km.toFixed(0)}, chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace('.',',')} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace('.',',')} km${station.route_availability.kind==='live'?` · ${escapeHtml(station.route_availability.label)}`:''}</li>`).join('')}</ol><b>Destino:</b> chegada estimada com ${finalSoc.toFixed(0)}%.`:suggested.length?`<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`:'<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>';
+    result.innerHTML=`<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace('.',',')} kWh</b> estimados</span></div>${stopsHtml}<br><small>Estimativa para ${escapeHtml(currentVehicle?`${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant||''}`.trim():'o veículo selecionado')}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace('.',',')} km de desvios.</small>`;
     result.classList.add('show');
   }catch(error){
     console.error(error);result.innerHTML=`<b>Não foi possível calcular a rota.</b><br>${escapeHtml(error.message)}`;result.classList.add('show');
@@ -408,4 +459,14 @@ document.getElementById('operator-filter').addEventListener('change',()=>renderS
 document.getElementById('sort-filter').addEventListener('change',()=>renderStations(false));
 document.getElementById('vehicle-select').addEventListener('change',event=>applyVehicle(event.target.value));
 document.getElementById('plan-route').addEventListener('click',planRoute);
+document.querySelectorAll('#route-origin,#route-destination,#route-battery,#route-reserve').forEach(input=>input.addEventListener('keydown',event=>{if(event.key==='Enter')planRoute()}));
+document.getElementById('nav-routes').addEventListener('click',openRoutePlanner);
+document.getElementById('nav-map').addEventListener('click',()=>{
+  document.querySelectorAll('.nav button').forEach(button=>button.classList.remove('active'));
+  document.getElementById('nav-map').classList.add('active');
+  document.getElementById('map-section').scrollIntoView({behavior:'smooth',block:'center'});
+});
+const quickRoute=document.getElementById('open-route-planner');
+quickRoute.addEventListener('click',openRoutePlanner);
+quickRoute.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openRoutePlanner()}});
 </script></body></html>
