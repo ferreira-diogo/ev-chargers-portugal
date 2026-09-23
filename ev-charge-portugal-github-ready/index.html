@@ -31,7 +31,7 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 <article class="card"><div class="op">A carregar postos reais…</div><div class="st">A consultar a base de dados nacional.</div></article></div>
 <div class="quickgrid"><div class="quick" id="open-route-planner" role="button" tabindex="0"><b>🧭 Planeador de viagens</b><p>Encontre paragens compatíveis, tempos e um Plano B para cada paragem.</p></div><div class="quick" id="open-price-comparator" role="button" tabindex="0"><b>⚖️ Comparador de preços</b><p>Compare cartões e apps com tarifa oficial, taxas e custo final.</p></div><div class="quick" id="open-history" role="button" tabindex="0"><b>📊 Histórico e fiabilidade</b><p>Consulte o estado atual e a cobertura histórica disponível.</p></div></div></main>
 <aside class="right"><div class="panel"><div class="photo">⚡</div><div class="pbody"><div class="stationtitle"><h2 id="sn">Selecione um posto no mapa</h2><span class="badge" id="station-operator">—</span></div><div class="meta" id="station-meta">Os detalhes reais aparecerão aqui.</div><div class="status" id="station-status">● Estado ainda não selecionado</div><div class="specs"><div class="spec"><b id="station-power">—</b>Potência máx.</div><div class="spec"><b id="station-connectors">—</b>Conectores</div><div class="spec"><b id="station-points">—</b>Tomadas</div><div class="spec"><b id="station-live">—</b>Disponibilidade</div></div></div></div>
-<div class="panel"><div class="pbody"><div class="sim"><h3>Simulador de carregamento</h3><div class="tabs"><button class="on">Por energia</button><button>Por tempo</button></div><div class="srow"><span>Estado atual da bateria</span><b id="fv">20%</b></div><input class="slider" id="from" type="range" min="5" max="90" value="20"><div class="srow"><span>Carregar até</span><b id="tv">80%</b></div><input class="slider" id="to" type="range" min="20" max="100" value="80"><div class="res"><b id="energy">~36 kWh</b>Energia necessária</div><div class="res"><b id="price">Selecione um posto</b>Melhor custo oficial estimado</div><div class="res"><b id="mins">~25 min</b>Tempo estimado</div><div class="price-head"><b>Comparador de cartões e apps</b><select id="price-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></div><div class="price-list" id="price-comparison"><div class="price-empty">Selecione um posto oficial MOBI.E/NAP com pelo menos 22 kW.</div></div><div class="note">Compara tarifas CEME com OPC, TAR, IEC e IVA, e campanhas de preço final sem duplicar taxas. Benefícios futuros são mostrados separadamente.</div><button class="primary" id="route-selected-station" disabled>Selecione um posto para criar rota</button><button class="secondary">☆ Adicionar aos favoritos</button></div></div></div></aside></div>
+<div class="panel"><div class="pbody"><div class="sim"><h3>Simulador de carregamento</h3><div class="tabs" role="tablist" aria-label="Modo do simulador"><button class="on" type="button" data-sim-mode="energy" role="tab" aria-selected="true">Por energia</button><button type="button" data-sim-mode="time" role="tab" aria-selected="false">Por tempo</button></div><div class="srow"><span id="from-label">Estado atual da bateria</span><b id="fv">20%</b></div><input class="slider" id="from" type="range" min="5" max="90" value="20" aria-label="Estado atual da bateria"><div class="srow"><span id="to-label">Carregar até</span><b id="tv">80%</b></div><input class="slider" id="to" type="range" min="20" max="100" value="80" aria-label="Bateria alvo"><div class="res"><b id="energy">~36 kWh</b>Energia necessária</div><div class="res"><b id="price">Selecione um posto</b>Melhor custo oficial estimado</div><div class="res"><b id="mins">~25 min</b>Tempo estimado</div><div class="price-head"><b>Comparador de cartões e apps</b><select id="price-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></div><div class="price-list" id="price-comparison"><div class="price-empty">Selecione um posto oficial MOBI.E/NAP com pelo menos 22 kW.</div></div><div class="note">Compara tarifas CEME com OPC, TAR, IEC e IVA, e campanhas de preço final sem duplicar taxas. Benefícios futuros são mostrados separadamente.</div><button class="primary" id="route-selected-station" disabled>Selecione um posto para criar rota</button><button class="secondary">☆ Adicionar aos favoritos</button></div></div></div></aside></div>
 <div class="modal" id="app-modal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><h2 id="modal-title">Detalhes</h2><button class="modal-close" id="modal-close" aria-label="Fechar">×</button></div><div id="modal-body"></div></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script><script>
 const SUPABASE_URL='https://ftnmdgiftdgaycotjixr.supabase.co';
@@ -334,17 +334,58 @@ function networkTariff(voltage,period){
   return rates[period]??rates.fora_vazio;
 }
 
-function pricingScenario(){
-  let start=Number(document.getElementById('from').value);
-  let end=Number(document.getElementById('to').value);
-  if(end<=start)end=Math.min(100,start+5);
+let simMode='energy';
+function simulationScenario(){
+  const start=Math.max(5,Math.min(90,Number(document.getElementById('from').value)||20));
   const capacity=Number(currentVehicle?.battery_capacity_kwh)||60;
-  const energyKwh=(end-start)*capacity/100;
   const maxVehiclePower=Number(currentVehicle?.max_dc_power_kw)||50;
   const effectivePower=Math.max(1,Math.min(selectedStationPower||maxVehiclePower,maxVehiclePower));
-  const minutes=Math.max(5,Math.ceil(energyKwh/effectivePower*60/.75));
-  return {energyKwh,minutes,effectivePower};
+  let end;
+  let energyKwh;
+  let minutes;
+  if(simMode==='time'){
+    minutes=Math.max(5,Math.min(180,Number(document.getElementById('to').value)||30));
+    energyKwh=Math.min((100-start)*capacity/100,effectivePower*minutes/60*.75);
+    end=start+energyKwh/capacity*100;
+  }else{
+    end=Math.max(start+1,Math.min(100,Number(document.getElementById('to').value)||80));
+    energyKwh=(end-start)*capacity/100;
+    minutes=Math.max(5,Math.ceil(energyKwh/effectivePower*60/.75));
+  }
+  return {start,end,energyKwh,minutes,effectivePower};
 }
+function pricingScenario(){return simulationScenario();}
+function renderSimulator(){
+  const scenario=simulationScenario();
+  document.getElementById('fv').textContent=scenario.start.toFixed(0)+'%';
+  document.getElementById('tv').textContent=simMode==='time'?scenario.minutes+' min':scenario.end.toFixed(0)+'%';
+  document.getElementById('energy').textContent='~'+scenario.energyKwh.toFixed(1).replace('.',',')+' kWh';
+  document.getElementById('mins').textContent='~'+scenario.minutes+' min';
+  document.getElementById('from-label').textContent='Estado atual da bateria';
+  document.getElementById('to-label').textContent=simMode==='time'?'Tempo de carregamento':'Carregar até';
+  document.getElementById('from').setAttribute('aria-label','Estado atual da bateria');
+  document.getElementById('to').setAttribute('aria-label',simMode==='time'?'Tempo de carregamento':'Bateria alvo');
+  renderPriceComparison();
+}
+function setSimulationMode(mode){
+  simMode=mode==='time'?'time':'energy';
+  const target=document.getElementById('to');
+  const buttons=document.querySelectorAll('[data-sim-mode]');
+  buttons.forEach(button=>{
+    const active=button.dataset.simMode===simMode;
+    button.classList.toggle('on',active);
+    button.setAttribute('aria-selected',active?'true':'false');
+  });
+  if(simMode==='time'){
+    target.min='5';target.max='180';target.step='5';target.value='30';
+  }else{
+    target.min='20';target.max='100';target.step='1';target.value='80';
+  }
+  renderSimulator();
+}
+function sim(){renderSimulator();}
+from.oninput=to.oninput=sim;
+document.querySelectorAll('[data-sim-mode]').forEach(button=>button.addEventListener('click',()=>setSimulationMode(button.dataset.simMode)));
 
 function compatibleOfficialTariffs(){
   const vehicleTypes=new Set(currentVehicle?.connector_types||[]);
