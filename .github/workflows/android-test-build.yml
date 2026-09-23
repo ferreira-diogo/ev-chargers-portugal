@@ -1,0 +1,45 @@
+name: Android test build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ev-charge-portugal-github-ready/**'
+      - '.github/workflows/android-test-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ev-charge-portugal-github-ready
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - run: npm ci
+      - run: npm run android:sync
+      - run: cd android && ./gradlew assembleDebug bundleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ev-charge-portugal-android-test
+          path: |
+            ev-charge-portugal-github-ready/android/app/build/outputs/apk/debug/app-debug.apk
+            ev-charge-portugal-github-ready/android/app/build/outputs/bundle/debug/app-debug.aab
+          if-no-files-found: error
+          retention-days: 14
