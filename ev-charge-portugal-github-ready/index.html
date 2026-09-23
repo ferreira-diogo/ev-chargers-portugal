@@ -117,12 +117,12 @@ function stationAvailability(connectors){
   const types=[...byType].map(([type,count])=>`${count} ${type}`).join(' · ');
   const suffix=complete?'':` · ${total-knownTotal} sem leitura atual`;
   const kind=fresh.length?'live':'stale';
-  const label=`${available}/${knownTotal} tomadas livres${kind==='stale'?' na última leitura':''}${suffix} · fonte há ${ageMinutes} min`;
-  return {kind,total,knownTotal,complete,available,ageMinutes,label,detail:types,publicationTime:new Date(oldest).toISOString()};
+  const label=`${available}/${knownTotal} fichas em pontos livres${kind==='stale'?' na última leitura':''}${suffix} · fonte há ${ageMinutes} min`;
+  return {kind,total,knownTotal,complete,available,ageMinutes,label,detail:`Fichas em pontos livres: ${types}`,publicationTime:new Date(oldest).toISOString()};
 }
 
 function availabilityHtml(info){
-  const title=escapeHtml(`MOBI.E NAP · publicação: ${info.publicationTime||'não comunicada'}. Estado por ponto de carregamento; tomadas do mesmo equipamento podem partilhar capacidade.`);
+  const title=escapeHtml(`MOBI.E NAP · publicação: ${info.publicationTime||'não comunicada'}. Estado comunicado por ponto de carregamento. Um ponto pode oferecer várias fichas; os totais não representam carros que podem carregar em simultâneo.`);
   if(info.kind==='live')return `<span class="live-pill" title="${title}"><i></i>LIVE</span> ${escapeHtml(info.label)}<br><small>${escapeHtml(info.detail)}</small>`;
   if(info.kind==='stale')return `<span class="stale-pill" title="${title}">ANTERIOR</span> ${escapeHtml(info.label)}`;
   return escapeHtml(info.label);
