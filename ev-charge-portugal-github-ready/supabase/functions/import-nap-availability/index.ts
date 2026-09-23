@@ -12,14 +12,28 @@ async function parse(stream: ReadableStream<Uint8Array>) {
   const decoder = new TextDecoder('utf-8',{fatal:true});
   const stack: string[] = [];
   const rows: Array<{site_id:string;point_id:string;status:string}> = [];
+  const prices: Array<{
+    site_id:string; point_id:string; pricing_policy:string; rate_index:number;
+    amount_eur:number; currency:string; valid_from:string|null; raw_data:Record<string, unknown>;
+  }> = [];
   let site: string | null = null;
-  let point: {site_id:string|null;point_id:string|null;status:string|null} | null = null;
+  type PriceDetail = {pricing_policy:string;amount_eur:number;rate_index:number;currency:string;valid_from:string|null};
+  type Point = {site_id:string|null;point_id:string|null;status:string|null;priceDetails:PriceDetail[]};
+  let point: Point | null = null;
+  let energyMix: {rate_index:number;currency:string;valid_from:string|null;rates:Array<{pricing_policy:string;amount_eur:number}>} | null = null;
+  let pricingPolicy: string | null = null;
   let text='', publication: string | null = null, bytes=0;
   parser.on('doctype',()=>{throw Error('DTD not allowed')});
   parser.on('opentag',node=>{
     stack.push(node.local); text='';
     if(node.local==='energyInfrastructureSiteStatus')site=null;
-    if(node.local==='refillPointStatus')point={site_id:site,point_id:null,status:null};
+    if(node.local==='refillPointStatus')point={site_id:site,point_id:null,status:null,priceDetails:[]};
+    if(node.local==='electricEnergyMixOverride' && point){
+      const rawIndex=Object.values(node.attributes).find(a=>a.local==='energyMixIndex')?.value;
+      const parsedIndex=Number(rawIndex);
+      energyMix={rate_index:Number.isInteger(parsedIndex)&&parsedIndex>=0?parsedIndex:0,currency:'EUR',valid_from:null,rates:[]};
+    }
+    if(node.local==='energyPricingPolicy' && energyMix)pricingPolicy=null;
     if(node.local==='reference'){
       const id=Object.values(node.attributes).find(a=>a.local==='id')?.value;
       if(stack.at(-2)==='energyInfrastructureSiteStatus')site=id||null;
@@ -29,10 +43,28 @@ async function parse(stream: ReadableStream<Uint8Array>) {
   parser.on('text',value=>{text+=value});
   parser.on('closetag',node=>{
     if(node.local==='publicationTime')publication=text.trim();
-    if(node.local==='status' && stack.at(-2)==='refillPointStatus' && point)point.status=text.trim();
+    const value=text.trim();
+    if(node.local==='status' && stack.at(-2)==='refillPointStatus' && point)point.status=value;
+    if(node.local==='pricingPolicy' && energyMix)pricingPolicy=value;
+    if(node.local==='minimumDeliveryFee' && energyMix && pricingPolicy){
+      const amount=Number(value);
+      if(Number.isFinite(amount)&&amount>=0)energyMix.rates.push({pricing_policy:pricingPolicy,amount_eur:amount});
+    }
+    if(node.local==='applicableCurrency' && energyMix && /^[A-Z]{3}$/.test(value))energyMix.currency=value;
+    if(node.local==='overallStartTime' && energyMix && Number.isFinite(Date.parse(value)))energyMix.valid_from=new Date(value).toISOString();
+    if(node.local==='electricEnergyMixOverride' && point && energyMix){
+      point.priceDetails.push(...energyMix.rates.map(rate=>({
+        ...rate,rate_index:energyMix!.rate_index,currency:energyMix!.currency,valid_from:energyMix!.valid_from
+      })));
+      energyMix=null;
+    }
     if(node.local==='refillPointStatus'){
       if(!point?.site_id||!point.point_id||!point.status||!STATES.has(point.status))throw Error('Invalid point');
       rows.push({site_id:point.site_id,point_id:point.point_id,status:point.status});
+      for(const rate of point.priceDetails)prices.push({
+        site_id:point.site_id,point_id:point.point_id,...rate,
+        raw_data:{official_label:'MOBI.E NAP ad hoc price',pricing_policy:rate.pricing_policy}
+      });
       point=null;
     }
     stack.pop();text='';
@@ -46,7 +78,8 @@ async function parse(stream: ReadableStream<Uint8Array>) {
   const time=Date.parse(publication||'');
   if(!Number.isFinite(time)||Date.now()-time>45*60_000||time-Date.now()>5*60_000)throw Error('Source is stale');
   if(rows.length<15000||rows.length>100000)throw Error('Unexpected coverage');
-  return {rows,publication_time:new Date(time).toISOString(),source_points:rows.length,source_bytes:bytes};
+  if(prices.length===0)throw Error('No official price components in live feed');
+  return {rows,prices,publication_time:new Date(time).toISOString(),source_points:rows.length,source_price_components:prices.length,source_bytes:bytes};
 }
 
 Deno.serve(async request=>{
@@ -69,16 +102,20 @@ Deno.serve(async request=>{
     if(response.status===304)return reply({success:true,unchanged:true,source_status:304,etag:previousEtag});
     if(!response.ok||!response.body)throw Error('NAP HTTP '+response.status);
     const currentEtag=response.headers.get('etag');
-    const {rows,publication_time,source_points,source_bytes}=await parse(response.body);
+    const {rows,prices,publication_time,source_points,source_price_components,source_bytes}=await parse(response.body);
     const result=await client.rpc('import_nap_availability',{
       p_publication_time:publication_time,p_rows:rows,p_apply:true
     });
     if(result.error)throw Error(result.error.message);
+    const priceResult=await client.rpc('import_nap_ad_hoc_prices',{
+      p_publication_time:publication_time,p_rows:prices
+    });
+    if(priceResult.error)throw Error(priceResult.error.message);
     if(currentEtag){
       const saved=await client.rpc('set_nap_live_etag',{p_etag:currentEtag});
       if(saved.error)throw Error('ETag save failed: '+saved.error.message);
     }
-    return reply({success:true,unchanged:false,source_points,source_bytes,publication_time,etag:currentEtag,database:result.data});
+    return reply({success:true,unchanged:false,source_points,source_price_components,source_bytes,publication_time,etag:currentEtag,database:result.data,prices:priceResult.data});
   }catch(error){
     console.error('NAP availability import:',error);
     return reply({success:false,error:String(error)},502);
