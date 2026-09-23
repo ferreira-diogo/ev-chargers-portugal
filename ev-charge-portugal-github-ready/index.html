@@ -906,7 +906,7 @@ async function refreshAvailability(){
 setInterval(refreshAvailability,5*60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAvailability()});
 
-function sim(){let a=+from.value,b=+to.value;if(b<=a)b=Math.min(100,a+5);fv.textContent=a+'%';tv.textContent=b+'%';const capacity=Number(currentVehicle?.battery_capacity_kwh)||60;const maxVehiclePower=Number(currentVehicle?.max_dc_power_kw)||50;const chargePower=Math.max(1,Math.min(selectedStationPower||maxVehiclePower,maxVehiclePower));let k=(b-a)*capacity/100;energy.textContent='~'+k.toFixed(1).replace('.',',')+' kWh';mins.textContent='~'+Math.max(5,Math.ceil(k/chargePower*60/0.75))+' min';renderPriceComparison()}from.oninput=to.oninput=sim;
+// Simulator controls are initialized above with energy/time modes.
 document.querySelectorAll('#power-filter .chip').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('#power-filter .chip').forEach(other=>other.classList.remove('on'));button.classList.add('on');selectedPower=button.dataset.power;renderStations()}));
 document.getElementById('apply-filters').addEventListener('click',searchPortugal);
 document.getElementById('use-location').addEventListener('click',()=>useMyLocation());
