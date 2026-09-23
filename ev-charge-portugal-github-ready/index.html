@@ -144,16 +144,16 @@ function applyTranslations(root=document.body){
 }
 function setLanguage(language){
   currentLanguage=language==='en'?'en':'pt';localStorage.setItem('ev-charge-language',currentLanguage);
-  applyTranslations();renderStations(false);
-  if(selectedStation)selectStation(selectedStation,operatorMap.get(selectedStation.operator_id));
+  applyTranslations();
+  // Do not recreate the map/card grid here: it keeps the language change instant on mobile.
+  if(selectedStation){
+    const info=stationAvailability(connectorMap.get(selectedStation.id)||[]);
+    document.getElementById('station-live').innerHTML=availabilityHtml(info);
+    document.getElementById('station-status').innerHTML=availabilityHtml(info);
+  }
 }
-const i18nObserver=new MutationObserver(records=>{
-  if(translatingPage||currentLanguage!=='en')return;
-  records.forEach(record=>record.addedNodes.forEach(node=>{
-    if(node.nodeType===Node.ELEMENT_NODE||node.nodeType===Node.TEXT_NODE)applyTranslations(node.nodeType===Node.ELEMENT_NODE?node:node.parentElement);
-  }));
-});
-i18nObserver.observe(document.documentElement,{childList:true,subtree:true});
+// Dynamic map data can contain thousands of elements. Translation is intentionally
+// applied only on explicit language changes so it never blocks map interactions.
 
 
 async function getRows(table,query){
@@ -487,7 +487,7 @@ function showEmailAuth(mode='signin'){
         : result.error.message;
       return;
     }
-    if(signup&&!result.data.session){message.textContent='Conta criada. Confirme o email antes de entrar.';return}
+    if(signup&&!result.data.session){message.textContent='Conta criada. Confirme o email antes de entrar e verifique também as pastas Spam e Promoções.';return}
     closeModal();await initAuth();
   });
   document.getElementById('auth-switch').addEventListener('click',()=>showEmailAuth(signup?'signin':'signup'));
@@ -496,7 +496,7 @@ function showEmailAuth(mode='signin'){
     const message=document.getElementById('auth-message');
     if(!email){message.textContent='Indique primeiro o seu email.';return}
     const result=await authClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
-    message.textContent=result.error?result.error.message:'Verifique o email para redefinir a palavra-passe.';
+    message.textContent=result.error?result.error.message:'Verifique o email para redefinir a palavra-passe. Se não aparecer, veja Spam e Promoções.';
   });
 }
 async function signOutUser(){await authClient.auth.signOut();closeModal()}
