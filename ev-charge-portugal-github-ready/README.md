@@ -115,7 +115,7 @@ Não foram introduzidas APIs pagas nem chaves no código. A arquitetura foi mant
 - OpenStreetMap/Leaflet para o mapa.
 - NAP MOBI.E e Open Charge Map como fontes públicas.
 
-O Cron de 5 minutos representa 288 execuções por dia. A função evita regravar histórico quando a publicação NAP não mudou. As quotas de Supabase e Cloudflare devem ser monitorizadas no painel para evitar ultrapassar os limites gratuitos.
+O Cron de 5 minutos representa 288 execuções por dia. A função evita regravar histórico quando a publicação NAP não mudou. O plano gratuito da Supabase inclui 5 GB de egress e 500.000 invocações de Edge Functions; as quotas de Supabase e Cloudflare devem ser monitorizadas no painel. O ETag reduz tráfego quando a publicação não muda, mas a fonte pode publicar um novo XML de aproximadamente 36 MB e esse consumo deve ser acompanhado.
 
 ## Desenvolvimento
 
