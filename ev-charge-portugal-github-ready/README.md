@@ -1,6 +1,6 @@
-# EV Charge Portugal
+# ChargeVoy — EV Charging & Routes
 
-Aplicação web para localizar postos de carregamento em Portugal, filtrar por conector e potência, verificar disponibilidade, selecionar um veículo e preparar uma rota com paragens.
+Aplicação web/móvel para localizar postos de carregamento em Portugal, filtrar por conector e potência, verificar disponibilidade, selecionar um veículo e preparar uma rota com paragens.
 
 ## Estado atual
 
@@ -12,6 +12,7 @@ Aplicação web para localizar postos de carregamento em Portugal, filtrar por c
 - Sugestão de paragens e alternativa quando existe risco de não chegar ao destino.
 - Ligações de navegação para Google Maps e outros mapas compatíveis.
 - Login com Supabase Auth, incluindo Google OAuth quando ativado no projeto.
+- Página pública e opção autenticada para eliminação permanente de conta e dados associados.
 - Favoritos, histórico de rotas e estrutura preparada para avaliações.
 - Indicadores de disponibilidade: disponível, ocupado, indisponível, desconhecida e dados desatualizados.
 - Registo histórico de alterações de disponibilidade para cálculo futuro de fiabilidade.
