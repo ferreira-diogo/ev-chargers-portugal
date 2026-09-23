@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EV Charge Portugal</string>
+    <string name="title_activity_main">EV Charge Portugal</string>
+    <string name="package_name">pt.evcharge.portugal</string>
+    <string name="custom_url_scheme">pt.evcharge.portugal</string>
+</resources>

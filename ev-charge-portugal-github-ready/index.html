@@ -753,7 +753,18 @@ async function searchPortugal(){
   }finally{button.disabled=false;button.textContent='⌕ Procurar'}
 }
 
-function browserPosition(){
+async function browserPosition(){
+  const nativeGeolocation=window.Capacitor?.Plugins?.Geolocation;
+  if(nativeGeolocation){
+    try{
+      const position=await nativeGeolocation.getCurrentPosition({enableHighAccuracy:true,timeout:12000,maximumAge:300000});
+      return {lat:position.coords.latitude,lon:position.coords.longitude,accuracy:position.coords.accuracy,label:'A minha localização'};
+    }catch(error){
+      const message=String(error?.message||error);
+      if(/denied|permission|recus/i.test(message))throw new Error('Permissão de localização recusada. Autorize-a nas definições da aplicação.');
+      throw new Error('Não foi possível determinar a localização.');
+    }
+  }
   return new Promise((resolve,reject)=>{
     if(!navigator.geolocation){reject(new Error('Este navegador não suporta localização.'));return}
     navigator.geolocation.getCurrentPosition(

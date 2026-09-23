@@ -140,6 +140,22 @@ O site é também uma Progressive Web App (PWA):
 
 A primeira fase da aplicação dedicada será esta PWA, partilhando o mesmo código, autenticação e dados. Uma versão publicada nas lojas poderá ser criada posteriormente com Capacitor, sem duplicar a lógica do produto.
 
+## Android / Google Play
+
+O projeto Android nativo está em `android/` e usa Capacitor 8. O identificador Android atual é `pt.evcharge.portugal` e não deve ser alterado depois da primeira publicação na Google Play.
+
+### Preparar uma compilação
+
+```bash
+npm ci
+npm run android:sync
+npm run android:open
+```
+
+Abrir o projeto `android/` no Android Studio, testar num dispositivo real e gerar um **Android App Bundle** assinado (`.aab`) através de **Build → Generate Signed Bundle / APK**. A aplicação pede localização apenas quando o utilizador usa “A minha localização”; os dados de postos continuam a ser atualizados pelas fontes NAP/OCM, sem exigir publicar uma nova versão da aplicação.
+
+Antes da primeira publicação é necessário criar a conta Google Play Console, preparar a ficha (descrição, ícone, screenshots, política de privacidade e classificação de conteúdo) e publicar primeiro no teste interno. A Google Play recebe App Bundles e gere a assinatura da aplicação.
+
 ## Licença
 
 Ver `LICENSE`.
