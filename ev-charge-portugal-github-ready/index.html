@@ -8,7 +8,7 @@
 <style>
 :root{--n:#071b31;--g:#18b978;--g2:#45e09c;--bg:#edf2f6;--line:#dce5ec;--mut:#708294}
 *{box-sizing:border-box}body{margin:0;font:14px system-ui,-apple-system,Segoe UI,sans-serif;color:#10263d;background:var(--bg)}
-button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115deg,#06192d,#0e3457);color:white;display:flex;align-items:center;gap:24px;padding:0 20px}.brand{display:flex;gap:10px;align-items:center;min-width:290px}.bolt{font-size:35px}.brand b{font-size:19px}.brand small{display:block;color:#bfd1df}.search{height:45px;background:white;color:#123;border-radius:9px;display:flex;align-items:center;padding:0 14px;flex:1;max-width:620px}.search input{border:0;outline:0;width:100%;padding-left:8px}.nav{margin-left:auto;display:flex;gap:20px}.nav button{border:0;background:transparent;color:#e5f0f7;font-size:11px;cursor:pointer}.nav .active{color:#48e09d}
+button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115deg,#06192d,#0e3457);color:white;display:flex;align-items:center;gap:24px;padding:0 20px}.brand{display:flex;gap:10px;align-items:center;min-width:290px}.bolt{font-size:35px}.brand b{font-size:19px}.brand small{display:block;color:#bfd1df}.search{height:45px;background:white;color:#123;border-radius:9px;display:flex;align-items:center;padding:0 14px;flex:1;max-width:620px}.search input{border:0;outline:0;width:100%;padding-left:8px}.language-toggle{border:1px solid #9bc3dc;background:#ffffff12;color:#fff;border-radius:7px;padding:7px 9px;font-weight:800;font-size:11px;cursor:pointer}.nav{margin-left:auto;display:flex;gap:20px}.nav button{border:0;background:transparent;color:#e5f0f7;font-size:11px;cursor:pointer}.nav .active{color:#48e09d}
 .layout{display:grid;grid-template-columns:285px 1fr 360px;min-height:calc(100vh - 74px)}.side{background:var(--n);color:white;padding:16px}.vehicle,.panel,.card,.quick{background:white;border:1px solid var(--line);border-radius:9px}.vehicle{background:#103a60;border-color:#285c82;padding:12px}.vehicle-row{display:flex;gap:10px;align-items:center;margin-top:10px}.vehicle-data{min-width:0;flex:1}.vehicle-data select{margin-bottom:5px}.vehicle-data small{display:block;color:#d8e7f1;line-height:1.4}.car{width:82px;height:58px;flex:0 0 82px;background:linear-gradient(145deg,#eaf5ff,#bcd5e8);border-radius:13px;display:grid;place-items:center;overflow:hidden;box-shadow:inset 0 0 0 1px #ffffff66}.car svg{width:78px;height:52px;filter:drop-shadow(0 5px 4px #071b3155)}.vehicle-source{margin-top:7px!important;font-size:8px!important;color:#a9c3d5!important}.vehicle-source a{color:#70e8b2}.side h3{font-size:14px;margin:18px 2px 9px}.loc{background:white;color:#24384b;border-radius:8px;padding:7px 7px 7px 10px;display:flex;gap:8px;align-items:center}.loc input{border:0;outline:0;width:100%}.loc button{border:0;background:#e2faef;color:#08794f;border-radius:7px;padding:7px 9px;cursor:pointer;font-weight:800}.fg{border-top:1px solid #1f3d59;margin-top:14px;padding-top:13px}.label{font-size:10px;color:#b9cad7;margin-bottom:8px}.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{background:#0e2b47;color:#dbe7f0;border:1px solid #365570;border-radius:16px;padding:7px 9px;font-size:10px}.chip.on{background:var(--g2);border-color:var(--g2);color:#06283c;font-weight:700}.check{display:block;font-size:11px;margin:9px 0;color:#dbe7f0}.side select{width:100%;padding:8px;background:#0e2b47;color:white;border:1px solid #365570;border-radius:7px}.go{width:100%;margin-top:16px;border:0;background:var(--g2);color:#06283c;font-weight:800;padding:12px;border-radius:8px}
 .main{padding:10px;min-width:0}.routeplanner{display:none;scroll-margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 3px 14px #071b310d}.routeplanner.route-visible{display:block}.routehead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}.routehead b{font-size:13px}.routehead small{display:block;color:var(--mut);font-size:9px;margin-top:2px}.routeform{display:grid;grid-template-columns:1.5fr 1.5fr .7fr .7fr auto;gap:7px}.route-origin-control{display:flex;min-width:0}.route-origin-control input{flex:1;min-width:0;border-radius:7px 0 0 7px}.route-origin-control button{width:38px;border:1px solid var(--line);border-left:0;border-radius:0 7px 7px 0;background:#eef6fb;color:#0b5b86;cursor:pointer}.routeform input{min-width:0;border:1px solid var(--line);border-radius:7px;padding:9px}.routeform button{border:0;border-radius:7px;background:#0eaf72;color:#fff;font-weight:800;padding:9px 14px}.routeresult{display:none;margin-top:9px;padding:10px;border-radius:7px;background:#f0faf6;font-size:11px;line-height:1.55}.routeresult.show{display:block}.route-summary{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.route-summary span{background:#fff;border:1px solid #cfe9dc;border-radius:7px;padding:5px 7px}.route-stops{margin:7px 0 3px;padding-left:20px}.route-stops li{margin:7px 0}.routeplanner.flash{animation:routeflash 1.1s ease}@keyframes routeflash{50%{box-shadow:0 0 0 4px #45e09c66}}.mapbox{height:515px;border-radius:10px;overflow:hidden;position:relative;box-shadow:0 8px 28px #071b3117}.mapbadge,.legend{position:absolute;z-index:600;background:white;border-radius:9px;box-shadow:0 4px 16px #0002}.mapbadge{top:14px;left:14px;padding:11px 14px;font-size:12px}.legend{right:12px;bottom:12px;padding:10px;font-size:10px;line-height:1.8;pointer-events:none}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.g{background:#18b978}.r{background:#ed6464}.b{background:#2b7bd0}
 .head{display:flex;align-items:center;justify-content:space-between;margin:16px 4px 9px}.head h2{font-size:17px;margin:0}.sort{border:1px solid var(--line);background:#fff;padding:8px;border-radius:7px;font-size:11px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.card{padding:11px;box-shadow:0 2px 8px #071b3108}.rank{font-size:9px;color:#587087}.tag{float:right;background:#e2faef;color:#08794f;padding:3px 6px;border-radius:10px;font-size:8px;font-weight:700}.op{font-weight:800;font-size:12px;margin-top:7px}.st{font-size:10px;color:var(--mut);margin:3px 0 8px}.avail{font-size:9px;color:#078052}.live-pill{display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#08794f;border:1px solid #86efac;border-radius:10px;padding:2px 6px;font-size:8px;font-weight:900;letter-spacing:.5px}.live-pill i{width:6px;height:6px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 0 #22c55e99;animation:livepulse 1.5s infinite}@keyframes livepulse{70%{box-shadow:0 0 0 6px #22c55e00}100%{box-shadow:0 0 0 0 #22c55e00}}.stale-pill{display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:10px;padding:2px 6px;font-size:8px;font-weight:800}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.metric{border-top:1px solid #edf1f4;padding-top:6px;font-size:9px;color:var(--mut)}.metric b{display:block;color:#10263d;font-size:11px}.cost{margin-top:9px}.cost b{font-size:17px}.card button,.secondary{width:100%;margin-top:9px;padding:7px;border-radius:6px;background:#e9fbf3;border:1px solid #a0e9ca;color:#08774f;font-weight:700;font-size:10px}.quickgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0 20px}.quick{padding:13px}.quick b{font-size:11px}.quick p{font-size:9px;color:var(--mut);line-height:1.5}
@@ -18,7 +18,7 @@ button,input,select{font:inherit}.top{height:74px;background:linear-gradient(115
 .nav-icon{display:block;font-size:18px;line-height:1.05;margin-bottom:2px}.nav button+button{border-left:1px solid #ffffff24}@media(max-width:780px){.nav button:last-child{display:block}.nav-icon{font-size:25px;margin-bottom:4px}.nav button{font-size:9px;line-height:1.1}}
 @media(max-width:780px){.top{z-index:2000}.right:not(.station-open){display:none}.right.station-open{display:block;height:61dvh;max-height:calc(100dvh - 82px);bottom:61px;overflow-y:auto;overscroll-behavior:contain;padding:6px 8px 24px}.main.station-selected .mapbox{height:43dvh;min-height:235px;transition:height .2s ease}.mobile-station-close{position:sticky;top:0;z-index:3;min-height:34px;background:#f5f8fa;border-radius:12px 12px 0 0}.right .pbody{padding:10px 11px}.right .station-links button{min-height:40px}.right .specs{margin-top:8px}.right .poi-panel,.right .review-panel,.right .sim{font-size:10px}.right.station-open .photo{height:82px}.photo #station-photo-placeholder{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:#40576b}.photo #station-photo-placeholder b{font-size:25px;color:#e3a700}.photo #station-photo-placeholder a{font-size:10px;font-weight:800;color:#14569b;text-decoration:underline}.photo img[hidden],.photo #station-photo-placeholder[hidden]{display:none}.right.station-open .panel:first-of-type{box-shadow:0 2px 12px #071b3120}}\n</style></head>
 <body>
-<header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><button class="mobile-controls" id="mobile-filters">☰ Filtros</button><div class="search">⌕<input id="global-search" placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active" id="nav-map"><span class="nav-icon">🗺</span>Mapa</button><button id="nav-routes"><span class="nav-icon">🧭</span>Rotas</button><button id="nav-vehicle"><span class="nav-icon">🚗</span>Veículo</button><button id="nav-favorites"><span class="nav-icon">☆</span>Favoritos</button><button id="nav-account"><span class="nav-icon">♙</span><span id="account-label">Entrar</span></button></nav></header>
+<header class="top"><div class="brand"><span class="bolt">⚡</span><div><b>EV Charge Portugal</b><small>Encontra · Compara · Calcula · Decide</small></div></div><button class="mobile-controls" id="mobile-filters">☰ Filtros</button><button class="language-toggle" id="language-toggle" type="button" aria-label="Mudar idioma">EN</button><div class="search">⌕<input id="global-search" placeholder="Pesquisar por local, morada ou posto de carregamento…"></div><nav class="nav"><button class="active" id="nav-map"><span class="nav-icon">🗺</span>Mapa</button><button id="nav-routes"><span class="nav-icon">🧭</span>Rotas</button><button id="nav-vehicle"><span class="nav-icon">🚗</span>Veículo</button><button id="nav-favorites"><span class="nav-icon">☆</span>Favoritos</button><button id="nav-account"><span class="nav-icon">♙</span><span id="account-label">Entrar</span></button></nav></header>
 <div class="layout">
 <aside class="side"><button class="drawer-close" id="close-mobile-filters" aria-label="Fechar filtros">×</button><div class="vehicle"><small>🚗 O meu veículo</small><div class="vehicle-row"><div class="car" id="vehicle-image" aria-hidden="true">🚘</div><div class="vehicle-data"><select id="vehicle-brand"><option>Todas as marcas</option></select><select id="vehicle-select"><option>A carregar veículos…</option></select><small id="vehicle-specs">A obter dados da Supabase…</small></div></div><div class="vehicle-image-credit" id="vehicle-image-credit"></div><small class="vehicle-source">Catálogo: <a href="https://github.com/gaia-charge/evdb" target="_blank" rel="noopener">Gaia EVDB</a> · CC BY-SA 4.0</small></div><h3>Onde quer carregar?</h3><div class="loc">⌖<input id="location-search" placeholder="Cidade, código postal ou localização"><button id="use-location" title="Usar a minha localização">◎</button></div>
 <div class="fg"><div class="label">Potência</div><div class="chips" id="power-filter"><button class="chip on" data-power="all">Todos</button><button class="chip" data-power="0-50">Até 50</button><button class="chip" data-power="50-150">50–150</button><button class="chip" data-power="150-250">150–250</button><button class="chip" data-power="250+">250+ kW</button></div></div>
@@ -69,6 +69,92 @@ let vehicleImageRequest=0;
 let currentSession=null;
 let installPrompt=null;
 const geocodeCache=new Map();
+// Interface translations: all platforms (web, PWA and Capacitor) share this file.
+const I18N_EN={
+  'Encontra · Compara · Calcula · Decide':'Find · Compare · Plan · Decide',
+  '☰ Filtros':'☰ Filters','Mapa':'Map','Rotas':'Routes','Veículo':'Vehicle','Favoritos':'Favourites','Entrar':'Sign in',
+  '🚗 O meu veículo':'🚗 My vehicle','Todas as marcas':'All makes','A carregar veículos…':'Loading vehicles…','A obter dados da Supabase…':'Fetching data from Supabase…',
+  'Onde quer carregar?':'Where do you want to charge?','Potência':'Power','Todos':'All','Até 50':'Up to 50','Conectores':'Connectors','Estado':'Status',
+  '🟢 Disponível':'🟢 Available','🔴 Indisponível':'🔴 Unavailable','🔵 Desconhecido':'🔵 Unknown','Operador':'Operator','Todos os operadores':'All operators','⌕ Procurar':'⌕ Search',
+  '🧭 Planeador de viagens':'🧭 Trip planner','Sugere paragens compatíveis, energia necessária e tempo até 80%.':'Suggests compatible stops, required energy and time to 80%.',
+  '🧭 Calcular rota':'🧭 Calculate route','🚗 Mostrando':'🚗 Showing','postos reais em Portugal':'real charging stations in Portugal',
+  'Disponível':'Available','Indisponível':'Unavailable','Estado desconhecido':'Status unknown',
+  'Melhores opções para o seu veículo':'Best options for your vehicle','Maior potência':'Highest power','Mais próximo':'Nearest','Nome A–Z':'Name A–Z','Operador A–Z':'Operator A–Z',
+  'A carregar postos reais…':'Loading charging stations…','A consultar a base de dados nacional.':'Checking the national database.',
+  'Encontre paragens compatíveis, tempos e um Plano B para cada paragem.':'Find compatible stops, charging times and a Plan B for every stop.',
+  'Compare cartões e apps com tarifa oficial, taxas e custo final.':'Compare cards and apps using official rates, fees and final cost.',
+  'Consulte o estado atual e a cobertura histórica disponível.':'See current status and available historical coverage.',
+  '⌄ Fechar detalhes e voltar ao mapa':'⌄ Close details and return to map','Fotografia do posto de carregamento':'Charging station photo',
+  'Fotografia do posto não disponível':'Charging station photo unavailable','Ver local e fotos no Google Maps':'View location and photos on Google Maps',
+  'Selecione um posto no mapa':'Select a station on the map','Os detalhes reais aparecerão aqui.':'Live details will appear here.','● Estado ainda não selecionado':'● No station selected yet',
+  'Potência máx.':'Max power','Tomadas':'Outlets','Disponibilidade':'Availability','O que há por perto?':'What is nearby?','Atualizar':'Refresh',
+  'Sugestões próximas, distância e tempo estimado a pé.':'Nearby suggestions, distance and estimated walking time.',
+  'Restaurantes':'Restaurants','Hotéis':'Hotels','Supermercados':'Supermarkets','Cafés':'Cafés',
+  'Selecione um posto para consultar locais próximos.':'Select a station to see nearby places.','⭐ Avaliações e fiabilidade':'⭐ Reviews and reliability',
+  'Selecione um posto para consultar avaliações.':'Select a station to see reviews.','Simulador de carregamento':'Charging simulator',
+  'Por energia':'By energy','Por tempo':'By time','Estado atual da bateria':'Current battery level','Carregar até':'Charge to',
+  'Energia necessária':'Energy required','Selecione um posto':'Select a station','Melhor custo oficial estimado':'Best estimated official cost','Tempo estimado':'Estimated time',
+  'Comparador de cartões e apps':'Card and app comparison','Fora de vazio':'Off-peak excluded','Vazio':'Off-peak',
+  'Selecione um posto oficial MOBI.E/NAP com pelo menos 22 kW.':'Select an official MOBI.E/NAP station with at least 22 kW.',
+  'Selecione um posto para criar rota':'Select a station to create a route','↔ Ver opção B':'↔ View Plan B','☆ Adicionar aos favoritos':'☆ Add to favourites',
+  'Privacidade e análise':'Privacy and analytics','Podemos usar o Google Analytics para melhorar o site? A escolha fica guardada neste dispositivo.':'May we use Google Analytics to improve the service? Your choice is saved on this device.',
+  'Recusar':'Decline','Aceitar':'Accept','EV Charge Portugal · projeto pessoal · demonstração':'EV Charge Portugal · personal project · demonstration',
+  'Aviso legal':'Legal notice','Privacidade':'Privacy','Termos':'Terms','Detalhes':'Details',
+  'Pesquisar por local, morada ou posto de carregamento…':'Search by town, address or charging station…','Cidade, código postal ou localização':'Town, postcode or location',
+  'Origem em Portugal':'Origin in Portugal','Destino em Portugal':'Destination in Portugal','Bateria %':'Battery %','Reserva %':'Reserve %',
+  'Usar a minha localização':'Use my location','Fechar filtros':'Close filters','Filtrar pontos de interesse':'Filter points of interest','Modo do simulador':'Simulator mode','Bateria alvo':'Target battery',
+  'A minha localização':'My location','Ver locais':'View places','Google Maps com trânsito':'Google Maps with traffic',
+  'Disponibilidade não comunicada':'Availability not reported','Disponibilidade desatualizada':'Availability out of date','Sem leitura atual':'No current reading','sem leitura atual':'without a current reading','ANTERIOR':'PREVIOUS'
+};
+let currentLanguage=localStorage.getItem('ev-charge-language')==='en'?'en':'pt';
+const i18nOriginalText=new WeakMap(),i18nOriginalAttrs=new WeakMap();
+let translatingPage=false;
+function translateString(value){
+  if(currentLanguage!=='en'||typeof value!=='string')return value;
+  const leading=value.match(/^\s*/)?.[0]||'',trailing=value.match(/\s*$/)?.[0]||'';
+  const core=value.slice(leading.length,value.length-trailing.length);
+  return leading+(I18N_EN[core]||core)+trailing;
+}
+function t(value){return currentLanguage==='en'?(I18N_EN[value]||value):value}
+function translateElementAttributes(element){
+  if(!(element instanceof Element))return;
+  const original=i18nOriginalAttrs.get(element)||{};
+  ['placeholder','title','aria-label','alt'].forEach(attribute=>{
+    if(!element.hasAttribute(attribute))return;
+    if(!(attribute in original))original[attribute]=element.getAttribute(attribute);
+    element.setAttribute(attribute,currentLanguage==='en'?translateString(original[attribute]):original[attribute]);
+  });
+  i18nOriginalAttrs.set(element,original);
+}
+function applyTranslations(root=document.body){
+  if(!root)return;
+  translatingPage=true;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;
+  while((node=walker.nextNode())){
+    if(!node.nodeValue.trim()||node.parentElement?.closest('script,style'))continue;
+    if(!i18nOriginalText.has(node))i18nOriginalText.set(node,node.nodeValue);
+    const original=i18nOriginalText.get(node);node.nodeValue=currentLanguage==='en'?translateString(original):original;
+  }
+  if(root instanceof Element)translateElementAttributes(root);
+  root.querySelectorAll?.('*').forEach(translateElementAttributes);
+  document.documentElement.lang=currentLanguage==='en'?'en':'pt-PT';
+  document.getElementById('language-toggle').textContent=currentLanguage==='en'?'PT':'EN';
+  document.getElementById('language-toggle').setAttribute('aria-label',currentLanguage==='en'?'Mudar para português':'Switch to English');
+  translatingPage=false;
+}
+function setLanguage(language){
+  currentLanguage=language==='en'?'en':'pt';localStorage.setItem('ev-charge-language',currentLanguage);
+  applyTranslations();renderStations(false);
+  if(selectedStation)selectStation(selectedStation,operatorMap.get(selectedStation.operator_id));
+}
+const i18nObserver=new MutationObserver(records=>{
+  if(translatingPage||currentLanguage!=='en')return;
+  records.forEach(record=>record.addedNodes.forEach(node=>{
+    if(node.nodeType===Node.ELEMENT_NODE||node.nodeType===Node.TEXT_NODE)applyTranslations(node.nodeType===Node.ELEMENT_NODE?node:node.parentElement);
+  }));
+});
+i18nObserver.observe(document.documentElement,{childList:true,subtree:true});
+
 
 async function getRows(table,query){
   const response=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`,{headers:API_HEADERS});
@@ -95,9 +181,9 @@ function markerColor(status){
 }
 
 function statusLabel(status){
-  if(status==='available')return 'Disponível';
-  if(status==='unavailable'||status==='offline')return 'Indisponível';
-  return 'Disponibilidade não comunicada';
+  if(status==='available')return t('Disponível');
+  if(status==='unavailable'||status==='offline')return t('Indisponível');
+  return t('Disponibilidade não comunicada');
 }
 
 function stationAvailability(connectors){
@@ -111,7 +197,7 @@ function stationAvailability(connectors){
   const fresh=valid.filter(c=>now-Date.parse(c.availability_updated_at)<=20*60000);
   const recent=valid.filter(c=>now-Date.parse(c.availability_updated_at)<=45*60000);
   const readings=fresh.length?fresh:recent;
-  if(!readings.length)return {kind:valid.length?'expired':'none',total,label:valid.length?'Disponibilidade desatualizada':'Disponibilidade não comunicada',detail:'Sem leitura atual'};
+  if(!readings.length)return {kind:valid.length?'expired':'none',total,label:valid.length?t('Disponibilidade desatualizada'):t('Disponibilidade não comunicada'),detail:t('Sem leitura atual')};
   const oldest=Math.min(...readings.map(c=>Date.parse(c.availability_updated_at)));
   const ageMinutes=Math.max(0,Math.floor((now-oldest)/60000));
   const available=readings.reduce((sum,c)=>sum+c.available_count,0);
@@ -120,16 +206,17 @@ function stationAvailability(connectors){
   const byType=new Map();
   readings.forEach(c=>{const type=connectorCategory(c.type);byType.set(type,(byType.get(type)||0)+c.available_count)});
   const types=[...byType].map(([type,count])=>`${count} ${type}`).join(' · ');
-  const suffix=complete?'':` · ${total-knownTotal} sem leitura atual`;
+  const suffix=complete?'':` · ${total-knownTotal} ${t('sem leitura atual')}`;
   const kind=fresh.length?'live':'stale';
-  const label=`${available}/${knownTotal} fichas em pontos livres${kind==='stale'?' na última leitura':''}${suffix} · fonte há ${ageMinutes} min`;
-  return {kind,total,knownTotal,complete,available,ageMinutes,label,detail:`Fichas em pontos livres: ${types}`,publicationTime:new Date(oldest).toISOString()};
+  const label=currentLanguage==='en'?`${available}/${knownTotal} available connectors${kind==='stale'?' in the last reading':''}${suffix} · source updated ${ageMinutes} min ago`:`${available}/${knownTotal} fichas em pontos livres${kind==='stale'?' na última leitura':''}${suffix} · fonte há ${ageMinutes} min`;
+  const detail=currentLanguage==='en'?`Available connectors: ${types}`:`Fichas em pontos livres: ${types}`;
+  return {kind,total,knownTotal,complete,available,ageMinutes,label,detail,publicationTime:new Date(oldest).toISOString()};
 }
 
 function availabilityHtml(info){
-  const title=escapeHtml(`MOBI.E NAP · publicação: ${info.publicationTime||'não comunicada'}. Estado comunicado por ponto de carregamento. Um ponto pode oferecer várias fichas; os totais não representam carros que podem carregar em simultâneo.`);
+  const title=escapeHtml(currentLanguage==='en'?`MOBI.E NAP · published: ${info.publicationTime||'not reported'}. Status is reported per charging point. One point may offer multiple connectors; totals do not represent the number of cars that can charge simultaneously.`:`MOBI.E NAP · publicação: ${info.publicationTime||'não comunicada'}. Estado comunicado por ponto de carregamento. Um ponto pode oferecer várias fichas; os totais não representam carros que podem carregar em simultâneo.`);
   if(info.kind==='live')return `<span class="live-pill" title="${title}"><i></i>LIVE</span> ${escapeHtml(info.label)}<br><small>${escapeHtml(info.detail)}</small>`;
-  if(info.kind==='stale')return `<span class="stale-pill" title="${title}">ANTERIOR</span> ${escapeHtml(info.label)}`;
+  if(info.kind==='stale')return `<span class="stale-pill" title="${title}">${t('ANTERIOR')}</span> ${escapeHtml(info.label)}`;
   return escapeHtml(info.label);
 }
 
@@ -1073,6 +1160,7 @@ async function initAuth(){
 }
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event});
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(error=>console.error('PWA:',error)));
+applyTranslations();
 initAuth();
 setupAnalyticsConsent();
 loadRealStations();
@@ -1134,6 +1222,7 @@ document.getElementById('nav-account').addEventListener('click',()=>{closeStatio
 document.getElementById('modal-close').addEventListener('click',closeModal);
 document.getElementById('app-modal').addEventListener('click',event=>{if(event.target.id==='app-modal')closeModal()});
 document.getElementById('mobile-filters').addEventListener('click',()=>document.querySelector('.side').classList.add('mobile-open'));
+document.getElementById('language-toggle').addEventListener('click',()=>setLanguage(currentLanguage==='en'?'pt':'en'));
 document.getElementById('close-mobile-filters').addEventListener('click',()=>document.querySelector('.side').classList.remove('mobile-open'));
 document.getElementById('nav-vehicle').addEventListener('click',()=>{closeStationPanel();if(window.innerWidth<=780)document.querySelector('.side').classList.add('mobile-open');else document.getElementById('vehicle-select').focus()});
 const quickRoute=document.getElementById('open-route-planner');
