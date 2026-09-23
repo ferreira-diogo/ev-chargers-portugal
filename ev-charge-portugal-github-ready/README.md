@@ -129,6 +129,17 @@ npm test
 
 As importações manuais devem ser executadas apenas com as variáveis secretas configuradas no ambiente seguro.
 
+## Experiência mobile e aplicação
+
+O site é também uma Progressive Web App (PWA):
+
+- manifest.webmanifest e service-worker.js permitem instalar o EV Charge Portugal no ecrã inicial, em modo standalone.
+- O mapa usa densidade progressiva: em zoom afastado agrupa visualmente os postos por grelha; ao aproximar, mostra mais detalhe.
+- No telemóvel, o detalhe do posto abre num painel inferior compacto e mostra apenas o posto escolhido; a alternativa B continua disponível por botão.
+- A instalação é iniciada no menu **A minha conta → Instalar aplicação** quando o navegador disponibiliza essa opção.
+
+A primeira fase da aplicação dedicada será esta PWA, partilhando o mesmo código, autenticação e dados. Uma versão publicada nas lojas poderá ser criada posteriormente com Capacitor, sem duplicar a lógica do produto.
+
 ## Licença
 
 Ver `LICENSE`.
