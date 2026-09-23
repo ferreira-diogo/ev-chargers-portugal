@@ -1980,6 +1980,35 @@
           font-size: 8px;
           max-width: 125px;
         }
+        /* A legenda pertence apenas ao modo Mapa. */
+        .legend {
+          display: none;
+        }
+        body.map-mode .legend {
+          display: block;
+        }
+        /* Rotas ocupa a área de conteúdo: o cabeçalho e menu mantêm-se iguais. */
+        .routeplanner.route-visible {
+          position: fixed;
+          z-index: 1700;
+          top: 136px;
+          right: 0;
+          bottom: 70px;
+          left: 0;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          margin: 0;
+          padding: 16px 12px 24px;
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+        .routeplanner.route-visible .routeform {
+          grid-template-columns: 1fr;
+        }
+        .routeplanner.route-visible .routeform button#plan-route {
+          grid-column: auto;
+        }
         .right {
           border: 0;
           background: #111827f7;
@@ -2048,7 +2077,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="map-mode">
     <header class="top">
       <div class="brand">
         <img class="brand-mark" src="./icon.svg" alt="ChargeVoy" />
@@ -3242,6 +3271,14 @@
           console.warn("Imagem de rua indisponível");
         }
       }
+      function setNavigationMode(mode) {
+        document.body.classList.toggle("map-mode", mode === "map");
+        document
+          .querySelectorAll(".nav button")
+          .forEach((button) => button.classList.remove("active"));
+        document.getElementById(`nav-${mode}`)?.classList.add("active");
+      }
+
       function closeStationPanel() {
         selectedStation = null;
         document.querySelector(".main")?.classList.remove("station-selected");
@@ -3295,9 +3332,9 @@
       function selectStation(station, operatorName) {
         selectedStation = station;
         document
-          .querySelectorAll(".nav button")
-          .forEach((button) => button.classList.remove("active"));
-        document.getElementById("nav-map")?.classList.add("active");
+          .getElementById("route-planner")
+          ?.classList.remove("route-visible");
+        setNavigationMode("map");
         document.querySelector(".main")?.classList.add("station-selected");
         document.querySelector(".right")?.classList.add("station-open");
         loadStationPhoto(station);
@@ -4719,12 +4756,9 @@
       function openRoutePlanner() {
         closeStationPanel();
         const planner = document.getElementById("route-planner");
-        document
-          .querySelectorAll(".nav button")
-          .forEach((button) => button.classList.remove("active"));
-        document.getElementById("nav-routes")?.classList.add("active");
+        setNavigationMode("routes");
         planner.classList.add("route-visible");
-        planner.scrollIntoView({ behavior: "smooth", block: "start" });
+        planner.scrollTop = 0;
         planner.classList.remove("flash");
         requestAnimationFrame(() => planner.classList.add("flash"));
         setTimeout(() => document.getElementById("route-origin").focus(), 350);
@@ -5339,23 +5373,29 @@
         document
           .getElementById("route-planner")
           .classList.remove("route-visible");
-        document
-          .querySelectorAll(".nav button")
-          .forEach((button) => button.classList.remove("active"));
-        document.getElementById("nav-map").classList.add("active");
+        setNavigationMode("map");
         document
           .getElementById("map-section")
           .scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => map.invalidateSize(), 250);
       });
       document
         .getElementById("station-favorite")
         .addEventListener("click", toggleSelectedFavorite);
       document.getElementById("nav-favorites").addEventListener("click", () => {
         closeStationPanel();
+        document
+          .getElementById("route-planner")
+          .classList.remove("route-visible");
+        setNavigationMode("favorites");
         showFavorites();
       });
       document.getElementById("nav-account").addEventListener("click", () => {
         closeStationPanel();
+        document
+          .getElementById("route-planner")
+          .classList.remove("route-visible");
+        setNavigationMode("account");
         showAccount();
       });
       document
@@ -5383,6 +5423,10 @@
         );
       document.getElementById("nav-vehicle").addEventListener("click", () => {
         closeStationPanel();
+        document
+          .getElementById("route-planner")
+          .classList.remove("route-visible");
+        setNavigationMode("vehicle");
         if (window.innerWidth <= 780)
           document.querySelector(".side").classList.add("mobile-open");
         else document.getElementById("vehicle-select").focus();
