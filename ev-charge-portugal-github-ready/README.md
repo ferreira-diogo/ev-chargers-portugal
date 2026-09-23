@@ -26,7 +26,7 @@ A atualização automática é feita pelo Supabase Cron através da Edge Functio
 - A fonte NAP/MOBI.E publica novos snapshots em intervalos variáveis. Foram observadas publicações entre 5 e 15 minutos. O Cron consulta a fonte a cada 5 minutos para manter o atraso de atualização dentro do objetivo de 5–7 minutos sempre que existe um snapshot novo.
 - O importador rejeita feeds antigos, futuros, incompletos ou com cobertura inesperada.
 - Se a fonte falhar, os últimos dados válidos permanecem disponíveis.
-- A função usa \`ETag/If-None-Match\`: quando a fonte não mudou, recebe \`304 Not Modified\`, evita descarregar novamente o XML e não cria snapshots duplicados.
+- A função usa `ETag/If-None-Match`: quando a fonte não mudou, recebe `304 Not Modified`, evita descarregar novamente o XML e não cria snapshots duplicados.
 - O estado live fica associado aos conectores através de `available_count`, `status`, `availability_updated_at` e `availability_source`.
 
 ## APIs e fontes utilizadas
