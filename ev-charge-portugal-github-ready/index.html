@@ -1929,36 +1929,26 @@
           background: #0f131c;
         }
         .main:not(.station-selected) .head {
-          position: absolute;
-          z-index: 900;
-          left: 12px;
-          right: 12px;
-          bottom: 76px;
-          margin: 0;
+          position: static;
+          z-index: auto;
+          margin: 12px 12px 8px;
           padding: 11px 13px;
-          border-radius: 19px 19px 0 0;
+          border-radius: 19px;
           background: #111827ee;
           border: 1px solid #ffffff12;
-          border-bottom: 0;
           backdrop-filter: blur(14px);
         }
         .main:not(.station-selected) .head h2 {
           font-size: 14px;
         }
         .main:not(.station-selected) .cards {
-          position: absolute;
-          z-index: 900;
-          left: 12px;
-          right: 12px;
-          bottom: 0;
-          max-height: 250px;
-          overflow: auto;
-          padding: 11px 12px 15px;
+          position: static;
+          z-index: auto;
+          max-height: none;
+          overflow: visible;
+          padding: 0;
+          margin: 0 12px 12px;
           background: #111827ee;
-          border: 1px solid #ffffff12;
-          border-top: 0;
-          border-radius: 0 0 22px 22px;
-          backdrop-filter: blur(14px);
           display: grid;
           grid-template-columns: 1fr;
         }
@@ -1966,15 +1956,13 @@
           border-radius: 14px;
           padding: 10px;
         }
-        .main:not(.station-selected) .card:not(:first-child) {
-          display: none;
-        }
         .main:not(.station-selected) .quickgrid {
-          display: none;
+          display: grid;
+          margin: 0 12px 16px;
         }
         .mapbox {
-          height: calc(100dvh - 206px);
-          min-height: 480px;
+          height: 52dvh;
+          min-height: 350px;
           border: 0;
           border-radius: 0;
           box-shadow: none;
@@ -2340,7 +2328,7 @@
             </div>
             <div class="station-links">
               <button class="secondary" id="station-google-maps" disabled>
-                🗺️ Google Maps</button
+                🧭 Iniciar navegação</button
               ><button class="secondary" id="station-photos" disabled>
                 📷 Fotos no Google Maps
               </button>
@@ -2468,7 +2456,9 @@
                 Selecione um posto para criar rota</button
               ><button class="secondary" id="station-alternative" disabled>
                 ↔ Ver opção B</button
-              ><button class="secondary">☆ Adicionar aos favoritos</button>
+              ><button class="secondary" id="station-favorite">
+                ☆ Adicionar aos favoritos
+              </button>
             </div>
           </div>
         </div>
@@ -3109,8 +3099,21 @@
           "&hl=pt"
         );
       }
+      function selectedStationDirectionsUrl() {
+        if (!selectedStation) return "";
+        const params = new URLSearchParams({
+          api: "1",
+          destination: `${selectedStation.latitude},${selectedStation.longitude}`,
+          travelmode: "driving",
+          dir_action: "navigate",
+        });
+        const origin = routeOriginOverride || searchPosition;
+        if (origin?.lat != null && origin?.lon != null)
+          params.set("origin", `${origin.lat},${origin.lon}`);
+        return `https://www.google.com/maps/dir/?${params.toString()}`;
+      }
       function openSelectedStationMaps() {
-        const url = selectedStationMapsUrl();
+        const url = selectedStationDirectionsUrl();
         if (url) window.open(url, "_blank", "noopener");
       }
       function showStationPhotos() {
@@ -3458,7 +3461,7 @@
         );
       }
       function updateFavoriteButton() {
-        const button = document.querySelector(".secondary");
+        const button = document.getElementById("station-favorite");
         if (!button) return;
         const active =
           selectedStation && favoriteStationIds.has(selectedStation.id);
@@ -5345,7 +5348,7 @@
           .scrollIntoView({ behavior: "smooth", block: "center" });
       });
       document
-        .querySelector(".secondary")
+        .getElementById("station-favorite")
         .addEventListener("click", toggleSelectedFavorite);
       document.getElementById("nav-favorites").addEventListener("click", () => {
         closeStationPanel();
