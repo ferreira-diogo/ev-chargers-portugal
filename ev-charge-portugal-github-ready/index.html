@@ -1067,7 +1067,7 @@ function renderNearbyPois(items){
   if(!filtered.length){list.innerHTML='<div>Não foram encontrados locais deste tipo próximos.</div>';return;}
   list.innerHTML=filtered.map((item,index)=>'<div class="poi-row"><div><b>'+escapeHtml(item.name)+'</b><small>'+escapeHtml(item.kind)+' · '+item.distance.toFixed(1).replace('.',',')+' km · ~'+Math.max(1,Math.round(item.distance/5*60))+' min a pé</small></div><button type="button" data-poi-route="'+index+'" title="Abrir no Google Maps">🗺️ Google Maps</button></div>').join('');
   list.querySelectorAll('[data-poi-route]').forEach(button=>button.addEventListener('click',()=>{
-    const item=items[Number(button.dataset.poiRoute)];
+    const item=filtered[Number(button.dataset.poiRoute)];
     if(item)window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(item.lat+','+item.lon),'_blank','noopener');
   }));
 }
