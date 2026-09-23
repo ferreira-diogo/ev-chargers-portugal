@@ -923,7 +923,7 @@ function setupAnalyticsConsent(){
   document.getElementById('analytics-accept').addEventListener('click',()=>{localStorage.setItem('analytics-consent','granted');banner.hidden=true;enableAnalytics()});
   document.getElementById('analytics-deny').addEventListener('click',()=>{localStorage.setItem('analytics-consent','denied');banner.hidden=true});
 }
-function initAuth(){
+async function initAuth(){
   const {data}=await authClient.auth.getSession();
   currentSession=data.session;updateAuthUI();
   if(currentSession)syncUserFavorites();
