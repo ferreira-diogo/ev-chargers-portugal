@@ -41,7 +41,7 @@ As chaves e tokens ficam apenas nas variáveis secretas da plataforma. Nunca dev
   - `https://ev-nap.mobie.pt/integration/nap/evChargingInfra` — infraestrutura estática.
   - `https://ev-nap.mobie.pt/integration/nap/evActualStatus` — estado de disponibilidade.
 - **Supabase PostgREST**: leitura dos postos, conectores, operadores, tarifas e dados de utilizador.
-- **Supabase Edge Functions**: ingestão segura do estado NAP.
+- **Supabase Edge Functions**: ingestão segura do estado NAP e eliminação autenticada de conta (`delete-my-account`).
 - **Supabase Cron + pg_net**: execução automática da ingestão.
 - **Supabase Auth**: autenticação, sessões e associação de favoritos/histórico.
 - **OpenStreetMap**: cartografia e geocodificação utilizada pelo site.
