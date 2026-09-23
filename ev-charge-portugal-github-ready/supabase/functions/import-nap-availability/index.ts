@@ -60,14 +60,25 @@ Deno.serve(async request=>{
   const auth=await client.rpc('verify_nap_cron_token',{p_token:token});
   if(auth.error||auth.data!==true)return reply({error:'Unauthorized'},401);
   try{
-    const response=await fetch(SOURCE_URL,{headers:{Accept:'application/xml'},signal:AbortSignal.timeout(115_000)});
-    if(!response.ok||!response.body)throw Error(`NAP HTTP ${response.status}`);
+    const etagResult=await client.rpc('get_nap_live_etag');
+    if(etagResult.error)throw Error('ETag read failed: '+etagResult.error.message);
+    const previousEtag=typeof etagResult.data==='string'?etagResult.data:null;
+    const requestHeaders: Record<string,string>={Accept:'application/xml'};
+    if(previousEtag)requestHeaders['If-None-Match']=previousEtag;
+    const response=await fetch(SOURCE_URL,{headers:requestHeaders,signal:AbortSignal.timeout(115_000)});
+    if(response.status===304)return reply({success:true,unchanged:true,source_status:304,etag:previousEtag});
+    if(!response.ok||!response.body)throw Error('NAP HTTP '+response.status);
+    const currentEtag=response.headers.get('etag');
     const {rows,publication_time,source_points,source_bytes}=await parse(response.body);
     const result=await client.rpc('import_nap_availability',{
       p_publication_time:publication_time,p_rows:rows,p_apply:true
     });
     if(result.error)throw Error(result.error.message);
-    return reply({success:true,source_points,source_bytes,publication_time,database:result.data});
+    if(currentEtag){
+      const saved=await client.rpc('set_nap_live_etag',{p_etag:currentEtag});
+      if(saved.error)throw Error('ETag save failed: '+saved.error.message);
+    }
+    return reply({success:true,unchanged:false,source_points,source_bytes,publication_time,etag:currentEtag,database:result.data});
   }catch(error){
     console.error('NAP availability import:',error);
     return reply({success:false,error:String(error)},502);
