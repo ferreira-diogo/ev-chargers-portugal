@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'pt.evcharge.portugal',
+  appId: 'app.chargevoy.mobile',
   appName: 'ChargeVoy',
   webDir: 'dist',
   android: {
