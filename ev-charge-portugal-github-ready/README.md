@@ -44,6 +44,7 @@ As chaves e tokens ficam apenas nas variáveis secretas da plataforma. Nunca dev
 - **Supabase Cron + pg_net**: execução automática da ingestão.
 - **Supabase Auth**: autenticação, sessões e associação de favoritos/histórico.
 - **OpenStreetMap**: cartografia e geocodificação utilizada pelo site.
+- **Overpass API (OpenStreetMap)**: consulta pontual de restaurantes, cafés, hotéis, supermercados e outros locais próximos do posto; usada apenas sob pedido e com cache local.
 - **Leaflet**: visualização e interação com o mapa.
 - **Google Maps / aplicações de mapas do dispositivo**: abertura de rotas externas através de links.
 
