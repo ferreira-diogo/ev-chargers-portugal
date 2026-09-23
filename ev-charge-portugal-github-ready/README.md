@@ -39,7 +39,7 @@ As chaves e tokens ficam apenas nas variáveis secretas da plataforma. Nunca dev
 - **Open Charge Map API**: importação e enriquecimento de postos públicos, operadores e conectores.
 - **NAP MOBI.E / EADME**:
   - `https://ev-nap.mobie.pt/integration/nap/evChargingInfra` — infraestrutura estática.
-  - `https://ev-nap.mobie.pt/integration/nap/evActualStatus` — estado de disponibilidade.
+  - `https://ev-nap.mobie.pt/integration/nap/evActualStatus` — estado de disponibilidade e componentes de preço *ad hoc* publicados pelo OPC.
 - **Supabase PostgREST**: leitura dos postos, conectores, operadores, tarifas e dados de utilizador.
 - **Supabase Edge Functions**: ingestão segura do estado NAP e eliminação autenticada de conta (`delete-my-account`).
 - **Supabase Cron + pg_net**: execução automática da ingestão.
@@ -64,6 +64,7 @@ Supabase Edge Function: import-nap-availability
 Supabase PostgreSQL
     ├── connectors             → estado atual
     ├── availability_snapshots → alterações históricas
+    ├── station_ad_hoc_price_components → preço oficial direto por tomada (energia, tempo e taxa fixa, quando publicado)
     └── station_source_links   → correspondência NAP/estação
             │
             ▼
