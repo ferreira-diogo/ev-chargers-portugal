@@ -249,7 +249,8 @@ function selectStation(station,operatorName){
   sim();
   loadStationPricing(station);
   const poiList=document.getElementById('station-pois');
-  if(poiList)poiList.innerHTML='Toque em “Ver locais” para consultar pontos de interesse próximos.';
+  if(poiList)poiList.innerHTML='A procurar pontos de interesse próximos…';
+  loadNearbyPois();
 }
 
 function saveFavorites(){localStorage.setItem('ev-charge-favorites',JSON.stringify([...favoriteStationIds]))}
@@ -294,7 +295,13 @@ function showEmailAuth(mode='signin'){
     const message=document.getElementById('auth-message');
     message.textContent='A processar…';
     const result=signup?await authClient.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname}}):await authClient.auth.signInWithPassword({email,password});
-    if(result.error){message.textContent=result.error.message;return}
+    if(result.error){
+      const code=result.error.code||'';
+      message.textContent=code==='email_address_not_authorized'||/not authorized|not authorised/i.test(result.error.message||'')
+        ? 'A Supabase ainda não está autorizada a enviar email para este endereço. Adicione-o à equipa do projeto para testes ou configure SMTP personalizado.'
+        : result.error.message;
+      return;
+    }
     if(signup&&!result.data.session){message.textContent='Conta criada. Confirme o email antes de entrar.';return}
     closeModal();await initAuth();
   });
@@ -1012,7 +1019,7 @@ function renderNearbyPois(items){
   const list=document.getElementById('station-pois');
   if(!list)return;
   if(!items.length){list.innerHTML='<div>Não foram encontrados locais próximos neste momento.</div>';return;}
-  list.innerHTML=items.map((item,index)=>'<div class="poi-row"><div><b>'+escapeHtml(item.name)+'</b><small>'+escapeHtml(item.kind)+' · '+item.distance.toFixed(1).replace('.',',')+' km</small></div><button type="button" data-poi-route="'+index+'">Rota</button></div>').join('');
+  list.innerHTML=items.map((item,index)=>'<div class="poi-row"><div><b>'+escapeHtml(item.name)+'</b><small>'+escapeHtml(item.kind)+' · '+item.distance.toFixed(1).replace('.',',')+' km</small></div><button type="button" data-poi-route="'+index+'" title="Abrir no Google Maps">🗺️ Google Maps</button></div>').join('');
   list.querySelectorAll('[data-poi-route]').forEach(button=>button.addEventListener('click',()=>{
     const item=items[Number(button.dataset.poiRoute)];
     if(item)window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(item.lat+','+item.lon),'_blank','noopener');
