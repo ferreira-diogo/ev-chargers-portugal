@@ -529,7 +529,7 @@ async function loadRealStations(){
   const badge=document.getElementById('station-count');
   const cards=document.getElementById('station-cards');
   try{
-    const [stations,connectors,operators,vehicles,cards]=await Promise.all([
+    const [stations,connectors,operators,vehicles,cards,reliability]=await Promise.all([
       getAllRows('charging_stations','select=id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id,amenities&order=max_power_kw.desc.nullslast'),
       getAllRows('connectors','select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&order=id.asc'),
       getRows('operators','select=id,name'),
