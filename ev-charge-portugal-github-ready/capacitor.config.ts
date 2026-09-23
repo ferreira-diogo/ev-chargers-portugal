@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'pt.evcharge.portugal',
-  appName: 'EV Charge Portugal',
+  appName: 'ChargeVoy',
   webDir: 'dist',
   android: {
     allowMixedContent: false,
