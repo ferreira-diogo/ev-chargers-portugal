@@ -1,7 +1,7 @@
 {
-  "name": "EV Charge Portugal",
-  "short_name": "EV Charge",
-  "description": "Postos, preços e rotas de carregamento elétrico em Portugal.",
+  "name": "ChargeVoy — EV Charging & Routes",
+  "short_name": "ChargeVoy",
+  "description": "EV Charging & Routes — postos, preços e rotas de carregamento elétrico.",
   "lang": "pt-PT",
   "start_url": "./",
   "scope": "./",
