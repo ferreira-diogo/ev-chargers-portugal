@@ -46,9 +46,9 @@ jobs:
       NAP_MIN_SITES: "8000"
       NAP_MIN_CONNECTORS: "17000"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
