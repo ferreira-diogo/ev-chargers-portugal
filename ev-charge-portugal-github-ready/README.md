@@ -23,7 +23,7 @@ A atualização automática é feita pelo Supabase Cron através da Edge Functio
 
 - Frequência do Cron: a cada 5 minutos (`*/5 * * * *`).
 - A consulta visual do site também é renovada a cada 5 minutos quando a página está visível.
-- A fonte NAP/MOBI.E publica alterações aproximadamente a cada 15 minutos. Por isso, uma execução a cada 5 minutos reduz o atraso de consulta, mas a informação só muda quando a fonte publica um novo snapshot.
+- A fonte NAP/MOBI.E publica novos snapshots em intervalos variáveis. Foram observadas publicações entre 5 e 15 minutos. O Cron consulta a fonte a cada 5 minutos para manter o atraso de atualização dentro do objetivo de 5–7 minutos sempre que existe um snapshot novo.
 - O importador rejeita feeds antigos, futuros, incompletos ou com cobertura inesperada.
 - Se a fonte falhar, os últimos dados válidos permanecem disponíveis.
 - Quando o snapshot da fonte não mudou, a função termina sem criar snapshots duplicados.
@@ -108,14 +108,14 @@ O rollback da funcionalidade NAP live está documentado em `supabase/rollback/na
 
 ## Custo
 
-A arquitetura foi mantida com serviços gratuitos:
+Não foram introduzidas APIs pagas nem chaves no código. A arquitetura foi mantida com os serviços gratuitos disponíveis:
 
 - Cloudflare para alojamento e entrega do site.
 - Supabase para base de dados, autenticação, Edge Function e Cron.
 - OpenStreetMap/Leaflet para o mapa.
 - NAP MOBI.E e Open Charge Map como fontes públicas.
 
-Os limites dos fornecedores devem ser monitorizados. O site não deve assumir que uma chave ou plano pago está disponível, e não deve guardar credenciais no código.
+O Cron de 5 minutos representa 288 execuções por dia. A função evita regravar histórico quando a publicação NAP não mudou. As quotas de Supabase e Cloudflare devem ser monitorizadas no painel para evitar ultrapassar os limites gratuitos.
 
 ## Desenvolvimento
 
