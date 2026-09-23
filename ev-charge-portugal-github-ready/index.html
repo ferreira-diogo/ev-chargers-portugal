@@ -406,6 +406,9 @@
         line-height: 1.8;
         pointer-events: none;
       }
+      body.station-mode .legend {
+        display: none !important;
+      }
       .dot {
         display: inline-block;
         width: 9px;
@@ -2055,6 +2058,10 @@
         body.map-mode .legend {
           display: block;
         }
+        /* A legenda não pode ficar por cima da ficha do posto. */
+        body.station-mode .legend {
+          display: none !important;
+        }
         /* Rotas ocupa a área de conteúdo: o cabeçalho e menu mantêm-se iguais. */
         .routeplanner.route-visible {
           position: fixed;
@@ -3339,6 +3346,7 @@
       }
       function setNavigationMode(mode) {
         document.body.classList.toggle("map-mode", mode === "map");
+        document.body.classList.remove("station-mode");
         document
           .querySelectorAll(".nav button")
           .forEach((button) => button.classList.remove("active"));
@@ -3347,6 +3355,7 @@
 
       function closeStationPanel() {
         selectedStation = null;
+        setNavigationMode("map");
         document.querySelector(".main")?.classList.remove("station-selected");
         document.querySelector(".right")?.classList.remove("station-open");
         if (window.innerWidth <= 780)
@@ -3401,6 +3410,7 @@
           .getElementById("route-planner")
           ?.classList.remove("route-visible");
         setNavigationMode("map");
+        document.body.classList.add("station-mode");
         document.querySelector(".main")?.classList.add("station-selected");
         document.querySelector(".right")?.classList.add("station-open");
         loadStationPhoto(station);
@@ -5225,7 +5235,7 @@
                 : suggested.length
                   ? `<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`
                   : "<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>";
-          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button><button onclick="openRouteInGoogleMaps()">Google Maps com trânsito</button></div><small class="traffic-note">O cálculo base usa OSRM; para trânsito em tempo real, abra a rota no Google Maps.</small>`;
+          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
           result.classList.add("show");
           saveRouteToUserHistory();
         } catch (error) {
