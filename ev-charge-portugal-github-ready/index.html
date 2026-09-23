@@ -62,6 +62,7 @@ let routeOriginOverride=null;
 let routeDestinationOverride=null;
 let cemeCards=[];
 let selectedOpcTariffs=[];
+let selectedAdHocPriceComponents=[];
 let pricingRequest=0;
 let favoriteStationIds=new Set(JSON.parse(localStorage.getItem('ev-charge-favorites')||'[]'));
 let lastPlannedRoute=null;
@@ -667,18 +668,47 @@ function calculateCardPrice(card,opc,scenario,period){
   return {card,opc,total,ceme,tar,opcCost,iec,minutes,effectiveKwh:total/Math.max(energy,.01)};
 }
 
+function adHocPriceMarkup(){
+  const freshAfter=Date.now()-24*60*60*1000;
+  const fresh=selectedAdHocPriceComponents.filter(item=>Date.parse(item.observed_at||'')>=freshAfter);
+  if(!fresh.length)return '';
+  const labels={pricePerDeliveryUnit:'energia',pricePerChargingTime:'tempo',flatRate:'sessão'};
+  const groups=new Map();
+  fresh.forEach(item=>{
+    const key=item.pricing_policy;
+    const values=groups.get(key)||new Set();
+    values.add(Number(item.amount_eur));groups.set(key,values);
+  });
+  const parts=[...groups.entries()].map(([policy,values])=>{
+    const amounts=[...values].filter(Number.isFinite).sort((a,b)=>a-b);
+    if(!amounts.length)return null;
+    const amount=amounts.length===1?amounts[0].toFixed(2):`${amounts[0].toFixed(2)}–${amounts.at(-1).toFixed(2)}`;
+    const unit=policy==='pricePerDeliveryUnit'?'€/kWh':policy==='pricePerChargingTime'?'€/min':'€';
+    const label=currentLanguage==='en'?({pricePerDeliveryUnit:'energy',pricePerChargingTime:'time',flatRate:'session'}[policy]||'component'):(labels[policy]||'componente');
+    return `${amount.replace('.',',')} ${unit} ${label}`;
+  }).filter(Boolean);
+  if(!parts.length)return '';
+  const latest=Math.max(...fresh.map(item=>Date.parse(item.observed_at||'')||0));
+  const age=Math.max(0,Math.round((Date.now()-latest)/60000));
+  const text=currentLanguage==='en'
+    ? `Direct charging at this station, published by MOBI.E ${age<2?'less than 2 min':age+' min'} ago. It is not a CEME card estimate.`
+    : `Carregamento direto no posto, publicado pela MOBI.E há ${age<2?'menos de 2 min':age+' min'}. Não é uma estimativa de cartão CEME.`;
+  return `<div class="price-empty"><span class="official-price">${currentLanguage==='en'?'OFFICIAL AD HOC PRICE':'PREÇO AD HOC OFICIAL'}</span><br><b>${parts.join(' · ')}</b><br>${text}</div>`;
+}
+
 function renderPriceComparison(){
   const container=document.getElementById('price-comparison');
   const headline=document.getElementById('price');
   if(!selectedStation){headline.textContent='Selecione um posto';return}
+  const directPrice=adHocPriceMarkup();
   if(selectedStation.source!=='nap'||Number(selectedStation.max_power_kw)<22){
     headline.textContent='Preço oficial indisponível';
-    container.innerHTML='<div class="price-empty">Os preços são apresentados apenas em postos oficiais NAP/MOBI.E com potência igual ou superior a 22 kW.</div>';
+    container.innerHTML=directPrice+'<div class="price-empty">O comparador de cartões é apresentado apenas em postos oficiais NAP/MOBI.E com potência igual ou superior a 22 kW.</div>';
     return;
   }
   if(!selectedOpcTariffs.length){
     headline.textContent='Preço oficial indisponível';
-    container.innerHTML='<div class="price-empty">Este posto ainda não tem uma correspondência tarifária oficial inequívoca. Não é apresentada qualquer estimativa.</div>';
+    container.innerHTML=directPrice+'<div class="price-empty">Este posto ainda não tem uma correspondência tarifária oficial inequívoca para cartões. Não é apresentada qualquer estimativa.</div>';
     return;
   }
   const scenario=pricingScenario();
@@ -689,21 +719,26 @@ function renderPriceComparison(){
     const options=eligibleTariffs.map(opc=>calculateCardPrice(card,opc,scenario,period));
     return options.sort((a,b)=>a.total-b.total)[0];
   }).filter(Boolean).sort((a,b)=>a.total-b.total);
-  if(!comparisons.length){container.innerHTML='<div class="price-empty">Não foi possível calcular os cartões de referência.</div>';return}
+  if(!comparisons.length){container.innerHTML=directPrice+'<div class="price-empty">Não foi possível calcular os cartões de referência.</div>';return}
   headline.textContent=`≈ ${comparisons[0].total.toFixed(2).replace('.',',')} €`;
-  container.innerHTML=comparisons.map((item,index)=>`<div class="price-card"><span class="price-rank">${index+1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index===0?'<span class="official-price">MENOR ESTIMATIVA</span>':''}<span class="price-breakdown">${item.finalFixed?`Preço final promocional · taxas incluídas${item.cashbackRate?` · ${Math.round(item.cashbackRate*100)}% em Green Gems (~${item.cashback.toFixed(2).replace('.',',')} €) para uso futuro`:''}`:`CEME ${item.ceme.toFixed(2).replace('.',',')} € · OPC ${item.opcCost.toFixed(2).replace('.',',')} €${item.tar?` · TAR ${item.tar.toFixed(2).replace('.',',')} €`:''} · taxas + IVA`}</span></div><div class="price-total">${item.total.toFixed(2).replace('.',',')} €<small>${item.effectiveKwh.toFixed(3).replace('.',',')} €/kWh final</small></div></div>`).join('')+`<div class="price-empty">Cenário: ${scenario.energyKwh.toFixed(1).replace('.',',')} kWh · ~${comparisons[0].minutes} min · tomada ${escapeHtml(comparisons[0].opc.connector_type||'compatível')} ${escapeHtml(comparisons[0].opc.power_kw)} kW. Fonte OPC: MOBI.E. Campanhas só aparecem durante a respetiva validade.</div>`;
+  container.innerHTML=directPrice+comparisons.map((item,index)=>`<div class="price-card"><span class="price-rank">${index+1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index===0?'<span class="official-price">MENOR ESTIMATIVA</span>':''}<span class="price-breakdown">${item.finalFixed?`Preço final promocional · taxas incluídas${item.cashbackRate?` · ${Math.round(item.cashbackRate*100)}% em Green Gems (~${item.cashback.toFixed(2).replace('.',',')} €) para uso futuro`:''}`:`CEME ${item.ceme.toFixed(2).replace('.',',')} € · OPC ${item.opcCost.toFixed(2).replace('.',',')} €${item.tar?` · TAR ${item.tar.toFixed(2).replace('.',',')} €`:''} · taxas + IVA`}</span></div><div class="price-total">${item.total.toFixed(2).replace('.',',')} €<small>${item.effectiveKwh.toFixed(3).replace('.',',')} €/kWh final</small></div></div>`).join('')+`<div class="price-empty">Cenário: ${scenario.energyKwh.toFixed(1).replace('.',',')} kWh · ~${comparisons[0].minutes} min · tomada ${escapeHtml(comparisons[0].opc.connector_type||'compatível')} ${escapeHtml(comparisons[0].opc.power_kw)} kW. Fonte OPC: MOBI.E. Campanhas só aparecem durante a respetiva validade.</div>`;
 }
 
 async function loadStationPricing(station){
   const request=++pricingRequest;
   selectedOpcTariffs=[];
+  selectedAdHocPriceComponents=[];
   const container=document.getElementById('price-comparison');
   if(station.source!=='nap'||Number(station.max_power_kw)<22){renderPriceComparison();return}
   container.innerHTML='<div class="price-empty">A consultar tarifas oficiais…</div>';
   try{
-    const rows=await getRows('official_opc_tariffs',`select=station_id,connector_uid,voltage_level,tariff_period,connector_type,power_kw,activation_fee_eur,energy_price_eur_kwh,time_price_eur_min&station_id=eq.${encodeURIComponent(station.id)}&tariff_period=eq.REGULAR&order=power_kw.desc`);
+    const [rows,adHoc]=await Promise.all([
+      getRows('official_opc_tariffs',`select=station_id,connector_uid,voltage_level,tariff_period,connector_type,power_kw,activation_fee_eur,energy_price_eur_kwh,time_price_eur_min&station_id=eq.${encodeURIComponent(station.id)}&tariff_period=eq.REGULAR&order=power_kw.desc`),
+      getRows('station_ad_hoc_price_components',`select=point_id,pricing_policy,amount_eur,currency,observed_at&station_id=eq.${encodeURIComponent(station.id)}&order=observed_at.desc`)
+    ]);
     if(request!==pricingRequest)return;
     selectedOpcTariffs=rows;
+    selectedAdHocPriceComponents=adHoc;
     renderPriceComparison();
   }catch(error){
     console.error(error);
