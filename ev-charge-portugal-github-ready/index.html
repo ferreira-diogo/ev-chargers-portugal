@@ -2280,6 +2280,112 @@
           border-radius: 22px 22px 0 0;
         }
       }
+
+      /* Fallback para Android/Chrome quando a viewport CSS não corresponde à
+         resolução física do telemóvel. A classe é aplicada pelo script. */
+      body.mobile-landscape {
+        overflow-x: hidden;
+      }
+      body.mobile-landscape .top {
+        height: 72px;
+        min-height: 72px;
+        position: sticky;
+        top: 0;
+        z-index: 2000;
+        flex-wrap: nowrap;
+        gap: 8px;
+        padding: 7px 10px;
+      }
+      body.mobile-landscape .brand {
+        min-width: 178px;
+        gap: 7px;
+      }
+      body.mobile-landscape .brand-mark {
+        width: 32px;
+        height: 32px;
+        flex-basis: 32px;
+      }
+      body.mobile-landscape .brand b {
+        font-size: 17px;
+      }
+      body.mobile-landscape .brand small {
+        display: none;
+      }
+      body.mobile-landscape .search {
+        order: initial;
+        min-width: 150px;
+        max-width: none;
+        height: 38px;
+        padding: 0 10px;
+      }
+      body.mobile-landscape .nav {
+        flex: 0 0 auto;
+        margin-left: 0;
+        gap: 0;
+      }
+      body.mobile-landscape .nav button {
+        min-width: 56px;
+        padding: 4px 7px;
+        font-size: 9px;
+        line-height: 1.1;
+      }
+      body.mobile-landscape .nav-icon {
+        font-size: 20px !important;
+        margin-bottom: 2px;
+      }
+      body.mobile-landscape .layout {
+        display: block;
+        min-height: calc(100dvh - 72px);
+      }
+      body.mobile-landscape .side,
+      body.mobile-landscape .right:not(.station-open) {
+        display: none !important;
+      }
+      body.mobile-landscape .main {
+        padding: 0;
+        min-height: calc(100dvh - 72px);
+      }
+      body.mobile-landscape .main:not(.station-selected) .head,
+      body.mobile-landscape .main:not(.station-selected) .cards,
+      body.mobile-landscape .main:not(.station-selected) .quickgrid {
+        display: none;
+      }
+      body.mobile-landscape .mapbox {
+        height: calc(100dvh - 72px);
+        min-height: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      body.mobile-landscape .routeplanner.route-visible {
+        position: fixed;
+        top: 72px;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1700;
+        overflow-y: auto;
+        margin: 0;
+        padding: 10px 14px 22px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      body.mobile-landscape .routeplanner.route-visible .routeform {
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr) 110px 110px auto;
+        align-items: stretch;
+      }
+      body.mobile-landscape .right.station-open {
+        display: block !important;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1800;
+        height: calc(100dvh - 72px);
+        max-height: none;
+        overflow-y: auto;
+        border-radius: 22px 22px 0 0;
+      }
     </style>
   </head>
   <body class="map-mode">
@@ -2752,6 +2858,19 @@
         },
       );
       const map = L.map("map").setView([39.55, -8], 6.5);
+      function syncMobileLandscapeMode() {
+        const isTouchDevice =
+          "ontouchstart" in window || navigator.maxTouchPoints > 0;
+        const isLandscape = window.innerWidth > window.innerHeight;
+        document.body.classList.toggle(
+          "mobile-landscape",
+          isTouchDevice && isLandscape,
+        );
+        requestAnimationFrame(() => map.invalidateSize());
+      }
+      syncMobileLandscapeMode();
+      window.addEventListener("resize", syncMobileLandscapeMode);
+      window.addEventListener("orientationchange", syncMobileLandscapeMode);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",
       }).addTo(map);
