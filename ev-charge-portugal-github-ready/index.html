@@ -643,7 +643,9 @@ function renderStations(zoomToResults=true){
   stationLayer.clearLayers();markerMap.clear();
   const markerZoom=map.getZoom();
   const markerSeen=new Set();
+  const viewport=markerZoom>=10?map.getBounds():null;
   const markerStations=filtered.filter(s=>{
+    if(viewport&&!viewport.contains([Number(s.latitude),Number(s.longitude)]))return false;
     const cell=markerCellKey(s,markerZoom);
     if(markerSeen.has(cell))return false;
     markerSeen.add(cell);
