@@ -2,7 +2,7 @@
 create extension if not exists pg_cron;
 select cron.schedule(
   'nap-availability-every-15-minutes',
-  '8,23,38,53 * * * *',
+  '3,18,33,48 * * * *',
   $$select net.http_post(
     url := 'https://ftnmdgiftdgaycotjixr.supabase.co/functions/v1/import-nap-availability',
     body := '{}'::jsonb,
