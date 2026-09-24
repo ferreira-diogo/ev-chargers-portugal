@@ -279,9 +279,10 @@
       // applied only on explicit language changes so it never blocks map interactions.
 
       async function getRows(table, query) {
-        const response = await fetch(
+        const response = await fetchWithTimeout(
           `${SUPABASE_URL}/rest/v1/${table}?${query}`,
           { headers: API_HEADERS },
+          15000,
         );
         if (!response.ok)
           throw new Error(
