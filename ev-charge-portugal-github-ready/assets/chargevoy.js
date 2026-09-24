@@ -1988,7 +1988,7 @@
                   Number(currentVehicle.max_dc_power_kw),
                 )
               : Number(s.max_power_kw) || 0;
-            return `<article class="card"><div class="rank">${index + 1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name || "Posto de carregamento")}</div><div class="avail">${availability.kind === "none" && isOfficialTeslaStation(s) ? "● Disponibilidade na app Tesla" : availabilityHtml(availability)}</div><div class="reliability">${reliabilityText}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower || "—")} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km != null ? "distância aproximada" : escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto</div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
+            return `<article class="card"><div class="rank">${index + 1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name || "Posto de carregamento")}</div><div class="avail">${availability.kind === "none" && isOfficialTeslaStation(s) ? "● Disponibilidade na app Tesla" : availabilityHtml(availability)}</div><div class="reliability">${reliabilityText}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower || "—")} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km != null ? "distância aproximada" : escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto<div class="card-actions"><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button><button class="secondary" data-station-details="${escapeHtml(s.id)}">Mais informações</button></div></article>`;
           })
           .join("");
         if (!best.length)
@@ -2005,6 +2005,19 @@
                 animate: true,
               });
               markerMap.get(station.id)?.openPopup();
+            }
+          }),
+        );
+        cards.querySelectorAll("button[data-station-details]").forEach((button) =>
+          button.addEventListener("click", () => {
+            const station = allStations.find(
+              (s) => s.id === button.dataset.stationDetails,
+            );
+            if (station) {
+              map.setView([station.latitude, station.longitude], 15, {
+                animate: true,
+              });
+              selectStation(station, operatorMap.get(station.operator_id));
             }
           }),
         );
