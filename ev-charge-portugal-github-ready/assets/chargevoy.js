@@ -449,7 +449,20 @@
         }, options.duration || 4500);
       }
 
-      async function fetchWithTimeout(resource, options = {}, timeoutMs = 15000) {\n        const controller = new AbortController();\n        const timer = setTimeout(() => controller.abort(), timeoutMs);\n        try {\n          return await fetch(resource, { ...options, signal: controller.signal });\n        } catch (error) {\n          if (error.name === "AbortError")\n            throw new Error("O serviço de rotas demorou demasiado tempo. Tente novamente.");\n          throw error;\n        } finally {\n          clearTimeout(timer);\n        }\n      }\n      function connectorCategory(value) {
+      async function fetchWithTimeout(resource, options = {}, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          return await fetch(resource, { ...options, signal: controller.signal });
+        } catch (error) {
+          if (error.name === "AbortError")
+            throw new Error("O serviço de rotas demorou demasiado tempo. Tente novamente.");
+          throw error;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+      function connectorCategory(value) {
         const type = String(value || "").toLowerCase();
         if (type.includes("chademo")) return "CHAdeMO";
         if (type.includes("tesla") || type.includes("nacs")) return "Tesla";
