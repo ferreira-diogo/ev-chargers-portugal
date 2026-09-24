@@ -185,7 +185,10 @@
           </div>
           <div class="routeform">
             <div class="route-origin-control">
-              <input\n                id="route-origin"\n                aria-label="Origem da rota"\n                placeholder="Origem em Portugal"
+              <input
+                id="route-origin"
+                aria-label="Origem da rota"
+                placeholder="Origem em Portugal"
               /><button
                 type="button"
                 id="route-use-location"
@@ -195,16 +198,23 @@
                 ◎
               </button>
             </div>
-            <input\n              id="route-destination"\n              aria-label="Destino da rota"\n              placeholder="Destino em Portugal"
+            <input
+              id="route-destination"
+              aria-label="Destino da rota"
+              placeholder="Destino em Portugal"
             /><input
-              id="route-battery"\n              aria-label="Bateria inicial em percentagem"\n              type="number"
+              id="route-battery"
+              aria-label="Bateria inicial em percentagem"
+              type="number"
               min="5"
               max="100"
               value="80"
               title="Bateria inicial (%)"
               placeholder="Bateria %"
             /><input
-              id="route-reserve"\n              aria-label="Reserva de bateria em percentagem"\n              type="number"
+              id="route-reserve"
+              aria-label="Reserva de bateria em percentagem"
+              type="number"
               min="5"
               max="40"
               value="15"
@@ -218,6 +228,15 @@
           <div id="map" role="region" aria-label="Mapa de postos de carregamento" style="height: 100%"></div>
           <div class="mapbadge">
             🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal
+          </div>
+          <div class="map-location-cta" id="map-location-cta">
+            <div>
+              <b>Encontre postos perto de si</b>
+              <small>Ordenamos os resultados pela distância à sua localização.</small>
+            </div>
+            <button class="primary" id="map-use-location" type="button">
+              Encontrar postos perto de mim
+            </button>
           </div>
           <div class="legend">
             <div><i class="dot g"></i>Disponível</div>
@@ -276,7 +295,9 @@
         </button>
         <div class="panel">
           <div class="photo">
-            <img\n              loading="lazy"\n              id="station-photo-fallback"
+            <img
+              loading="lazy"
+              id="station-photo-fallback"
               src="./assets/chargevoy-station-fallback.webp"
               alt=""
             />
