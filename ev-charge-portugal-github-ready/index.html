@@ -81,9 +81,9 @@
           <div class="vehicle-row">
             <div class="car" id="vehicle-image" aria-hidden="true">🚘</div>
             <div class="vehicle-data">
-              <select id="vehicle-brand">
+              <select id="vehicle-brand" aria-label="Marca do veículo">
                 <option>Todas as marcas</option></select
-              ><select id="vehicle-select">
+              ><select id="vehicle-select" aria-label="Modelo do veículo">
                 <option>A carregar veículos…</option></select
               ><small id="vehicle-specs">A obter dados da Supabase…</small>
             </div>
@@ -166,7 +166,7 @@
         </div>
         <div class="fg">
           <div class="label">Operador</div>
-          <select id="operator-filter">
+          <select id="operator-filter" aria-label="Filtrar por operador">
             <option value="all">Todos os operadores</option>
           </select>
         </div>
@@ -185,9 +185,7 @@
           </div>
           <div class="routeform">
             <div class="route-origin-control">
-              <input
-                id="route-origin"
-                placeholder="Origem em Portugal"
+              <input\n                id="route-origin"\n                aria-label="Origem da rota"\n                placeholder="Origem em Portugal"
               /><button
                 type="button"
                 id="route-use-location"
@@ -197,20 +195,16 @@
                 ◎
               </button>
             </div>
-            <input
-              id="route-destination"
-              placeholder="Destino em Portugal"
+            <input\n              id="route-destination"\n              aria-label="Destino da rota"\n              placeholder="Destino em Portugal"
             /><input
-              id="route-battery"
-              type="number"
+              id="route-battery"\n              aria-label="Bateria inicial em percentagem"\n              type="number"
               min="5"
               max="100"
               value="80"
               title="Bateria inicial (%)"
               placeholder="Bateria %"
             /><input
-              id="route-reserve"
-              type="number"
+              id="route-reserve"\n              aria-label="Reserva de bateria em percentagem"\n              type="number"
               min="5"
               max="40"
               value="15"
@@ -234,7 +228,7 @@
         </div>
         <div class="head">
           <h2>Melhores opções para o seu veículo</h2>
-          <select class="sort" id="sort-filter">
+          <select class="sort" id="sort-filter" aria-label="Ordenar postos">
             <option value="power-desc">Maior potência</option>
             <option value="distance-asc">Mais próximo</option>
             <option value="name-asc">Nome A–Z</option>
@@ -282,8 +276,7 @@
         </button>
         <div class="panel">
           <div class="photo">
-            <img
-              id="station-photo-fallback"
+            <img\n              loading="lazy"\n              id="station-photo-fallback"
               src="./assets/chargevoy-station-fallback.webp"
               alt=""
             />
