@@ -2144,6 +2144,9 @@
           }
           const place = await browserPosition();
           searchPosition = place;
+          document
+            .getElementById("map-location-cta")
+            ?.classList.add("is-hidden");
           routeOriginOverride = { ...place, input: "A minha localização" };
           document.getElementById("location-search").value =
             "A minha localização";
@@ -2821,6 +2824,14 @@
       document
         .getElementById("use-location")
         .addEventListener("click", () => useMyLocation());
+      document
+        .getElementById("map-use-location")
+        .addEventListener("click", () =>
+          useMyLocation({
+            setRouteOrigin: true,
+            buttonId: "map-use-location",
+          }),
+        );
       document
         .getElementById("location-search")
         .addEventListener("keydown", (event) => {

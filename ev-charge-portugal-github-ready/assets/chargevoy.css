@@ -2432,3 +2432,111 @@
         }
       }
 
+
+/* Design readiness: make the first action obvious without hiding the map. */
+.map-location-cta {
+  position: absolute;
+  top: 68px;
+  left: 18px;
+  z-index: 650;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(480px, calc(100% - 36px));
+  padding: 13px 14px 13px 16px;
+  border: 1px solid rgba(109, 255, 186, 0.26);
+  border-radius: 18px;
+  background: rgba(10, 20, 30, 0.92);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  color: #effff7;
+  backdrop-filter: blur(16px);
+}
+.map-location-cta > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.map-location-cta b {
+  font-size: 14px;
+  line-height: 1.25;
+}
+.map-location-cta small {
+  color: #bad2c7;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.map-location-cta .primary {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 10px 13px;
+  white-space: nowrap;
+}
+.map-location-cta.is-hidden {
+  display: none;
+}
+.cards .card {
+  border-color: rgba(109, 255, 186, 0.16);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+.cards .card .rank {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cards .card .tag {
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(109, 255, 186, 0.12);
+  color: #6dffba;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+.cards .card .avail {
+  min-height: 26px;
+}
+.cards .card > button {
+  min-height: 42px;
+  font-weight: 800;
+}
+@media (max-width: 780px) {
+  .map-location-cta {
+    top: 62px;
+    left: 12px;
+    right: 12px;
+    max-width: none;
+    gap: 10px;
+    padding: 11px 12px;
+  }
+  .map-location-cta b {
+    font-size: 13px;
+  }
+  .map-location-cta small {
+    font-size: 11px;
+  }
+  .map-location-cta .primary {
+    min-height: 44px;
+    padding: 9px 11px;
+    font-size: 11px;
+  }
+}
+@media (orientation: landscape) and (max-height: 760px) {
+  .map-location-cta {
+    top: 58px;
+    left: 10px;
+    max-width: 390px;
+    padding: 9px 10px;
+    gap: 9px;
+  }
+  .map-location-cta b {
+    font-size: 12px;
+  }
+  .map-location-cta small {
+    font-size: 10px;
+  }
+  .map-location-cta .primary {
+    min-height: 38px;
+    padding: 7px 9px;
+    font-size: 10px;
+  }
+}
