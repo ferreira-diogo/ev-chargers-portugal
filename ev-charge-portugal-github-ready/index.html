@@ -229,14 +229,14 @@
           <div class="mapbadge">
             🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal
           </div>
-          <div class="map-location-cta" id="map-location-cta">
-            <div>
-              <b>Encontre postos perto de si</b>
-              <small>Ordenamos os resultados pela distância à sua localização.</small>
-            </div>
-            <button class="primary" id="map-use-location" type="button">
-              Encontrar postos perto de mim
-            </button>
+          <div
+            class="map-location-cta"
+            id="map-location-cta"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="map-cta-dot" aria-hidden="true"></span>
+            <span id="map-location-cta-text">A pesquisar postos na proximidade…</span>
           </div>
           <div class="legend">
             <div><i class="dot g"></i>Disponível</div>
