@@ -406,6 +406,9 @@
         line-height: 1.8;
         pointer-events: none;
       }
+      body.station-mode .legend {
+        display: none !important;
+      }
       .dot {
         display: inline-block;
         width: 9px;
@@ -548,6 +551,19 @@
         color: #08774f;
         font-weight: 700;
         font-size: 10px;
+      }
+      .card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .card-actions button {
+        margin-top: 9px;
+      }
+      .card-actions button[data-station-details] {
+        background: #10263d;
+        border-color: #10263d;
+        color: #fff;
       }
       .quickgrid {
         display: grid;
@@ -2055,6 +2071,10 @@
         body.map-mode .legend {
           display: block;
         }
+        /* A legenda não pode ficar por cima da ficha do posto. */
+        body.station-mode .legend {
+          display: none !important;
+        }
         /* Rotas ocupa a área de conteúdo: o cabeçalho e menu mantêm-se iguais. */
         .routeplanner.route-visible {
           position: fixed;
@@ -2141,6 +2161,286 @@
         .analytics-consent {
           background: #1e293b !important;
           border-color: #ffffff18 !important;
+        }
+      }
+
+      /* Telemóvel na horizontal: usar a experiência mobile mesmo quando o
+         navegador expõe uma viewport larga em CSS. */
+      @media (orientation: landscape) and (max-height: 760px) {
+        body {
+          overflow-x: hidden;
+        }
+        .top {
+          height: 72px;
+          min-height: 72px;
+          position: sticky;
+          top: 0;
+          z-index: 2000;
+          flex-wrap: nowrap;
+          gap: 8px;
+          padding: 7px 10px;
+        }
+        .brand {
+          min-width: 178px;
+          gap: 7px;
+        }
+        .brand-mark {
+          width: 32px;
+          height: 32px;
+          flex-basis: 32px;
+        }
+        .brand b {
+          font-size: 17px;
+        }
+        .brand small {
+          display: none;
+        }
+        .language-toggle {
+          flex: 0 0 auto;
+          padding: 8px 9px;
+        }
+        .search {
+          order: initial;
+          min-width: 150px;
+          max-width: none;
+          height: 38px;
+          padding: 0 10px;
+        }
+        .nav {
+          flex: 0 0 auto;
+          margin-left: 0;
+          gap: 0;
+        }
+        .nav button {
+          min-width: 56px;
+          padding: 4px 7px;
+          font-size: 9px;
+          line-height: 1.1;
+        }
+        .nav-icon {
+          font-size: 20px !important;
+          margin-bottom: 2px;
+        }
+        .layout {
+          display: block;
+          min-height: calc(100dvh - 72px);
+        }
+        .side,
+        .right:not(.station-open) {
+          display: none;
+        }
+        .main {
+          padding: 0;
+          min-height: calc(100dvh - 72px);
+        }
+        .main:not(.station-selected) .head,
+        .main:not(.station-selected) .cards,
+        .main:not(.station-selected) .quickgrid {
+          display: none;
+        }
+        .mapbox {
+          height: calc(100dvh - 72px);
+          min-height: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+        .mapbadge {
+          top: 10px;
+          left: 10px;
+          padding: 7px 9px;
+          font-size: 10px;
+        }
+        .legend {
+          top: 10px;
+          right: 10px;
+          bottom: auto;
+          font-size: 8px;
+          line-height: 1.5;
+          padding: 6px 8px;
+          max-width: 124px;
+        }
+        .routeplanner.route-visible {
+          position: fixed;
+          top: 72px;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          z-index: 1700;
+          overflow-y: auto;
+          margin: 0;
+          padding: 10px 14px 22px;
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+        .routeplanner.route-visible .routeform {
+          grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr) 110px 110px auto;
+          align-items: stretch;
+        }
+        .routeplanner.route-visible .routeform button#plan-route {
+          grid-column: auto;
+        }
+        .right.station-open {
+          display: block;
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 1800;
+          height: calc(100dvh - 72px);
+          max-height: none;
+          overflow-y: auto;
+          border-radius: 22px 22px 0 0;
+        }
+      }
+
+      /* Fallback para Android/Chrome quando a viewport CSS não corresponde à
+         resolução física do telemóvel. A classe é aplicada pelo script. */
+      body.mobile-landscape {
+        overflow-x: hidden;
+      }
+      body.mobile-landscape .top {
+        height: 72px;
+        min-height: 72px;
+        position: sticky;
+        top: 0;
+        z-index: 2000;
+        flex-wrap: nowrap;
+        gap: 8px;
+        padding: 7px 10px;
+      }
+      body.mobile-landscape .brand {
+        min-width: 178px;
+        gap: 7px;
+      }
+      body.mobile-landscape .brand-mark {
+        width: 32px;
+        height: 32px;
+        flex-basis: 32px;
+      }
+      body.mobile-landscape .brand b {
+        font-size: 17px;
+      }
+      body.mobile-landscape .brand small {
+        display: none;
+      }
+      body.mobile-landscape .search {
+        order: initial;
+        min-width: 150px;
+        max-width: none;
+        height: 38px;
+        padding: 0 10px;
+      }
+      body.mobile-landscape .nav {
+        flex: 0 0 auto;
+        margin-left: 0;
+        gap: 0;
+      }
+      body.mobile-landscape .nav button {
+        min-width: 56px;
+        padding: 4px 7px;
+        font-size: 9px;
+        line-height: 1.1;
+      }
+      body.mobile-landscape .nav-icon {
+        font-size: 20px !important;
+        margin-bottom: 2px;
+      }
+      body.mobile-landscape .layout {
+        display: block;
+        min-height: calc(100dvh - 72px);
+      }
+      body.mobile-landscape .side,
+      body.mobile-landscape .right:not(.station-open) {
+        display: none !important;
+      }
+      body.mobile-landscape .main {
+        padding: 0;
+        min-height: calc(100dvh - 72px);
+      }
+      body.mobile-landscape .main:not(.station-selected) .head,
+      body.mobile-landscape .main:not(.station-selected) .cards,
+      body.mobile-landscape .main:not(.station-selected) .quickgrid {
+        display: none;
+      }
+      body.mobile-landscape .mapbox {
+        height: calc(100dvh - 72px);
+        min-height: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      body.mobile-landscape .routeplanner.route-visible {
+        position: fixed;
+        top: 72px;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1700;
+        overflow-y: auto;
+        margin: 0;
+        padding: 10px 14px 22px;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      body.mobile-landscape .routeplanner.route-visible .routeform {
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr) 110px 110px auto;
+        align-items: stretch;
+      }
+      body.mobile-landscape .right.station-open {
+        display: block !important;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1800;
+        height: calc(100dvh - 72px);
+        max-height: none;
+        overflow-y: auto;
+        border-radius: 22px 22px 0 0;
+      }
+
+      /* Fase 1: estabilização responsiva e acessibilidade dos fluxos principais. */
+      :where(button, input, select):focus-visible {
+        outline: 3px solid #6dffba;
+        outline-offset: 2px;
+      }
+      .routeform button,
+      .route-actions button,
+      .primary,
+      .go,
+      .station-links button {
+        min-height: 42px;
+      }
+      @media (max-width: 780px) {
+        body {
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        .top {
+          padding-top: max(7px, env(safe-area-inset-top));
+        }
+        .route-actions {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .route-actions button {
+          min-height: 44px;
+          font-size: 11px;
+        }
+      }
+      @media (orientation: landscape) and (max-height: 760px) {
+        body.mobile-landscape .route-actions {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        body.mobile-landscape .route-actions button {
+          min-height: 42px;
+          padding: 8px 7px;
+          font-size: 10px;
+        }
+        body.mobile-landscape .route-summary span {
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
         }
       }
     </style>
@@ -2559,6 +2859,13 @@
             </div>
           </div>
         </div>
+        <button
+          class="mobile-station-close mobile-station-close-bottom"
+          id="close-station-panel-bottom"
+          type="button"
+        >
+          ⌃ Voltar ao mapa
+        </button>
       </aside>
     </div>
     <div class="analytics-consent" id="analytics-consent" hidden>
@@ -2615,6 +2922,19 @@
         },
       );
       const map = L.map("map").setView([39.55, -8], 6.5);
+      function syncMobileLandscapeMode() {
+        const isTouchDevice =
+          "ontouchstart" in window || navigator.maxTouchPoints > 0;
+        const isLandscape = window.innerWidth > window.innerHeight;
+        document.body.classList.toggle(
+          "mobile-landscape",
+          isTouchDevice && isLandscape,
+        );
+        requestAnimationFrame(() => map.invalidateSize());
+      }
+      syncMobileLandscapeMode();
+      window.addEventListener("resize", syncMobileLandscapeMode);
+      window.addEventListener("orientationchange", syncMobileLandscapeMode);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",
       }).addTo(map);
@@ -3339,6 +3659,7 @@
       }
       function setNavigationMode(mode) {
         document.body.classList.toggle("map-mode", mode === "map");
+        document.body.classList.remove("station-mode");
         document
           .querySelectorAll(".nav button")
           .forEach((button) => button.classList.remove("active"));
@@ -3347,6 +3668,7 @@
 
       function closeStationPanel() {
         selectedStation = null;
+        setNavigationMode("map");
         document.querySelector(".main")?.classList.remove("station-selected");
         document.querySelector(".right")?.classList.remove("station-open");
         if (window.innerWidth <= 780)
@@ -3401,6 +3723,7 @@
           .getElementById("route-planner")
           ?.classList.remove("route-visible");
         setNavigationMode("map");
+        document.body.classList.add("station-mode");
         document.querySelector(".main")?.classList.add("station-selected");
         document.querySelector(".right")?.classList.add("station-open");
         loadStationPhoto(station);
@@ -4266,56 +4589,21 @@
 
       async function loadRealStations() {
         const badge = document.getElementById("station-count");
-        const cards = document.getElementById("station-cards");
+        const stationCards = document.getElementById("station-cards");
         try {
-          const [
-            stations,
-            connectors,
-            operators,
-            vehicles,
-            cards,
-            reliability,
-          ] = await Promise.all([
+          // O mapa é o conteúdo principal. Os dados auxiliares não o podem
+          // bloquear, sobretudo em redes móveis mais lentas.
+          const [stations, operators] = await Promise.all([
             getAllRows(
               "charging_stations",
               "select=id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id,amenities&order=max_power_kw.desc.nullslast",
             ),
-            getAllRows(
-              "connectors",
-              "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&order=id.asc",
-            ),
             getRows("operators", "select=id,name"),
-            getRows(
-              "vehicle_models",
-              "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
-            ),
-            getRows(
-              "ceme_cards",
-              "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
-            ),
-            getAllRows(
-              "station_reliability",
-              "select=station_id,review_count,average_rating,snapshot_count,availability_rate,last_observed_at",
-            ),
           ]);
           connectorMap = new Map();
-          connectors.forEach((c) => {
-            const list = connectorMap.get(c.station_id) || [];
-            list.push(c);
-            connectorMap.set(c.station_id, list);
-          });
           operatorMap = new Map(operators.map((o) => [o.id, o.name]));
-          reliabilityMap = new Map(
-            reliability.map((item) => [item.station_id, item]),
-          );
+          reliabilityMap = new Map();
           allStations = stations;
-          const today = new Date().toISOString().slice(0, 10);
-          cemeCards = cards.filter(
-            (card) =>
-              (!card.valid_from || card.valid_from <= today) &&
-              (!card.valid_to || card.valid_to >= today),
-          );
-          populateVehicles(vehicles);
           const operatorSelect = document.getElementById("operator-filter");
           [
             ...new Set(
@@ -4331,11 +4619,69 @@
               option.textContent = name;
               operatorSelect.appendChild(option);
             });
+          // Mostra os postos assim que o núcleo da aplicação chega.
           renderStations(false);
+          // A localização é o ponto de partida padrão; se for recusada,
+          // mantém-se o mapa nacional sem interromper o carregamento.
+          useMyLocation({ setRouteOrigin: true, silent: true }).catch(() => {});
+
+          // O enriquecimento é opcional: uma falha num módulo não apaga o mapa.
+          const [connectorsResult, vehiclesResult, cardsResult, reliabilityResult] =
+            await Promise.allSettled([
+              getAllRows(
+                "connectors",
+                "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&order=id.asc",
+              ),
+              getRows(
+                "vehicle_models",
+                "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
+              ),
+              getRows(
+                "ceme_cards",
+                "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
+              ),
+              getAllRows(
+                "station_reliability",
+                "select=station_id,review_count,average_rating,snapshot_count,availability_rate,last_observed_at",
+              ),
+            ]);
+          if (connectorsResult.status === "fulfilled") {
+            connectorsResult.value.forEach((connector) => {
+              const list = connectorMap.get(connector.station_id) || [];
+              list.push(connector);
+              connectorMap.set(connector.station_id, list);
+            });
+            renderStations(false);
+          } else {
+            console.warn("Conectores dos postos indisponíveis", connectorsResult.reason);
+          }
+          if (vehiclesResult.status === "fulfilled") {
+            populateVehicles(vehiclesResult.value);
+          } else {
+            console.warn("Catálogo de veículos indisponível", vehiclesResult.reason);
+          }
+          if (cardsResult.status === "fulfilled") {
+            const today = new Date().toISOString().slice(0, 10);
+            cemeCards = cardsResult.value.filter(
+              (card) =>
+                (!card.valid_from || card.valid_from <= today) &&
+                (!card.valid_to || card.valid_to >= today),
+            );
+          } else {
+            console.warn("Tarifários CEME indisponíveis", cardsResult.reason);
+          }
+          if (reliabilityResult.status === "fulfilled") {
+            reliabilityMap = new Map(
+              reliabilityResult.value.map((item) => [item.station_id, item]),
+            );
+            renderStations(false);
+          } else {
+            console.warn("Fiabilidade dos postos indisponível", reliabilityResult.reason);
+          }
         } catch (error) {
           console.error(error);
           badge.textContent = "erro";
-          cards.innerHTML =
+          stationCards.innerHTML =
             '<article class="card"><div class="op">Não foi possível carregar os postos</div><div class="st">Confirme o URL, a publishable key e as políticas RLS da Supabase.</div></article>';
         }
       }
@@ -4535,7 +4881,7 @@
                   Number(currentVehicle.max_dc_power_kw),
                 )
               : Number(s.max_power_kw) || 0;
-            return `<article class="card"><div class="rank">${index + 1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name || "Posto de carregamento")}</div><div class="avail">${availability.kind === "none" && isOfficialTeslaStation(s) ? "● Disponibilidade na app Tesla" : availabilityHtml(availability)}</div><div class="reliability">${reliabilityText}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower || "—")} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km != null ? "distância aproximada" : escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto</div><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button></article>`;
+            return `<article class="card"><div class="rank">${index + 1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name || "Posto de carregamento")}</div><div class="avail">${availability.kind === "none" && isOfficialTeslaStation(s) ? "● Disponibilidade na app Tesla" : availabilityHtml(availability)}</div><div class="reliability">${reliabilityText}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower || "—")} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km != null ? "distância aproximada" : escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto</div><div class="card-actions"><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button><button data-station-details="${escapeHtml(s.id)}">Ver detalhes e navegar</button></div></article>`;
           })
           .join("");
         if (!best.length)
@@ -4549,8 +4895,16 @@
             if (station) {
               map.setView([station.latitude, station.longitude], 15);
               markerMap.get(station.id)?.openPopup();
-              selectStation(station, operatorMap.get(station.operator_id));
             }
+          }),
+        );
+        cards.querySelectorAll("button[data-station-details]").forEach((button) =>
+          button.addEventListener("click", () => {
+            const station = allStations.find(
+              (s) => s.id === button.dataset.stationDetails,
+            );
+            if (station)
+              selectStation(station, operatorMap.get(station.operator_id));
           }),
         );
       }
@@ -4712,7 +5066,7 @@
           return place;
         } catch (error) {
           console.error(error);
-          alert(error.message);
+          if (!options.silent) alert(error.message);
           throw error;
         } finally {
           button.disabled = false;
@@ -5225,7 +5579,7 @@
                 : suggested.length
                   ? `<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`
                   : "<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>";
-          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button><button onclick="openRouteInGoogleMaps()">Google Maps com trânsito</button></div><small class="traffic-note">O cálculo base usa OSRM; para trânsito em tempo real, abra a rota no Google Maps.</small>`;
+          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
           result.classList.add("show");
           saveRouteToUserHistory();
         } catch (error) {
@@ -5352,6 +5706,9 @@
         .addEventListener("click", searchPortugal);
       document
         .getElementById("close-station-panel")
+        ?.addEventListener("click", closeStationPanel);
+      document
+        .getElementById("close-station-panel-bottom")
         ?.addEventListener("click", closeStationPanel);
       map.on("zoomend", () => renderStations(false));
       document
