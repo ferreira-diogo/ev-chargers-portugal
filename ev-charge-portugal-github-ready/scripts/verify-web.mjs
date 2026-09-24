@@ -26,7 +26,7 @@ const checks = [
   ["No inline application script remains", !html.includes("    <script>\\n")],
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
-  ["PWA cache version is current", worker.includes("ev-charge-shell-v2")],
+  ["PWA cache version is current", worker.includes("ev-charge-shell-v3")],
   ["Route timeout helper is present", js.includes("fetchWithTimeout")],
   ["Application JavaScript syntax is valid", canParse(js)],
   ["Service Worker syntax is valid", canParse(worker)],
