@@ -8,4 +8,5 @@ const assets = ['index.html', 'manifest.webmanifest', 'service-worker.js', 'icon
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
 await Promise.all(assets.map((asset) => cp(resolve(root, asset), resolve(dist, asset))));
+await cp(resolve(root, 'assets'), resolve(dist, 'assets'), { recursive: true });
 console.log('Web bundle created in dist/.');
