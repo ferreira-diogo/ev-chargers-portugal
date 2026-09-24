@@ -2000,9 +2000,11 @@
               (s) => s.id === button.dataset.stationId,
             );
             if (station) {
-              map.setView([station.latitude, station.longitude], 15);
+              closeStationPanel();
+              map.setView([station.latitude, station.longitude], 15, {
+                animate: true,
+              });
               markerMap.get(station.id)?.openPopup();
-              selectStation(station, operatorMap.get(station.operator_id));
             }
           }),
         );
