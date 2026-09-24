@@ -2625,3 +2625,12 @@
     font-size: 10px;
   }
 }
+@media (max-width: 780px) {
+  .mobile-station-close-bottom {
+    position: static;
+    margin: 4px 0 0;
+    padding: 10px 0 12px;
+    border-top: 1px solid rgba(82, 112, 135, 0.22);
+    border-radius: 0 0 12px 12px;
+  }
+}
