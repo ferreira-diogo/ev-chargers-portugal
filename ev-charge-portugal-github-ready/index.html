@@ -4635,6 +4635,9 @@
               operatorSelect.appendChild(option);
             });
           renderStations(false);
+          // A localização é o ponto de partida padrão; se o utilizador
+          // recusar, o mapa mantém o comportamento nacional atual.
+          useMyLocation({ setRouteOrigin: true, silent: true }).catch(() => {});
         } catch (error) {
           console.error(error);
           badge.textContent = "erro";
@@ -4988,8 +4991,10 @@
           options.buttonId || "use-location",
         );
         try {
-          button.disabled = true;
-          button.textContent = "…";
+          if (button) {
+            button.disabled = true;
+            button.textContent = "…";
+          }
           const place = await browserPosition();
           searchPosition = place;
           routeOriginOverride = { ...place, input: "A minha localização" };
@@ -5011,15 +5016,18 @@
             .bindPopup("<b>A sua localização aproximada</b>")
             .openPopup();
           document.getElementById("sort-filter").value = "distance-asc";
-          renderStations(true);
+          renderStations(false);
+          map.setView([place.lat, place.lon], 12, { animate: false });
           return place;
         } catch (error) {
           console.error(error);
-          alert(error.message);
+          if (!options.silent) alert(error.message);
           throw error;
         } finally {
-          button.disabled = false;
-          button.textContent = "◎";
+          if (button) {
+            button.disabled = false;
+            button.textContent = "◎";
+          }
         }
       }
 
