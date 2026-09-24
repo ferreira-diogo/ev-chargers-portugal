@@ -16,5 +16,6 @@ self.addEventListener('fetch',event=>{
     return;
   }
   const url=new URL(event.request.url);
-  if(url.origin===self.location.origin)event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{\n    if(response.ok)caches.open(CACHE_NAME).then(cache=>cache.put(event.request,response.clone()));\n    return response;\n  })));
+  if(url.origin===self.location.origin)event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{
+    if(response.ok)caches.open(CACHE_NAME).then(cache=>cache.put(event.request,response.clone()));\n    return response;\n  })));
 });
