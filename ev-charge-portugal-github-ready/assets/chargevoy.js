@@ -2835,8 +2835,10 @@
         .getElementById("apply-filters")
         .addEventListener("click", searchPortugal);
       document
-        .getElementById("close-station-panel")
-        ?.addEventListener("click", closeStationPanel);
+        .querySelectorAll(".mobile-station-close")
+        .forEach((button) =>
+          button.addEventListener("click", closeStationPanel),
+        );
       let stationRenderFrame = 0;
       function scheduleStationRender() {
         cancelAnimationFrame(stationRenderFrame);
