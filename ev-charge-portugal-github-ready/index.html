@@ -2386,6 +2386,50 @@
         overflow-y: auto;
         border-radius: 22px 22px 0 0;
       }
+
+      /* Fase 1: estabilização responsiva e acessibilidade dos fluxos principais. */
+      :where(button, input, select):focus-visible {
+        outline: 3px solid #6dffba;
+        outline-offset: 2px;
+      }
+      .routeform button,
+      .route-actions button,
+      .primary,
+      .go,
+      .station-links button {
+        min-height: 42px;
+      }
+      @media (max-width: 780px) {
+        body {
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        .top {
+          padding-top: max(7px, env(safe-area-inset-top));
+        }
+        .route-actions {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .route-actions button {
+          min-height: 44px;
+          font-size: 11px;
+        }
+      }
+      @media (orientation: landscape) and (max-height: 760px) {
+        body.mobile-landscape .route-actions {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        body.mobile-landscape .route-actions button {
+          min-height: 42px;
+          padding: 8px 7px;
+          font-size: 10px;
+        }
+        body.mobile-landscape .route-summary span {
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
+        }
+      }
     </style>
   </head>
   <body class="map-mode">
