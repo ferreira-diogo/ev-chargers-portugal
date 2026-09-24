@@ -1,4 +1,4 @@
-const CACHE_NAME='ev-charge-shell-v6';
+const CACHE_NAME='ev-charge-shell-v7';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css','./assets/chargevoy.js'];
 
 self.addEventListener('install',event=>{
@@ -16,8 +16,5 @@ self.addEventListener('fetch',event=>{
     return;
   }
   const url=new URL(event.request.url);
-  if(url.origin===self.location.origin)event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{
-    if(response.ok)caches.open(CACHE_NAME).then(cache=>cache.put(event.request,response.clone()));
-    return response;
-  })));
+  if(url.origin===self.location.origin)event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request)));
 });
