@@ -1,5 +1,5 @@
-const CACHE_NAME='ev-charge-shell-v1';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg'];
+const CACHE_NAME='ev-charge-shell-v2';
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css','./assets/chargevoy.js'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -16,5 +16,5 @@ self.addEventListener('fetch',event=>{
     return;
   }
   const url=new URL(event.request.url);
-  if(url.origin===self.location.origin)event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request)));
+  if(url.origin===self.location.origin)event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{\n    if(response.ok)caches.open(CACHE_NAME).then(cache=>cache.put(event.request,response.clone()));\n    return response;\n  })));
 });
