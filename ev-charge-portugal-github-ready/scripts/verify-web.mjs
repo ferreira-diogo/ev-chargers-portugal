@@ -9,15 +9,28 @@ const [html, js, worker, packageJson] = await Promise.all([
   readFile(resolve(root, "package.json"), "utf8"),
 ]);
 
-const canParse = (source) => {\n  try {\n    new Function(source);\n    return true;\n  } catch (error) {\n    console.error(error.message);\n    return false;\n  }\n};\n\nconst checks = [
+const canParse = (source) => {
+  try {
+    new Function(source);
+    return true;
+  } catch (error) {
+    console.error(error.message);
+    return false;
+  }
+};
+
+const checks = [
   ["HTML references extracted CSS", html.includes("./assets/chargevoy.css")],
   ["HTML references extracted JavaScript", html.includes("./assets/chargevoy.js")],
   ["No inline stylesheet remains", !html.includes("<style>")],
-  ["No inline application script remains", !html.includes("    <script>\n")],
+  ["No inline application script remains", !html.includes("    <script>
+")],
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA cache version is current", worker.includes("ev-charge-shell-v2")],
-  ["Route timeout helper is present", js.includes("fetchWithTimeout")],\n  ["Application JavaScript syntax is valid", canParse(js)],\n  ["Service Worker syntax is valid", canParse(worker)],
+  ["Route timeout helper is present", js.includes("fetchWithTimeout")],
+  ["Application JavaScript syntax is valid", canParse(js)],
+  ["Service Worker syntax is valid", canParse(worker)],
   ["Package exposes npm test", JSON.parse(packageJson).scripts?.test === "node scripts/verify-web.mjs"],
 ];
 
