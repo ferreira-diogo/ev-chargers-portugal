@@ -2171,6 +2171,14 @@
           return place;
         } catch (error) {
           console.error(error);
+          const locationStatus = document.getElementById("map-location-cta");
+          const locationStatusText = document.getElementById(
+            "map-location-cta-text",
+          );
+          locationStatus?.classList.add("is-error");
+          if (locationStatusText)
+            locationStatusText.textContent =
+              "Pode pesquisar uma localização no mapa.";
           if (!options.silent) notifyUser(error.message, { kind: "error" });
           throw error;
         } finally {
@@ -2824,14 +2832,6 @@
       document
         .getElementById("use-location")
         .addEventListener("click", () => useMyLocation());
-      document
-        .getElementById("map-use-location")
-        .addEventListener("click", () =>
-          useMyLocation({
-            setRouteOrigin: true,
-            buttonId: "map-use-location",
-          }),
-        );
       document
         .getElementById("location-search")
         .addEventListener("keydown", (event) => {
