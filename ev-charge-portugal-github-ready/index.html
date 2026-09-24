@@ -1009,6 +1009,37 @@
       .route-actions button:first-child {
         background: #0eaf72;
       }
+      .app-toast {
+        position: fixed;
+        left: 50%;
+        bottom: max(18px, env(safe-area-inset-bottom));
+        z-index: 4000;
+        max-width: min(92vw, 520px);
+        transform: translate(-50%, 140%);
+        padding: 12px 16px;
+        border: 1px solid #b9d6e5;
+        border-radius: 10px;
+        background: #071b31;
+        color: #fff;
+        box-shadow: 0 8px 28px #071b3155;
+        font-size: 13px;
+        line-height: 1.4;
+        opacity: 0;
+        transition: opacity 160ms ease, transform 160ms ease;
+        pointer-events: none;
+      }
+      .app-toast.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      .app-toast.error {
+        border-color: #f1a7a7;
+        background: #7c2020;
+      }
+      .app-toast.success {
+        border-color: #7ee7b8;
+        background: #08794f;
+      }
       .modal {
         display: none;
         position: fixed;
@@ -2507,8 +2538,9 @@
         <div class="loc">
           ⌖<input
             id="location-search"
+            aria-label="Pesquisar localização"
             placeholder="Cidade, código postal ou localização"
-          /><button id="use-location" title="Usar a minha localização">
+          /><button id="use-location" type="button" title="Usar a minha localização" aria-label="Usar a minha localização">
             ◎
           </button>
         </div>
@@ -2623,7 +2655,7 @@
           <div class="routeresult" id="route-result" aria-live="polite"></div>
         </section>
         <div class="mapbox" id="map-section">
-          <div id="map" style="height: 100%"></div>
+          <div id="map" role="region" aria-label="Mapa de postos de carregamento" style="height: 100%"></div>
           <div class="mapbadge">
             🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal
           </div>
@@ -2881,6 +2913,7 @@
         <div id="modal-body"></div>
       </div>
     </div>
+    <div class="app-toast" id="app-toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
     <script>
@@ -2901,7 +2934,11 @@
           },
         },
       );
-      const map = L.map("map").setView([39.55, -8], 6.5);
+      const map = L.map("map", {
+        preferCanvas: true,
+        zoomSnap: 0.5,
+        zoomDelta: 1,
+      }).setView([39.55, -8], 6.5);
       function syncMobileLandscapeMode() {
         const isTouchDevice =
           "ontouchstart" in window || navigator.maxTouchPoints > 0;
@@ -2917,6 +2954,8 @@
       window.addEventListener("orientationchange", syncMobileLandscapeMode);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",
+        updateWhenIdle: true,
+        keepBuffer: 1,
       }).addTo(map);
       const stationLayer = L.layerGroup().addTo(map);
       const searchLayer = L.layerGroup().addTo(map);
@@ -3317,6 +3356,18 @@
         );
       }
 
+      let toastTimer;
+      function notifyUser(message, options = {}) {
+        const toast = document.getElementById("app-toast");
+        if (!toast) return;
+        clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.className = `app-toast show ${options.kind || ""}`.trim();
+        toastTimer = setTimeout(() => {
+          toast.classList.remove("show");
+        }, options.duration || 4500);
+      }
+
       function connectorCategory(value) {
         const type = String(value || "").toLowerCase();
         if (type.includes("chademo")) return "CHAdeMO";
@@ -3542,7 +3593,7 @@
           );
         const alternative = alternatives[0];
         if (!alternative) {
-          alert("Não foi encontrada uma opção B compatível num raio de 60 km.");
+          notifyUser("Não foi encontrada uma opção B compatível num raio de 60 km.", { kind: "error" });
           return;
         }
         map.setView([alternative.latitude, alternative.longitude], 15);
@@ -4085,10 +4136,11 @@
         saveFavorites();
         updateAuthUI();
         closeModal();
-        alert(
+        notifyUser(
           currentLanguage === "en"
             ? "Your account and associated data have been deleted."
             : "A sua conta e os dados associados foram eliminados.",
+          { kind: "success" },
         );
       }
       async function syncUserFavorites() {
@@ -4924,7 +4976,7 @@
           document.querySelector(".side").classList.remove("mobile-open");
         } catch (error) {
           console.error(error);
-          alert(error.message || "Não foi possível pesquisar este local.");
+          notifyUser(error.message || "Não foi possível pesquisar este local.", { kind: "error" });
         } finally {
           button.disabled = false;
           button.textContent = "⌕ Procurar";
@@ -5021,7 +5073,7 @@
           return place;
         } catch (error) {
           console.error(error);
-          if (!options.silent) alert(error.message);
+          if (!options.silent) notifyUser(error.message, { kind: "error" });
           throw error;
         } finally {
           if (button) {
@@ -5033,7 +5085,7 @@
 
       async function routeToSelectedStation() {
         if (!selectedStation) {
-          alert("Selecione primeiro um posto no mapa.");
+          notifyUser("Selecione primeiro um posto no mapa.", { kind: "error" });
           return;
         }
         const operatorName =
@@ -5277,7 +5329,7 @@
             await navigator.share({ title: "ChargeVoy", text, url });
           else {
             await navigator.clipboard.writeText(`${text}\n${url}`);
-            alert("Ligação da rota copiada.");
+            notifyUser("Ligação da rota copiada.", { kind: "success" });
           }
         } catch (error) {
           if (error?.name !== "AbortError")
@@ -5326,11 +5378,11 @@
           ),
         );
         if (!originText || !destinationText) {
-          alert("Indique a origem e o destino.");
+            notifyUser("Indique a origem e o destino.", { kind: "error" });
           return;
         }
         if (reserve >= startBattery) {
-          alert("A bateria inicial deve ser superior à reserva de chegada.");
+            notifyUser("A bateria inicial deve ser superior à reserva de chegada.", { kind: "error" });
           return;
         }
         try {
@@ -5664,7 +5716,13 @@
       document
         .getElementById("close-station-panel")
         ?.addEventListener("click", closeStationPanel);
-      map.on("zoomend", () => renderStations(false));
+      let stationRenderFrame = 0;
+      function scheduleStationRender() {
+        cancelAnimationFrame(stationRenderFrame);
+        stationRenderFrame = requestAnimationFrame(() => renderStations(false));
+      }
+      map.on("moveend", scheduleStationRender);
+      map.on("zoomend", scheduleStationRender);
       document
         .getElementById("use-location")
         .addEventListener("click", () => useMyLocation());
