@@ -23,8 +23,7 @@ const checks = [
   ["HTML references extracted CSS", html.includes("./assets/chargevoy.css")],
   ["HTML references extracted JavaScript", html.includes("./assets/chargevoy.js")],
   ["No inline stylesheet remains", !html.includes("<style>")],
-  ["No inline application script remains", !html.includes("    <script>
-")],
+  ["No inline application script remains", !html.includes("    <script>\\n")],
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA cache version is current", worker.includes("ev-charge-shell-v2")],
