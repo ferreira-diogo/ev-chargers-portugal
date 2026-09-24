@@ -32,6 +32,7 @@ jobs:
           java-version: '21'
 
       - run: npm ci
+      - run: npm test
       - run: npm run android:sync
       - run: cd android && ./gradlew assembleDebug bundleDebug
 
