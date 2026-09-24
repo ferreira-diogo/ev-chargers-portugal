@@ -10,7 +10,8 @@
     "android:open": "npx cap open android",
     "android:bundle": "npm run android:sync && cd android && ./gradlew bundleRelease",
     "nap:check": "node scripts/import-nap-datex.mjs --dry-run",
-    "nap:stage": "node scripts/import-nap-datex.mjs --stage"
+    "nap:stage": "node scripts/import-nap-datex.mjs --stage",
+    "test": "node scripts/verify-web.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
