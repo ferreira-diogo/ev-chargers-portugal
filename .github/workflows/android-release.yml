@@ -39,7 +39,7 @@ jobs:
           java-version: "21"
       - name: Install web dependencies
         run: npm ci
-      - name: Sync Capacitor Android project
+      - name: Run web smoke checks\n        run: npm test\n      - name: Sync Capacitor Android project
         run: npm run android:sync
       - name: Restore upload key
         env:
