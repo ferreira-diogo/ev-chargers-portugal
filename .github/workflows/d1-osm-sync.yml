@@ -44,8 +44,19 @@ jobs:
         run: node scripts/sync-d1-openstreetmap.mjs
       - name: Upload snapshot to D1
         run: |
+          set -e
           for file in tmp/d1-osm-sync/*.sql; do
-            wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"
+            echo "Uploading $file"
+            success=0
+            for attempt in 1 2 3; do
+              if wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"; then
+                success=1
+                break
+              fi
+              echo "Upload failed (attempt $attempt); retrying..."
+              sleep $((attempt * 5))
+            done
+            test "$success" = "1" || exit 1
           done
 
 # Manual connectivity test
