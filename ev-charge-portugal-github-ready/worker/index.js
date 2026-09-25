@@ -42,7 +42,7 @@ async function stations(request, env) {
     const result = hasLocation
       ? await db
           .prepare(`SELECT ${fields}
-            FROM station_cache
+            FROM station_cache_v2
             WHERE latitude BETWEEN ? AND ?
               AND longitude BETWEEN ? AND ?
             ORDER BY COALESCE(max_power_kw, 0) DESC
@@ -51,7 +51,7 @@ async function stations(request, env) {
           .all()
       : await db
           .prepare(`SELECT ${fields}
-            FROM station_cache
+            FROM station_cache_v2
             ORDER BY COALESCE(max_power_kw, 0) DESC
             LIMIT 500`)
           .all();
