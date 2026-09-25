@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/d1-stations-sync.yml"
       - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
+      - "ev-charge-portugal-github-ready/scripts/build-nap-d1-mapping.mjs"
       - "ev-charge-portugal-github-ready/cloudflare/d1/schema.sql"
   schedule:
     - cron: "0 */6 * * *"
@@ -44,6 +45,8 @@ jobs:
         run: wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=cloudflare/d1/schema.sql
       - name: Prepare NAP station snapshot
         run: node scripts/import-nap-datex.mjs --d1
+      - name: Prepare explicit NAP live mapping
+        run: node scripts/build-nap-d1-mapping.mjs
       - name: Group NAP snapshot batches
         run: |
           set -e
@@ -78,6 +81,11 @@ jobs:
             done
             test "$success" = "1" || exit 1
           done
+      - name: Verify D1 NAP mapping
+        run: |
+          result="$(wrangler d1 execute "$D1_DATABASE_NAME" --remote --command="SELECT count(*) AS mapping_count FROM nap_connector_mapping")"
+          echo "$result"
+          echo "$result" | grep -q 'mapping_count'
       - name: Verify D1 station API
         run: |
           curl --fail --silent --show-error --max-time 30 "https://chargevoy-api.zombid.workers.dev/api/stations?lat=39.7&lon=-8.1" | grep -q '"stations"'
