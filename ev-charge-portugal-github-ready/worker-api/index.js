@@ -40,7 +40,7 @@ const CATALOGS = {
 };
 
 const TABLES = {
-  stations: "station_cache",
+  stations: "station_cache_v2",
   operators: "operators",
   connectors: "connectors",
   vehicle_models: "vehicle_models",
