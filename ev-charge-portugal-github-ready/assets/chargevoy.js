@@ -1892,10 +1892,9 @@
 
       async function loadFallbackStations(place) {
         const params = new URLSearchParams();
-        if (place) {
-          params.set("lat", String(place.lat));
-          params.set("lon", String(place.lon));
-        }
+        const area = place || { lat: 39.55, lon: -8 };
+        params.set("lat", String(area.lat));
+        params.set("lon", String(area.lon));
         try {
           const response = await fetchWithTimeout(
             `${D1_FALLBACK_URL}?${params.toString()}`,
