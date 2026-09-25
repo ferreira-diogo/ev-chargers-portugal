@@ -2025,14 +2025,17 @@
             return null;
           });
 
-          const [place, cardsResult] = await Promise.all([
-            locationPromise,
-            getRows(
-              "ceme_cards",
-              "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
-            ).then((rows) => ({ status: "fulfilled", value: rows }))
-              .catch((reason) => ({ status: "rejected", reason })),
-          ]);
+          const place = await locationPromise;
+          void getRows(
+            "ceme_cards",
+            "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
+          ).then((rows) => {
+            const today = new Date().toISOString().slice(0, 10);
+            cemeCards = rows.filter(
+              (card) => (!card.valid_from || card.valid_from <= today) &&
+                        (!card.valid_to || card.valid_to >= today),
+            );
+          }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));
 
           const stations = await loadFallbackStations(place);
           if (!stations.length) throw new Error("D1/OSM sem postos disponíveis");
@@ -2061,15 +2064,6 @@
 
           const vehicles = await vehiclePromise;
           if (vehicles.length) cacheVehicleRows(vehicles);
-          if (cardsResult.status === "fulfilled") {
-            const today = new Date().toISOString().slice(0, 10);
-            cemeCards = cardsResult.value.filter(
-              (card) => (!card.valid_from || card.valid_from <= today) &&
-                        (!card.valid_to || card.valid_to >= today),
-            );
-          } else {
-            console.warn("Tarifários CEME indisponíveis", cardsResult.reason);
-          }
         } catch (error) {
           console.error(error);
           badge.textContent = "erro";
