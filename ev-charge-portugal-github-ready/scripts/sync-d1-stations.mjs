@@ -99,7 +99,7 @@ await writeFile(
   "CREATE TABLE IF NOT EXISTS station_cache_next AS SELECT * FROM station_cache WHERE 0;\\nDELETE FROM station_cache_next;\\n",
 );
 
-const chunkSize = 200;
+const chunkSize = 100;
 for (let index = 0; index < stations.length; index += chunkSize) {
   const chunk = stations.slice(index, index + chunkSize);
   const values = chunk.map((row) => `(${rowValues(row)})`).join(",\\n");
