@@ -364,7 +364,7 @@ async function writeD1Snapshot(parsed) {
   };
   let fileNumber = 2;
   for (const [table, rows] of Object.entries(datasets)) {
-    for (let index = 0; index < rows.length; index += 100) {
+    for (let index = 0; index < rows.length; index += 250) {
       const chunk = rows.slice(index, index + 100);
       const values = chunk.map((row) => "(" + columns[table].map((column) => d1Sql(row[column])).join(", ") + ")").join(",\n");
       await writeFile(
