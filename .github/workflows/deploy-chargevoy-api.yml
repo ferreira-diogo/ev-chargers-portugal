@@ -1,0 +1,42 @@
+name: Deploy ChargeVoy API Worker
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ev-charge-portugal-github-ready/worker-api/index.js"
+      - "ev-charge-portugal-github-ready/wrangler-api.toml"
+      - ".github/workflows/deploy-chargevoy-api.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Validate Cloudflare configuration
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          test -n "$D1_DATABASE_NAME" || { echo "::error::Missing D1_DATABASE_NAME"; exit 1; }
+      - name: Install Wrangler
+        run: npm install --global wrangler@4
+      - name: Resolve D1 database ID
+        working-directory: ev-charge-portugal-github-ready
+        run: |
+          DB_ID="$(wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);const d=a.find(x=>x.name===process.env.D1_DATABASE_NAME);if(!d) process.exit(2);process.stdout.write(d.uuid||d.id||"")})')"
+          test -n "$DB_ID" || { echo "::error::D1 database not found"; exit 1; }
+          cp wrangler-api.toml wrangler-api-deploy.toml
+          sed -i "s|# database_id = \\"ID_DA_BASE_D1\\"|database_id = \\"$DB_ID\\"|" wrangler-api-deploy.toml
+          grep -q "database_id" wrangler-api-deploy.toml
+      - name: Deploy API Worker
+        working-directory: ev-charge-portugal-github-ready
+        run: wrangler deploy --config wrangler-api-deploy.toml
