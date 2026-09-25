@@ -1,4 +1,4 @@
-// Deploy trigger: Cloudflare API ID resolution
+// Deploy trigger: Wrangler D1 info resolution
 const CATALOGS = {
   stations: [
     "id", "external_id", "source", "name", "address", "city",
