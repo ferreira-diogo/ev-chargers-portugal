@@ -91,22 +91,34 @@ function rowValues(row) {
   ].join(", ");
 }
 
-const response = await fetch("https://overpass-api.de/api/interpreter", {
-  method: "POST",
-  headers: {
-    "content-type": "application/x-www-form-urlencoded",
-    accept: "application/json",
-    "user-agent": "ChargeVoy-D1-Sync/1.0",
-  },
-  body: new URLSearchParams({ data: query }),
-  signal: AbortSignal.timeout(120000),
-});
-
-if (!response.ok) {
-  throw new Error(`Overpass HTTP ${response.status}: ${await response.text()}`);
+const endpoints = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+];
+let payload;
+let lastError;
+for (const endpoint of endpoints) {
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        accept: "application/json",
+        "user-agent": "ChargeVoy-D1-Sync/1.0",
+      },
+      body: new URLSearchParams({ data: query }),
+      signal: AbortSignal.timeout(120000),
+    });
+    if (!response.ok) throw new Error(`Overpass HTTP ${response.status}`);
+    payload = await response.json();
+    break;
+  } catch (error) {
+    lastError = error;
+    console.warn(`Overpass endpoint failed: ${endpoint}`, error);
+  }
 }
-
-const payload = await response.json();
+if (!payload) throw new Error(`All Overpass endpoints failed: ${lastError}`);
 const stations = (payload.elements || []).map(mapStation).filter(Boolean);
 if (!stations.length) throw new Error("No charging stations returned by OpenStreetMap");
 
@@ -119,7 +131,7 @@ await writeFile(
 );
 
 // Small batches keep each remote D1 statement below API size limits.
-const chunkSize = 20;
+const chunkSize = 50;
 for (let index = 0; index < stations.length; index += chunkSize) {
   const chunk = stations.slice(index, index + chunkSize);
   const values = chunk.map((row) => `(${rowValues(row)})`).join(",\n");
