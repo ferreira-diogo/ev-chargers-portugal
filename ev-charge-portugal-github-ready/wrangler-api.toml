@@ -5,5 +5,8 @@ compatibility_date = "2026-09-25"
 [[d1_databases]]
 binding = "CHARGEVOY_DB"
 database_name = "chargevoy-fallback"
-# Preencher no deploy se usar Wrangler:
 # database_id = "ID_DA_BASE_D1"
+
+[[kv_namespaces]]
+binding = "AVAILABILITY_KV"
+# id = "ID_DO_KV_AVAILABILITY"
