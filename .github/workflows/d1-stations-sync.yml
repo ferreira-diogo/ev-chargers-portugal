@@ -40,6 +40,27 @@ jobs:
         run: node scripts/sync-d1-stations.mjs
       - name: Upload station snapshot
         run: |
-          for file in tmp/d1-sync/*.sql; do
-            wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"
+          for attempt in 1 2 3 4 5; do
+            echo "D1 upload attempt $attempt"
+            failed=0
+            if ! wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=tmp/d1-sync/001_prepare.sql; then
+              failed=1
+            fi
+            if [ "$failed" -eq 0 ]; then
+              for file in tmp/d1-sync/0*.sql; do
+                [ "$file" = "tmp/d1-sync/001_prepare.sql" ] && continue
+                if ! wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"; then
+                  failed=1
+                  break
+                fi
+              done
+            fi
+            if [ "$failed" -eq 0 ]; then
+              echo "D1 station snapshot uploaded"
+              exit 0
+            fi
+            echo "D1 upload attempt $attempt failed; retrying after a short pause"
+            sleep $((attempt * 10))
           done
+          echo "::error::D1 station snapshot upload failed after retries"
+          exit 1
