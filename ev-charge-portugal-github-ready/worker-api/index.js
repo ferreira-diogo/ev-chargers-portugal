@@ -1,3 +1,4 @@
+// Deploy trigger: automated Cloudflare API deployment
 const CATALOGS = {
   stations: [
     "id", "external_id", "source", "name", "address", "city",
