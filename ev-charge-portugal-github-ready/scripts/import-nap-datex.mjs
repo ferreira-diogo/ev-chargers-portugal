@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { Readable } from "node:stream";
 import { createClient } from "@supabase/supabase-js";
 import { SaxesParser } from "saxes";
