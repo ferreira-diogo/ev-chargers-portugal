@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { createClient } from "@supabase/supabase-js";
 import { SaxesParser } from "saxes";
@@ -55,6 +56,12 @@ const summary = {
 if (!summary.success) {
   console.error(JSON.stringify(summary, null, 2));
   process.exit(1);
+}
+
+if (args.has("--d1")) {
+  await writeD1Snapshot(parsed);
+  console.log(JSON.stringify({ ...summary, mode: "d1", output_dir: process.env.D1_SQL_DIR || "tmp/d1-nap-sync" }, null, 2));
+  process.exit(0);
 }
 
 if (!stage) {
@@ -268,4 +275,103 @@ function normalizeConnector(value) {
   if (normalized.includes("62196t1") || normalized.includes("type1")) return "Type 1";
   if (normalized.includes("domestic") || normalized.includes("schuko")) return "Schuko";
   return value || "Unknown";
+}
+
+
+function d1Sql(value) {
+  if (value === undefined || value === null) return "NULL";
+  if (typeof value === "boolean") return value ? "1" : "0";
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "'" + String(value).replaceAll("'", "''") + "'";
+}
+
+function d1OperatorId(name) {
+  return name ? "nap-operator-" + String(name).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 120) : null;
+}
+
+async function writeD1Snapshot(parsed) {
+  const outputDir = process.env.D1_SQL_DIR || "tmp/d1-nap-sync";
+  await rm(outputDir, { recursive: true, force: true });
+  await mkdir(outputDir, { recursive: true });
+
+  const syncedAt = parsed.publicationTime || new Date().toISOString();
+  const stations = parsed.stations
+    .filter((row) => Number.isFinite(row.latitude) && Number.isFinite(row.longitude))
+    .map((row) => ({
+      id: "nap-" + row.external_id,
+      external_id: row.external_id,
+      source: "nap-mobie",
+      name: row.name || row.external_id,
+      address: row.address || "",
+      city: row.city || "",
+      latitude: row.latitude,
+      longitude: row.longitude,
+      max_power_kw: row.max_power_kw,
+      status: "unknown",
+      operator_id: d1OperatorId(row.operator_name),
+      amenities: JSON.stringify({
+        postal_code: row.postal_code,
+        country_code: row.country_code,
+        accessibility: row.accessibility,
+        operator_name: row.operator_name,
+        source_updated_at: row.source_updated_at,
+      }),
+      synced_at: syncedAt,
+    }));
+
+  const operators = [...new Set(parsed.stations.map((row) => row.operator_name).filter(Boolean))]
+    .map((name) => ({
+      id: d1OperatorId(name),
+      name,
+      external_id: name,
+      source: "nap-mobie",
+      updated_at: syncedAt,
+    }));
+
+  const connectors = parsed.connectors.map((row) => ({
+    id: "nap-" + row.external_id,
+    station_id: "nap-" + row.station_external_id,
+    type: row.type || "Unknown",
+    power_kw: row.power_kw,
+    quantity: row.quantity || 1,
+    available_count: null,
+    status: "unknown",
+    availability_updated_at: null,
+    availability_source: null,
+    updated_at: syncedAt,
+  }));
+
+  const resetTables = [
+    "station_cache_v2", "station_cache", "connectors", "operators",
+  ];
+  await writeFile(
+    join(outputDir, "001_reset.sql"),
+    "BEGIN TRANSACTION;\n" + resetTables.map((table) => `DELETE FROM ${table};`).join("\n") + "\nCOMMIT;\n",
+  );
+
+  const columns = {
+    station_cache_v2: ["id", "external_id", "source", "name", "address", "city", "latitude", "longitude", "max_power_kw", "status", "operator_id", "amenities", "synced_at"],
+    station_cache: ["id", "external_id", "source", "name", "address", "city", "latitude", "longitude", "max_power_kw", "status", "operator_id", "amenities", "synced_at"],
+    operators: ["id", "name", "external_id", "source", "updated_at"],
+    connectors: ["id", "station_id", "type", "power_kw", "quantity", "available_count", "status", "availability_updated_at", "availability_source", "updated_at"],
+  };
+  const datasets = {
+    station_cache_v2: stations,
+    station_cache: stations,
+    connectors,
+    operators,
+  };
+  let fileNumber = 2;
+  for (const [table, rows] of Object.entries(datasets)) {
+    for (let index = 0; index < rows.length; index += 100) {
+      const chunk = rows.slice(index, index + 100);
+      const values = chunk.map((row) => "(" + columns[table].map((column) => d1Sql(row[column])).join(", ") + ")").join(",\n");
+      await writeFile(
+        join(outputDir, String(fileNumber).padStart(4, "0") + "_" + table + ".sql"),
+        "BEGIN TRANSACTION;\nINSERT OR REPLACE INTO " + table + " (" + columns[table].join(", ") + ") VALUES\n" + values + ";\nCOMMIT;\n",
+      );
+      fileNumber += 1;
+    }
+  }
+  await writeFile(join(outputDir, "999_validate.sql"), "SELECT 'stations' AS table_name, count(*) AS row_count FROM station_cache_v2 UNION ALL SELECT 'connectors', count(*) FROM connectors UNION ALL SELECT 'operators', count(*) FROM operators;\n");
 }
