@@ -1,5 +1,5 @@
       const SUPABASE_URL = "https://ftnmdgiftdgaycotjixr.supabase.co";
-      const D1_FALLBACK_URL = "https://chargevoy-api.zombid.workers.dev/api/stations";
+      const D1_FALLBACK_URL = "https://broken-mud-373e.zombid.workers.dev/api/stations";
       const SUPABASE_KEY = "sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_";
       const API_HEADERS = {
         apikey: SUPABASE_KEY,
@@ -311,16 +311,9 @@
       // Dynamic map data can contain thousands of elements. Translation is intentionally
       // applied only on explicit language changes so it never blocks map interactions.
 
-      const D1_PUBLIC_TABLES = new Set([
-        "operators",
-        "connectors",
-        "station_reviews",
-        "station_reliability",
-        "official_opc_tariffs",
-        "station_ad_hoc_price_components",
-        "vehicle_models",
-        "ceme_cards",
-      ]);
+      // Stations use the site Worker D1 path. Auxiliary catalogues remain
+      // on Supabase until the separate API Worker is attached to a public route.
+      const D1_PUBLIC_TABLES = new Set();
 
       function d1Query(table, query) {
         const source = new URLSearchParams(query || "");
