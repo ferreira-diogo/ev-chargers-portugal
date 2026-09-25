@@ -44,10 +44,28 @@ jobs:
         run: wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=cloudflare/d1/schema.sql
       - name: Prepare NAP station snapshot
         run: node scripts/import-nap-datex.mjs --d1
-      - name: Upload NAP station snapshot
+      - name: Group NAP snapshot batches
         run: |
           set -e
+          rm -rf tmp/d1-nap-upload
+          mkdir -p tmp/d1-nap-upload
+          group=1
+          count=0
           for file in tmp/d1-nap-sync/*.sql; do
+            case "$file" in
+              *999_validate.sql) continue ;;
+            esac
+            cat "$file" >> "tmp/d1-nap-upload/$(printf '%04d' "$group").sql"
+            count=$((count + 1))
+            if [ "$count" -ge 10 ]; then
+              group=$((group + 1))
+              count=0
+            fi
+          done
+      - name: Upload grouped NAP station snapshot
+        run: |
+          set -e
+          for file in tmp/d1-nap-upload/*.sql; do
             echo "Uploading $file"
             success=0
             for attempt in 1 2 3 4 5; do
