@@ -1794,20 +1794,20 @@
 
           let stations;
           try {
-            stations = await getRows(
-              "charging_stations",
-              place ? nearbyStationsQuery(place) : fallbackStationsQuery(),
-            );
-          } catch (error) {
-            console.warn("Supabase indisponível; tentando fallback D1");
+            // D1 é agora a fonte primária do catálogo público de postos.
+            // A Supabase permanece como fallback reversível enquanto validamos a migração.
+            stations = await loadFallbackStations(place);
+            if (!stations.length) throw new Error("D1 sem postos disponíveis");
+          } catch (d1Error) {
+            console.warn("D1 indisponível ou vazia; usando Supabase como fallback", d1Error);
             try {
-              stations = await loadFallbackStations(place);
-            } catch (fallbackError) {
-              console.warn("Fallback D1 indisponível; usando consulta nacional limitada");
               stations = await getRows(
                 "charging_stations",
-                fallbackStationsQuery(),
+                place ? nearbyStationsQuery(place) : fallbackStationsQuery(),
               );
+            } catch (supabaseError) {
+              console.warn("Supabase indisponível; tentando novamente D1", supabaseError);
+              stations = await loadFallbackStations(place);
             }
           }
           const operatorResult = (
