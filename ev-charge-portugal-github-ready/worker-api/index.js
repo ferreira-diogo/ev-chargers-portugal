@@ -1,5 +1,6 @@
 // Restore API after static Worker build separation: 2026-09-25T14:55Z
 // Deploy trigger: Cloudflare D1 primary API
+// D1 NAP snapshot loaded: 2026-09-25
 const CATALOGS = {
   stations: [
     "id", "external_id", "source", "name", "address", "city",
