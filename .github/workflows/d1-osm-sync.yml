@@ -11,7 +11,6 @@ on:
 
 jobs:
   sync:
-    if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' && secrets.D1_DATABASE_NAME != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,6 +26,11 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+      - name: Validate Cloudflare configuration
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID repository secret"; exit 1; }
+          test -n "$D1_DATABASE_NAME" || { echo "::error::Missing D1_DATABASE_NAME repository secret"; exit 1; }
       - name: Install Wrangler
         run: npm install --global wrangler@4
       - name: Ensure D1 schema
