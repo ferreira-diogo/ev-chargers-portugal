@@ -1747,6 +1747,21 @@
         }
       }
 
+      async function loadFallbackStations(place) {
+        const params = new URLSearchParams();
+        if (place) {
+          params.set("lat", String(place.lat));
+          params.set("lon", String(place.lon));
+        }
+        const response = await fetch(`/api/stations?${params.toString()}`, {
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok)
+          throw new Error(`Fallback D1 HTTP ${response.status}`);
+        const payload = await response.json();
+        return Array.isArray(payload.stations) ? payload.stations : [];
+      }
+
       const stationFields =
         "id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id,amenities";
       function nearbyStationsQuery(place) {
@@ -1783,11 +1798,16 @@
               place ? nearbyStationsQuery(place) : fallbackStationsQuery(),
             );
           } catch (error) {
-            console.warn("Consulta de postos próxima falhou; usando fallback limitado");
-            stations = await getRows(
-              "charging_stations",
-              fallbackStationsQuery(),
-            );
+            console.warn("Supabase indisponível; tentando fallback D1");
+            try {
+              stations = await loadFallbackStations(place);
+            } catch (fallbackError) {
+              console.warn("Fallback D1 indisponível; usando consulta nacional limitada");
+              stations = await getRows(
+                "charging_stations",
+                fallbackStationsQuery(),
+              );
+            }
           }
           const operatorResult = (
             await Promise.allSettled([getRows("operators", "select=id,name")])
