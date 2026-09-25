@@ -1,0 +1,69 @@
+name: Migrate Supabase public data to D1
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 3 * * *"
+
+concurrency:
+  group: d1-supabase-migration
+  cancel-in-progress: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
+      SUPABASE_URL: https://ftnmdgiftdgaycotjixr.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+    defaults:
+      run:
+        working-directory: ev-charge-portugal-github-ready
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate configuration and recover public Supabase key
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          test -n "$D1_DATABASE_NAME" || { echo "::error::Missing D1_DATABASE_NAME"; exit 1; }
+          if [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            SUPABASE_PUBLISHABLE_KEY="$(node -e 'const fs=require("fs");const s=fs.readFileSync("assets/chargevoy.js","utf8");const m=s.match(/sb_publishable_[A-Za-z0-9._-]+/);if(!m) process.exit(2);process.stdout.write(m[0])')"
+            echo "Using the frontend publishable key already protected by Supabase RLS"
+            echo "SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY" >> "$GITHUB_ENV"
+          fi
+      - name: Install Wrangler
+        run: npm install --global wrangler@4
+      - name: Ensure D1 schema
+        run: wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=cloudflare/d1/schema.sql
+      - name: Prepare Supabase snapshot
+        run: node scripts/sync-d1-supabase.mjs
+      - name: Upload D1 snapshot
+        run: |
+          set -e
+          for file in tmp/d1-supabase-sync/*.sql; do
+            echo "Uploading $file"
+            success=0
+            for attempt in 1 2 3 4 5; do
+              if wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"; then
+                success=1
+                break
+              fi
+              echo "Upload failed (attempt $attempt); retrying..."
+              sleep $((attempt * 5))
+            done
+            test "$success" = "1" || exit 1
+          done
+      - name: Validate D1 counts
+        run: |
+          wrangler d1 execute "$D1_DATABASE_NAME" --remote --command="SELECT 'stations' AS name, count(*) AS rows FROM station_cache_v2 UNION ALL SELECT 'connectors', count(*) FROM connectors UNION ALL SELECT 'vehicles', count(*) FROM vehicle_models UNION ALL SELECT 'cards', count(*) FROM ceme_cards;"
+      - name: Verify public API
+        run: |
+          curl --fail --silent --show-error --max-time 30 "https://chargevoy-api.zombid.workers.dev/api/catalog?table=vehicle_models" | grep -q '"rows"'
+          curl --fail --silent --show-error --max-time 30 "https://chargevoy-api.zombid.workers.dev/api/stations?lat=39.7&lon=-8.1" | grep -q '"stations"'
