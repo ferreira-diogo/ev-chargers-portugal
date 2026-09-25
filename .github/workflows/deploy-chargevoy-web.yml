@@ -21,6 +21,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -33,6 +34,12 @@ jobs:
       - name: Build web bundle
         working-directory: ev-charge-portugal-github-ready
         run: npm run build:web
-      - name: Deploy static Worker
+      - name: Prepare D1 binding
         working-directory: ev-charge-portugal-github-ready
-        run: npx wrangler@4 deploy --config wrangler.toml
+        run: |
+          test -n "$D1_DATABASE_ID" || exit 1
+          cp wrangler.toml wrangler-deploy.toml
+          sed -i "s/# database_id = \\\"ID_DA_BASE_D1\\\"/database_id = \\\"$D1_DATABASE_ID\\\"/" wrangler-deploy.toml
+      - name: Deploy static Worker with D1
+        working-directory: ev-charge-portugal-github-ready
+        run: npx wrangler@4 deploy --config wrangler-deploy.toml
