@@ -1,0 +1,100 @@
+name: Apply route corridor planner patch
+
+on:
+  push:
+    branches: [feat/cloudflare-primary-api]
+    paths:
+      - ".github/workflows/apply-route-corridor-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: feat/cloudflare-primary-api
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Patch route planner to load full route corridor
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('ev-charge-portugal-github-ready/assets/chargevoy.js')
+          s = p.read_text()
+          old = '''          let candidates = allStations
+            .filter(
+              (station) =>
+                stationCompatibleWithVehicle(station) &&
+                Number(station.max_power_kw) > 0,
+            )'''
+          new = '''          // Route planning must use charging stations across the complete road
+          // corridor, not only the stations previously loaded around the map.
+          const routeLats = coordinates.map((coordinate) => Number(coordinate[1]));
+          const routeLons = coordinates.map((coordinate) => Number(coordinate[0]));
+          const routePaddingDegrees = 0.2;
+          const corridorParams = new URLSearchParams({
+            min_lat: String(Math.max(-90, Math.min(...routeLats) - routePaddingDegrees)),
+            max_lat: String(Math.min(90, Math.max(...routeLats) + routePaddingDegrees)),
+            min_lon: String(Math.max(-180, Math.min(...routeLons) - routePaddingDegrees)),
+            max_lon: String(Math.min(180, Math.max(...routeLons) + routePaddingDegrees)),
+            limit: "1000",
+          });
+          let routeStations;
+          try {
+            const corridorResponse = await fetchWithTimeout(
+              `${D1_FALLBACK_URL}?${corridorParams.toString()}`,
+              { headers: { Accept: "application/json" } },
+              12000,
+            );
+            if (!corridorResponse.ok)
+              throw new Error(`Cloudflare stations HTTP ${corridorResponse.status}`);
+            const corridorPayload = await corridorResponse.json();
+            routeStations = Array.isArray(corridorPayload.stations)
+              ? corridorPayload.stations
+              : [];
+            const corridorConnectors = Array.isArray(corridorPayload.connectors)
+              ? corridorPayload.connectors
+              : [];
+            for (const connector of corridorConnectors) {
+              if (!connector?.station_id) continue;
+              const rows = connectorMap.get(connector.station_id) || [];
+              if (!rows.some((row) => row.id === connector.id)) rows.push(connector);
+              connectorMap.set(connector.station_id, rows);
+            }
+            if (!routeStations.length)
+              throw new Error("Cloudflare não devolveu postos para o corredor da rota.");
+          } catch (corridorError) {
+            console.error("Postos do corredor da rota:", corridorError);
+            throw new Error(
+              "Não foi possível obter os postos ao longo de todo o percurso. Tente novamente para evitar um plano de carregamento incompleto.",
+            );
+          }
+          let candidates = routeStations
+            .filter(
+              (station) =>
+                stationCompatibleWithVehicle(station) &&
+                Number(station.max_power_kw) > 0,
+            )'''
+          if old not in s:
+              raise SystemExit('Expected route-planner block not found; refusing unsafe patch')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+      - name: Syntax check
+        run: node --check ev-charge-portugal-github-ready/assets/chargevoy.js
+      - name: Verify corridor integration
+        run: |
+          grep -q 'corridorParams' ev-charge-portugal-github-ready/assets/chargevoy.js
+          grep -q 'let candidates = routeStations' ev-charge-portugal-github-ready/assets/chargevoy.js
+      - name: Commit patched planner
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ev-charge-portugal-github-ready/assets/chargevoy.js
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: plan charging stops from full route corridor"
+          git push origin HEAD:feat/cloudflare-primary-api
