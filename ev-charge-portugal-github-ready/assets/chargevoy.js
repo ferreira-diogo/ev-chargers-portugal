@@ -1746,17 +1746,50 @@
         }
       }
 
+      const stationFields =
+        "id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id,amenities";
+      function nearbyStationsQuery(place) {
+        const latDelta = 0.45;
+        const lonDelta = 0.65;
+        const lat = Number(place.lat);
+        const lon = Number(place.lon);
+        return `select=${stationFields}&latitude=gte.${lat - latDelta}&latitude=lte.${lat + latDelta}&longitude=gte.${lon - lonDelta}&longitude=lte.${lon + lonDelta}&limit=500`;
+      }
+      function fallbackStationsQuery() {
+        return `select=${stationFields}&limit=500`;
+      }
+
       async function loadRealStations() {
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
         try {
-          const [stations, operators] = await Promise.all([
-            getAllRows(
+          // Primeiro tentamos obter a posição. Assim não obrigamos a
+          // aplicação a descarregar a tabela nacional completa.
+          let place = null;
+          try {
+            place = await useMyLocation({
+              setRouteOrigin: true,
+              silent: true,
+            });
+          } catch (error) {
+            console.warn("Localização indisponível; usando fallback nacional");
+          }
+
+          let stations;
+          try {
+            stations = await getRows(
               "charging_stations",
-              "select=id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id,amenities&order=max_power_kw.desc.nullslast",
-            ),
-            getRows("operators", "select=id,name"),
-          ]);
+              place ? nearbyStationsQuery(place) : fallbackStationsQuery(),
+            );
+          } catch (error) {
+            console.warn("Consulta de postos próxima falhou; usando fallback limitado");
+            stations = await getRows(
+              "charging_stations",
+              fallbackStationsQuery(),
+            );
+          }
+          const operators = await getRows("operators", "select=id,name");
+
           connectorMap = new Map();
           reliabilityMap = new Map();
           operatorMap = new Map(operators.map((o) => [o.id, o.name]));
@@ -1777,10 +1810,9 @@
               operatorSelect.appendChild(option);
             });
           renderStations(false);
-          useMyLocation({ setRouteOrigin: true, silent: true }).catch(() => {});
 
-          // O mapa não fica dependente de leituras volumosas. Conectores e
-          // fiabilidade são carregados apenas quando o utilizador abre um posto.
+          // O enriquecimento continua opcional. Conectores e fiabilidade
+          // são carregados apenas quando o utilizador abre um posto.
           const [vehiclesResult, cardsResult] = await Promise.allSettled([
             getRows(
               "vehicle_models",
@@ -1810,7 +1842,7 @@
           console.error(error);
           badge.textContent = "erro";
           cards.innerHTML =
-            '<article class="card"><div class="op">Não foi possível carregar os postos</div><div class="st">Confirme o URL, a publishable key e as políticas RLS da Supabase.</div></article>';
+            '<article class="card"><div class="op">Não foi possível carregar os postos</div><div class="st">Confirme a localização, o acesso à Supabase ou tente novamente.</div></article>';
         }
       }
 
