@@ -15,6 +15,7 @@ const canParse = (source) => {
   try { new Function(source); return true; }
   catch (error) { console.error(error.message); return false; }
 };
+const canParseWorkerModule = (source) => canParse(source.replace(/export\s+default/, "return"));
 
 const checks = [
   ["HTML references extracted CSS", html.includes("./assets/chargevoy.css")],
@@ -29,7 +30,7 @@ const checks = [
   ["Application JavaScript syntax is valid", canParse(js)],
   ["Route corridor JavaScript syntax is valid", canParse(routeJs)],
   ["Service Worker syntax is valid", canParse(worker)],
-  ["Static Worker syntax is valid", canParse(staticWorker)],
+  ["Static Worker syntax is valid", canParseWorkerModule(staticWorker)],
   ["Static Worker injects corridor planner", staticWorker.includes("route-corridor.js")],
   ["Corridor planner requests route bounds", routeJs.includes("min_lat") && routeJs.includes("max_lat") && routeJs.includes("min_lon") && routeJs.includes("max_lon")],
   ["Corridor planner keeps local fallback", routeJs.includes('corridorSource = "local-fallback"')],
