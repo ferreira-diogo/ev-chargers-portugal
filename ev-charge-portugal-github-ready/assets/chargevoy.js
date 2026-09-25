@@ -1,4 +1,5 @@
       const SUPABASE_URL = "https://ftnmdgiftdgaycotjixr.supabase.co";
+      const D1_FALLBACK_URL = "https://chargevoy-api.zombid.workers.dev/api/stations";
       const SUPABASE_KEY = "sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_";
       const API_HEADERS = {
         apikey: SUPABASE_KEY,
@@ -1753,7 +1754,7 @@
           params.set("lat", String(place.lat));
           params.set("lon", String(place.lon));
         }
-        const response = await fetch(`/api/stations?${params.toString()}`, {
+        const response = await fetch(`${D1_FALLBACK_URL}?${params.toString()}`, {
           headers: { Accept: "application/json" },
         });
         if (!response.ok)
