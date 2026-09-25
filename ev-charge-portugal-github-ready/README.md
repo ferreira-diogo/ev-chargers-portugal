@@ -12,23 +12,23 @@ Aplicação web/móvel para localizar postos de carregamento em Portugal, filtra
 - Sugestão de paragens e alternativa quando existe risco de não chegar ao destino.
 - Ligações de navegação para Google Maps e outros mapas compatíveis.
 - Login com Supabase Auth, incluindo Google OAuth quando ativado no projeto.
-- Página pública e opção autenticada para eliminação permanente de conta e dados associados.
 - Favoritos, histórico de rotas e estrutura preparada para avaliações.
 - Indicadores de disponibilidade: disponível, ocupado, indisponível, desconhecida e dados desatualizados.
-- Registo histórico de alterações de disponibilidade para cálculo futuro de fiabilidade.
 - Tesla-only identificado separadamente dos postos públicos compatíveis com Tesla.
 
-## Atualização dos postos
+## Arquitetura Cloudflare atual
 
-A atualização automática é feita pelo Supabase Cron através da Edge Function `import-nap-availability`.
+A infraestrutura pública do ChargeVoy é Cloudflare-first. O catálogo de postos/conectores e os mapeamentos de fontes ficam em Cloudflare D1; o snapshot de disponibilidade corrente fica em Cloudflare KV; Workers expõem a API consumida pelo frontend. Supabase não é a base de dados do catálogo/live. A utilização remanescente de Supabase deve limitar-se a funcionalidades ainda não migradas, como autenticação/dados privados e Edge Functions que ainda não tenham equivalente Worker.
 
-- Frequência do Cron: a cada 5 minutos (`*/5 * * * *`).
-- A consulta visual do site também é renovada a cada 5 minutos quando a página está visível.
-- A fonte NAP/MOBI.E publica novos snapshots em intervalos variáveis. Foram observadas publicações entre 5 e 15 minutos. O Cron consulta a fonte a cada 5 minutos para manter o atraso de atualização dentro do objetivo de 5–7 minutos sempre que existe um snapshot novo.
-- O importador rejeita feeds antigos, futuros, incompletos ou com cobertura inesperada.
-- Se a fonte falhar, os últimos dados válidos permanecem disponíveis.
-- A função usa `ETag/If-None-Match`: quando a fonte não mudou, recebe `304 Not Modified`, evita descarregar novamente o XML e não cria snapshots duplicados.
-- O estado live fica associado aos conectores através de `available_count`, `status`, `availability_updated_at` e `availability_source`.
+### Atualização dos postos e estado live
+
+- `evChargingInfra` do NAP/MOBI.E alimenta o catálogo NAP em D1 e o mapeamento explícito `site_id + point_id -> station_id + connector_id`.
+- `evActualStatus` alimenta o snapshot KV `mobie_nap_current`.
+- O workflow de disponibilidade consulta a fonte a cada 5 minutos (`*/5 * * * *`).
+- Um snapshot só é apresentado como **live** durante 5 minutos. Depois disso os conectores passam a `unknown/stale`; o snapshot antigo pode permanecer guardado apenas para diagnóstico.
+- O Worker cruza D1 e KV através de `nap_connector_mapping`. A inferência por IDs legados existe apenas como fallback transitório durante a migração.
+- O estado live exposto aos clientes usa `available_count`, `status`, `availability_updated_at` e `availability_source`.
+- O frontend renova os dados periodicamente quando a página está visível.
 
 ## APIs e fontes utilizadas
 
@@ -36,89 +36,72 @@ As chaves e tokens ficam apenas nas variáveis secretas da plataforma. Nunca dev
 
 ### Dados de postos e conectores
 
-- **Open Charge Map API**: importação e enriquecimento de postos públicos, operadores e conectores.
 - **NAP MOBI.E / EADME**:
-  - `https://ev-nap.mobie.pt/integration/nap/evChargingInfra` — infraestrutura estática.
-  - `https://ev-nap.mobie.pt/integration/nap/evActualStatus` — estado de disponibilidade e componentes de preço *ad hoc* publicados pelo OPC.
-- **Supabase PostgREST**: leitura dos postos, conectores, operadores, tarifas e dados de utilizador.
-- **Supabase Edge Functions**: ingestão segura do estado NAP e eliminação autenticada de conta (`delete-my-account`).
-- **Supabase Cron + pg_net**: execução automática da ingestão.
-- **Supabase Auth**: autenticação, sessões e associação de favoritos/histórico.
-- **OpenStreetMap**: cartografia e geocodificação utilizada pelo site.
-- **Overpass API (OpenStreetMap)**: consulta pontual de restaurantes, cafés, hotéis, supermercados e outros locais próximos do posto; usada apenas sob pedido e com cache local.
-- **Leaflet**: visualização e interação com o mapa.
-- **Google Maps / aplicações de mapas do dispositivo**: abertura de rotas externas através de links.
+  - `https://ev-nap.mobie.pt/integration/nap/evChargingInfra` — infraestrutura estática e IDs oficiais NAP.
+  - `https://ev-nap.mobie.pt/integration/nap/evActualStatus` — disponibilidade atual publicada pelos operadores.
+- **Cloudflare D1** — catálogo público, conectores, operadores, mapeamentos NAP e restantes dados públicos migrados.
+- **Cloudflare KV** — snapshot rápido da disponibilidade NAP corrente.
+- **Cloudflare Workers** — API pública, junção D1+KV e entrega do site.
+- **OpenStreetMap / Overpass** — cartografia e enriquecimento complementar.
+- **Leaflet** — visualização e interação com o mapa.
+- **Supabase Auth** — autenticação enquanto esta componente não for migrada.
 
 ## Arquitetura live
 
 ```
 NAP MOBI.E
     │
-    ├── evChargingInfra       → infraestrutura e correspondência de postos
-    └── evActualStatus        → estados dos pontos de carregamento
-            │
-            ▼
-Supabase Edge Function: import-nap-availability
-            │
-            ▼
-Supabase PostgreSQL
-    ├── connectors             → estado atual
-    ├── availability_snapshots → alterações históricas
-    ├── station_ad_hoc_price_components → preço oficial direto por tomada (energia, tempo e taxa fixa, quando publicado)
-    └── station_source_links   → correspondência NAP/estação
-            │
-            ▼
-Frontend
-    ├── consulta dados públicos
-    ├── atualiza a cada 5 minutos
-    └── cruza estado live com o veículo escolhido
+    ├── evChargingInfra ──> import/sync ──> Cloudflare D1
+    │                                      ├── station_cache_v2
+    │                                      ├── connectors
+    │                                      └── nap_connector_mapping
+    │
+    └── evActualStatus ──> refresh 5 min ─> Cloudflare KV
+                                           └── mobie_nap_current
+                                                    │
+                         D1 mapping + KV snapshot ───┤
+                                                    ▼
+                                           Cloudflare Worker API
+                                                    │
+                                                    ▼
+                                                Frontend
 ```
 
-Atualmente não é utilizado Cloudflare KV para o estado live. O site pode continuar alojado em Cloudflare Pages/Workers, enquanto a base de dados e a ingestão permanecem na Supabase. Esta separação evita duplicar o estado e mantém o sistema simples.
+A chave de disponibilidade no KV é `site_id|point_id`. D1 mantém a correspondência explícita para os IDs internos. Isto evita depender de parsing heurístico dos IDs e permite que o catálogo evolua sem perder a associação ao estado live.
+
+## Rotas
+
+O cálculo de rota usa OSRM para obter a geometria e consulta postos na bounding box do percurso. Os candidatos são depois filtrados pela distância ao corredor, compatibilidade com o veículo e autonomia/SOC. A lista local do mapa é apenas fallback se a consulta de corredor falhar.
 
 ## Segurança
 
-- Chaves da Open Charge Map, Supabase e tokens de execução são configurados como secrets.
-- A chave pública do Supabase pode ser usada no frontend com RLS ativo.
-- A service role key nunca deve ser colocada no HTML, JavaScript público, README ou GitHub.
-- O token usado pelo Cron para chamar a Edge Function é validado no servidor.
-- Tabelas privadas, staging e backups não são expostas ao frontend.
+- Tokens Cloudflare e outras credenciais de servidor são secrets.
+- Tokens com permissões de escrita em D1/KV nunca devem ser enviados para o frontend.
+- A service role Supabase nunca deve ser colocada no HTML, JavaScript público, README ou GitHub.
+- Tabelas privadas e dados de autenticação não são expostos pela API pública.
 
 ## Estrutura principal
 
 - `index.html` — aplicação web.
 - `service-worker.js` — suporte PWA/cache do browser.
-- `scripts/import-nap-availability.mjs` — parser, validação e importação manual.
-- `scripts/import-nap-availability.test.mjs` — testes do parser e das validações.
-- `supabase/functions/import-nap-availability/index.ts` — Edge Function live.
-- `supabase/deployments/` — scripts de instalação e configuração.
-- `supabase/rollback/` — scripts de rollback.
-- `.github/workflows/` — validações e execução manual de importação.
+- `worker/index.js` — Worker principal e API D1+KV.
+- `cloudflare/d1/schema.sql` — schema público D1.
+- `scripts/import-nap-datex.mjs` — parser/validação da infraestrutura NAP e geração do snapshot D1.
+- `scripts/build-nap-d1-mapping.mjs` — geração do mapping explícito NAP para D1.
+- `scripts/import-nap-availability.mjs` — parser/validação do `evActualStatus`.
+- `scripts/refresh-nap-availability-kv.mjs` — atualização do snapshot live em KV.
+- `.github/workflows/d1-stations-sync.yml` — sincronização periódica do catálogo/mapping D1.
+- `.github/workflows/refresh-nap-availability.yml` — atualização do estado live a cada 5 minutos.
 
 ## Operação e rollback
 
-Antes de alterações estruturais deve ser criado um backup no schema privado. O backup atual do agendamento encontra-se em:
+Antes de alterações estruturais deve existir um ponto de rollback. Para a migração do mapping live Cloudflare, a baseline é `03daaa241890ff7ef5c95116e4e9d92bf980e00d` e a branch dedicada é `rollback/pre-cloudflare-nap-live-mapping`.
 
-`private.nap_cron_backup_20260923`
-
-Para reverter o intervalo, usar o backup e alterar o Cron para:
-
-```sql
-select cron.alter_job(1, '3,18,33,48 * * * *');
-```
-
-O rollback da funcionalidade NAP live está documentado em `supabase/rollback/nap-live.sql`.
+As alterações de schema são aditivas e idempotentes (`CREATE TABLE/INDEX IF NOT EXISTS`). O Worker mantém fallback para o formato anterior enquanto o mapping D1 ainda não estiver disponível, permitindo aplicar a migração e o deploy sem janela de indisponibilidade.
 
 ## Custo
 
-Não foram introduzidas APIs pagas nem chaves no código. A arquitetura foi mantida com os serviços gratuitos disponíveis:
-
-- Cloudflare para alojamento e entrega do site.
-- Supabase para base de dados, autenticação, Edge Function e Cron.
-- OpenStreetMap/Leaflet para o mapa.
-- NAP MOBI.E e Open Charge Map como fontes públicas.
-
-O Cron de 5 minutos representa 288 execuções por dia. A função evita regravar histórico quando a publicação NAP não mudou. O plano gratuito da Supabase inclui 5 GB de egress e 500.000 invocações de Edge Functions; as quotas de Supabase e Cloudflare devem ser monitorizadas no painel. O ETag reduz tráfego quando a publicação não muda, mas a fonte pode publicar um novo XML de aproximadamente 36 MB e esse consumo deve ser acompanhado.
+A arquitetura privilegia Cloudflare D1/KV/Workers e fontes públicas NAP MOBI.E/OpenStreetMap. O refresh live de 5 minutos representa até 288 verificações por dia. As quotas Cloudflare e o volume dos feeds NAP devem ser monitorizados.
 
 ## Desenvolvimento
 
@@ -135,12 +118,10 @@ As importações manuais devem ser executadas apenas com as variáveis secretas 
 
 O site é também uma Progressive Web App (PWA):
 
-- manifest.webmanifest e service-worker.js permitem instalar o EV Charge Portugal no ecrã inicial, em modo standalone.
-- O mapa usa densidade progressiva: em zoom afastado agrupa visualmente os postos por grelha; ao aproximar, mostra mais detalhe.
-- No telemóvel, o detalhe do posto abre num painel inferior compacto e mostra apenas o posto escolhido; a alternativa B continua disponível por botão.
-- A instalação é iniciada no menu **A minha conta → Instalar aplicação** quando o navegador disponibiliza essa opção.
-
-A primeira fase da aplicação dedicada será esta PWA, partilhando o mesmo código, autenticação e dados. Uma versão publicada nas lojas poderá ser criada posteriormente com Capacitor, sem duplicar a lógica do produto.
+- `manifest.webmanifest` e `service-worker.js` permitem instalar o ChargeVoy no ecrã inicial, em modo standalone.
+- O mapa usa densidade progressiva: em zoom afastado agrupa visualmente os postos; ao aproximar mostra mais detalhe.
+- No telemóvel, o detalhe do posto abre num painel inferior compacto.
+- A instalação é iniciada no menu da conta quando o navegador disponibiliza essa opção.
 
 ## Android / Google Play
 
@@ -154,9 +135,7 @@ npm run android:sync
 npm run android:open
 ```
 
-Abrir o projeto `android/` no Android Studio, testar num dispositivo real e gerar um **Android App Bundle** assinado (`.aab`) através de **Build → Generate Signed Bundle / APK**. A aplicação pede localização apenas quando o utilizador usa “A minha localização”; os dados de postos continuam a ser atualizados pelas fontes NAP/OCM, sem exigir publicar uma nova versão da aplicação.
-
-Antes da primeira publicação é necessário criar a conta Google Play Console, preparar a ficha (descrição, ícone, screenshots, política de privacidade e classificação de conteúdo) e publicar primeiro no teste interno. A Google Play recebe App Bundles e gere a assinatura da aplicação.
+A aplicação pede localização apenas quando o utilizador usa a funcionalidade correspondente; os dados de postos são atualizados pelas fontes do backend sem exigir publicar uma nova versão da aplicação.
 
 ## Licença
 
