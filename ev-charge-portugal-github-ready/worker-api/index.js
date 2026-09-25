@@ -124,12 +124,12 @@ async function readStations(db, url) {
 
   const query = hasLocation
     ? db.prepare(`SELECT ${CATALOGS.stations.join(", ")}
-       FROM station_cache
+       FROM station_cache_v2
        WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?
        ORDER BY COALESCE(max_power_kw, 0) DESC LIMIT 500`)
       .bind(lat - 0.45, lat + 0.45, lon - 0.65, lon + 0.65)
     : db.prepare(`SELECT ${CATALOGS.stations.join(", ")}
-       FROM station_cache
+       FROM station_cache_v2
        ORDER BY COALESCE(max_power_kw, 0) DESC LIMIT 500`);
 
   const result = await query.all();
@@ -142,37 +142,52 @@ async function readStations(db, url) {
 
 async function nearbyOpenStreetMap(lat, lon) {
   const query =
-    `[out:json][timeout:10];nwr[amenity=charging_station](around:50000,${lat},${lon});out center tags;`;
-  const response = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-      accept: "application/json",
-      "user-agent": "ChargeVoy/1.0",
-    },
-    body: new URLSearchParams({ data: query }),
-  });
-  if (!response.ok) throw new Error(`Overpass HTTP ${response.status}`);
-  const payload = await response.json();
-  return (payload.elements || []).slice(0, 500).map((item) => {
-    const tags = item.tags || {};
-    const latitude = Number(item.lat ?? item.center?.lat);
-    const longitude = Number(item.lon ?? item.center?.lon);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
-    return {
-      id: `osm-${item.type}-${item.id}`,
-      external_id: String(item.id),
-      source: "openstreetmap-overpass",
-      name: tags.name || tags.ref || "Posto de carregamento",
-      address: [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(" "),
-      city: tags["addr:city"] || tags["addr:municipality"] || "",
-      latitude, longitude,
-      max_power_kw: null,
-      status: "unknown",
-      operator_id: tags.operator || null,
-      amenities: JSON.stringify(tags),
-    };
-  }).filter(Boolean);
+    `[out:json][timeout:20];nwr[amenity=charging_station](around:50000,${lat},${lon});out center tags;`;
+  const endpoints = [
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+  ];
+  let lastError;
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          accept: "application/json",
+          "user-agent": "ChargeVoy/1.0",
+        },
+        body: new URLSearchParams({ data: query }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!response.ok) throw new Error(`Overpass HTTP ${response.status}`);
+      const payload = await response.json();
+      return (payload.elements || []).slice(0, 500).map((item) => {
+        const tags = item.tags || {};
+        const latitude = Number(item.lat ?? item.center?.lat);
+        const longitude = Number(item.lon ?? item.center?.lon);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+        return {
+          id: `osm-${item.type}-${item.id}`,
+          external_id: String(item.id),
+          source: "openstreetmap-overpass",
+          name: tags.name || tags.ref || "Posto de carregamento",
+          address: [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(" "),
+          city: tags["addr:city"] || tags["addr:municipality"] || "",
+          latitude, longitude,
+          max_power_kw: null,
+          status: "unknown",
+          operator_id: tags.operator || null,
+          amenities: JSON.stringify(tags),
+        };
+      }).filter(Boolean);
+    } catch (error) {
+      lastError = error;
+      console.warn("Overpass endpoint failed:", endpoint, error);
+    }
+  }
+  throw lastError || new Error("No Overpass endpoint available");
 }
 
 export default {
