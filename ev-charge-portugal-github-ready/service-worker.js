@@ -1,4 +1,4 @@
-const CACHE_NAME='ev-charge-shell-v9';
+const CACHE_NAME='ev-charge-shell-v10';
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css','./assets/chargevoy.js'];
 
 self.addEventListener('install',event=>{
