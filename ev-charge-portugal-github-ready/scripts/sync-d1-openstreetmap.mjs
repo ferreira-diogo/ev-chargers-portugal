@@ -8,18 +8,9 @@ nwr["amenity"="charging_station"](area.pt);
 out center tags;`;
 
 const fields = [
-  "id",
-  "external_id",
-  "source",
-  "name",
-  "address",
-  "city",
-  "latitude",
-  "longitude",
-  "max_power_kw",
-  "status",
-  "operator_id",
-  "amenities",
+  "id", "external_id", "source", "name", "address", "city",
+  "latitude", "longitude", "max_power_kw", "status",
+  "operator_id", "amenities"
 ];
 
 function sqlString(value) {
@@ -44,8 +35,20 @@ function powerFromTags(tags) {
     const match = String(value).match(/[0-9]+(?:[.,][0-9]+)?/);
     if (match) return Number(match[0].replace(",", "."));
   }
-
   return null;
+}
+
+function compactAmenities(tags) {
+  const allowed = [
+    "socket:type2", "socket:ccs", "socket:chademo",
+    "socket:type2:output", "socket:ccs:output",
+    "opening_hours", "fee", "access", "operator", "brand"
+  ];
+  const result = {};
+  for (const key of allowed) {
+    if (tags[key] != null) result[key] = String(tags[key]).slice(0, 160);
+  }
+  return JSON.stringify(result);
 }
 
 function mapStation(item) {
@@ -54,22 +57,19 @@ function mapStation(item) {
   const longitude = Number(item.lon ?? item.center?.lon);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
 
-  const id = `osm-${item.type}-${item.id}`;
   return {
-    id,
+    id: `osm-${item.type}-${item.id}`,
     external_id: String(item.id),
     source: "openstreetmap",
     name: tags.name || tags.ref || "Posto de carregamento",
-    address: [tags["addr:street"], tags["addr:housenumber"]]
-      .filter(Boolean)
-      .join(" "),
+    address: [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(" "),
     city: tags["addr:city"] || tags["addr:municipality"] || "",
     latitude,
     longitude,
     max_power_kw: powerFromTags(tags),
     status: "unknown",
     operator_id: tags.operator || null,
-    amenities: JSON.stringify(tags),
+    amenities: compactAmenities(tags),
   };
 }
 
@@ -108,10 +108,7 @@ if (!response.ok) {
 
 const payload = await response.json();
 const stations = (payload.elements || []).map(mapStation).filter(Boolean);
-
-if (!stations.length) {
-  throw new Error("No charging stations returned by OpenStreetMap");
-}
+if (!stations.length) throw new Error("No charging stations returned by OpenStreetMap");
 
 await rm(outputDir, { recursive: true, force: true });
 await mkdir(outputDir, { recursive: true });
@@ -121,7 +118,8 @@ await writeFile(
   "CREATE TABLE IF NOT EXISTS station_cache_next AS SELECT * FROM station_cache WHERE 0;\nDELETE FROM station_cache_next;\n",
 );
 
-const chunkSize = 100;
+// Small batches keep each remote D1 statement below API size limits.
+const chunkSize = 20;
 for (let index = 0; index < stations.length; index += chunkSize) {
   const chunk = stations.slice(index, index + chunkSize);
   const values = chunk.map((row) => `(${rowValues(row)})`).join(",\n");
@@ -142,4 +140,4 @@ COMMIT;
 `,
 );
 
-console.log(`Prepared ${stations.length} OpenStreetMap charging stations`);
+console.log(`Prepared ${stations.length} OpenStreetMap charging stations in ${Math.ceil(stations.length / chunkSize)} batches`);
