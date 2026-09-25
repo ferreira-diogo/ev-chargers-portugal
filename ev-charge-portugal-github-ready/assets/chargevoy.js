@@ -395,17 +395,32 @@
           return connectorMap.get(stationId) || [];
         if (!force && connectorRequests.has(stationId))
           return connectorRequests.get(stationId);
-        const request = getRows(
-          "connectors",
-          "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&station_id=eq." +
-            encodeURIComponent(stationId) +
-            "&order=id.asc",
-        )
-          .then((rows) => {
-            connectorMap.set(stationId, rows);
-            return rows;
-          })
-          .finally(() => connectorRequests.delete(stationId));
+        const request = (async () => {
+          let rows = [];
+          try {
+            const response = await fetchWithTimeout(
+              `${D1_FALLBACK_URL.replace(/\\/api\\/stations$/, "")}/api/connectors?station_id=${encodeURIComponent(stationId)}`,
+              { headers: { Accept: "application/json" } },
+              7000,
+            );
+            if (response.ok) {
+              const payload = await response.json();
+              rows = Array.isArray(payload.connectors) ? payload.connectors : [];
+            }
+          } catch (error) {
+            console.warn("D1 connectors indisponíveis", error);
+          }
+          if (!rows.length) {
+            rows = await getRows(
+              "connectors",
+              "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&station_id=eq." +
+                encodeURIComponent(stationId) +
+                "&order=id.asc",
+            );
+          }
+          connectorMap.set(stationId, rows);
+          return rows;
+        })().finally(() => connectorRequests.delete(stationId));
         connectorRequests.set(stationId, request);
         return request;
       }
@@ -1882,12 +1897,21 @@
           params.set("lon", String(place.lon));
         }
         try {
-          const response = await fetch(`${D1_FALLBACK_URL}?${params.toString()}`, {
-            headers: { Accept: "application/json" },
-          });
+          const response = await fetchWithTimeout(
+            `${D1_FALLBACK_URL}?${params.toString()}`,
+            { headers: { Accept: "application/json" } },
+            9000,
+          );
           if (response.ok) {
             const payload = await response.json();
             const stations = Array.isArray(payload.stations) ? payload.stations : [];
+            const rows = Array.isArray(payload.connectors) ? payload.connectors : [];
+            connectorMap = new Map();
+            for (const row of rows) {
+              const list = connectorMap.get(row.station_id) || [];
+              list.push(row);
+              connectorMap.set(row.station_id, list);
+            }
             if (stations.length) return stations;
           }
         } catch (error) {
@@ -1909,48 +1933,125 @@
         return `select=${stationFields}&limit=500`;
       }
 
+      const VEHICLE_CACHE_KEY = "chargevoy-vehicle-catalog-v1";
+      const STATION_CACHE_KEY = "chargevoy-nearby-stations-v1";
+
+      function readVehicleCache() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(VEHICLE_CACHE_KEY) || "null");
+          return Array.isArray(saved?.rows) && saved.rows.length ? saved.rows : null;
+        } catch { return null; }
+      }
+
+      function cacheVehicleRows(rows) {
+        try {
+          localStorage.setItem(VEHICLE_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), rows }));
+        } catch {}
+      }
+
+      function readStationCache() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STATION_CACHE_KEY) || "null");
+          if (!Array.isArray(saved?.stations) || !saved.stations.length) return null;
+          return saved;
+        } catch { return null; }
+      }
+
+      function cacheStationRows(stations, connectors) {
+        try {
+          localStorage.setItem(STATION_CACHE_KEY, JSON.stringify({
+            savedAt: Date.now(),
+            stations,
+            connectors,
+            place: searchPosition ? { lat: searchPosition.lat, lon: searchPosition.lon } : null,
+          }));
+        } catch {}
+      }
+
+      function restoreConnectorRows(rows) {
+        const mapByStation = new Map();
+        for (const row of Array.isArray(rows) ? rows : []) {
+          if (!row?.station_id) continue;
+          const list = mapByStation.get(row.station_id) || [];
+          list.push(row);
+          mapByStation.set(row.station_id, list);
+        }
+        connectorMap = mapByStation;
+      }
+
       async function loadRealStations() {
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
-        try {
-          // Primeiro tentamos obter a posição. Assim não obrigamos a
-          // aplicação a descarregar a tabela nacional completa.
-          let place = null;
-          try {
-            place = await useMyLocation({
-              setRouteOrigin: true,
-              silent: true,
-            });
-          } catch (error) {
-            console.warn("Localização indisponível; usando fallback nacional");
-          }
 
-          // A D1 é a única fonte pública de postos. Se estiver vazia,
-          // o próprio Worker tenta a consulta geográfica ao OpenStreetMap.
+        // Put a usable vehicle selection on screen immediately, then refresh the
+        // full catalogue in parallel with geolocation and station loading.
+        const cachedVehicles = readVehicleCache();
+        populateVehicles(cachedVehicles || LOCAL_VEHICLE_FALLBACK);
+        const vehiclePromise = getRows(
+          "vehicle_models",
+          "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
+        ).then((rows) => {
+          if (rows.length) {
+            cacheVehicleRows(rows);
+            populateVehicles(rows);
+          }
+          return rows;
+        }).catch((error) => {
+          console.warn("Catálogo de veículos indisponível; mantendo a última cópia guardada", error);
+          return cachedVehicles || LOCAL_VEHICLE_FALLBACK;
+        });
+
+        // Reuse the last nearby result instantly on repeat visits while fetching
+        // current location and fresh D1 data.
+        const cachedStations = readStationCache();
+        if (cachedStations) {
+          allStations = cachedStations.stations;
+          restoreConnectorRows(cachedStations.connectors);
+          operatorMap = new Map(
+            allStations.map((station) => [
+              station.operator_id,
+              station.operator_name || "Operador não indicado",
+            ]),
+          );
+          renderStations(false);
+        }
+
+        try {
+          const locationPromise = useMyLocation({
+            setRouteOrigin: true,
+            silent: true,
+          }).catch((error) => {
+            console.warn("Localização indisponível; usando fallback nacional", error);
+            return null;
+          });
+
+          const [place, cardsResult] = await Promise.all([
+            locationPromise,
+            getRows(
+              "ceme_cards",
+              "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
+            ).then((rows) => ({ status: "fulfilled", value: rows }))
+              .catch((reason) => ({ status: "rejected", reason })),
+          ]);
+
           const stations = await loadFallbackStations(place);
           if (!stations.length) throw new Error("D1/OSM sem postos disponíveis");
-          const operatorResult = (
-            await Promise.allSettled([getRows("operators", "select=id,name")])
-          )[0];
-          const operators =
-            operatorResult.status === "fulfilled" ? operatorResult.value : [];
-          if (operatorResult.status !== "fulfilled")
-            console.warn("Operadores indisponíveis; mostrando postos sem operador");
 
-          connectorMap = new Map();
           reliabilityMap = new Map();
-          operatorMap = new Map(operators.map((o) => [o.id, o.name]));
+          operatorMap = new Map(stations.map((station) => [
+            station.operator_id,
+            station.operator_name || "Operador não indicado",
+          ]));
           allStations = stations;
+          cacheStationRows(stations, [...connectorMap.values()].flat());
           const operatorSelect = document.getElementById("operator-filter");
-          [
-            ...new Set(
-              stations
-                .map((station) => operatorMap.get(station.operator_id))
-                .filter(Boolean),
-            ),
-          ]
+          const seenOperators = new Set(
+            [...operatorSelect.options].map((option) => option.value),
+          );
+          [...new Set(stations.map((station) => station.operator_name).filter(Boolean))]
             .sort((a, b) => a.localeCompare(b, "pt"))
             .forEach((name) => {
+              if (seenOperators.has(name)) return;
               const option = document.createElement("option");
               option.value = name;
               option.textContent = name;
@@ -1958,33 +2059,16 @@
             });
           renderStations(false);
 
-          // O enriquecimento continua opcional. Conectores e fiabilidade
-          // são carregados apenas quando o utilizador abre um posto.
-          const [vehiclesResult, cardsResult] = await Promise.allSettled([
-            getRows(
-              "vehicle_models",
-              "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
-            ),
-            getRows(
-              "ceme_cards",
-              "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
-            ),
-          ]);
-          if (vehiclesResult.status === "fulfilled" && vehiclesResult.value.length) {
-            populateVehicles(vehiclesResult.value);
-          } else {
-            console.warn("Catálogo D1 indisponível; usando catálogo local", vehiclesResult.reason);
-            populateVehicles(LOCAL_VEHICLE_FALLBACK);
-          }
+          const vehicles = await vehiclePromise;
+          if (vehicles.length) cacheVehicleRows(vehicles);
           if (cardsResult.status === "fulfilled") {
             const today = new Date().toISOString().slice(0, 10);
             cemeCards = cardsResult.value.filter(
-              (card) =>
-                (!card.valid_from || card.valid_from <= today) &&
-                (!card.valid_to || card.valid_to >= today),
+              (card) => (!card.valid_from || card.valid_from <= today) &&
+                        (!card.valid_to || card.valid_to >= today),
             );
           } else {
-            console.warn("Tarifários D1 indisponíveis; a área de preços ficará sem valores até existir um snapshot válido", cardsResult.reason);
+            console.warn("Tarifários CEME indisponíveis", cardsResult.reason);
           }
         } catch (error) {
           console.error(error);
@@ -2351,7 +2435,7 @@
                 ),
               );
             },
-            { enableHighAccuracy: true, timeout: 12000, maximumAge: 300000 },
+            { enableHighAccuracy: false, timeout: 6000, maximumAge: 600000 },
           );
         });
       }
