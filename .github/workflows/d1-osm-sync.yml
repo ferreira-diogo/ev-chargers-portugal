@@ -2,6 +2,10 @@ name: D1 OpenStreetMap station sync
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/d1-osm-sync.yml"
+      - "ev-charge-portugal-github-ready/scripts/sync-d1-openstreetmap.mjs"
   schedule:
     - cron: "30 */6 * * *"
 
