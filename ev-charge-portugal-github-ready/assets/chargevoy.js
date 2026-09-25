@@ -399,7 +399,7 @@
           let rows = [];
           try {
             const response = await fetchWithTimeout(
-              `${D1_FALLBACK_URL.replace(/\\/api\\/stations$/, "")}/api/connectors?station_id=${encodeURIComponent(stationId)}`,
+              `${D1_FALLBACK_URL.replace(/\/api\/stations$/, "")}/api/connectors?station_id=${encodeURIComponent(stationId)}`,
               { headers: { Accept: "application/json" } },
               7000,
             );
