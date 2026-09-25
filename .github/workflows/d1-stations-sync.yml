@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - ".github/workflows/d1-stations-sync.yml"
-      - "ev-charge-portugal-github-ready/scripts/sync-d1-stations.mjs"
+      - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
       - "ev-charge-portugal-github-ready/cloudflare/d1/schema.sql"
   schedule:
     - cron: "0 */6 * * *"
@@ -38,33 +38,28 @@ jobs:
           test -n "$D1_DATABASE_NAME" || { echo "::error::Missing D1_DATABASE_NAME"; exit 1; }
       - name: Install Wrangler
         run: npm install --global wrangler@4
+      - name: Install application dependencies
+        run: npm install --no-audit --no-fund
       - name: Ensure D1 schema
         run: wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=cloudflare/d1/schema.sql
-      - name: Prepare station snapshot
-        run: node scripts/sync-d1-stations.mjs
-      - name: Upload station snapshot
+      - name: Prepare NAP station snapshot
+        run: node scripts/import-nap-datex.mjs --d1
+      - name: Upload NAP station snapshot
         run: |
-          for attempt in 1 2 3 4 5; do
-            echo "D1 upload attempt $attempt"
-            failed=0
-            if ! wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=tmp/d1-sync/001_prepare.sql; then
-              failed=1
-            fi
-            if [ "$failed" -eq 0 ]; then
-              for file in tmp/d1-sync/0*.sql; do
-                [ "$file" = "tmp/d1-sync/001_prepare.sql" ] && continue
-                if ! wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"; then
-                  failed=1
-                  break
-                fi
-              done
-            fi
-            if [ "$failed" -eq 0 ]; then
-              echo "D1 station snapshot uploaded"
-              exit 0
-            fi
-            echo "D1 upload attempt $attempt failed; retrying after a short pause"
-            sleep $((attempt * 10))
+          set -e
+          for file in tmp/d1-nap-sync/*.sql; do
+            echo "Uploading $file"
+            success=0
+            for attempt in 1 2 3 4 5; do
+              if wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"; then
+                success=1
+                break
+              fi
+              echo "Upload failed (attempt $attempt); retrying..."
+              sleep $((attempt * 5))
+            done
+            test "$success" = "1" || exit 1
           done
-          echo "::error::D1 station snapshot upload failed after retries"
-          exit 1
+      - name: Verify D1 station API
+        run: |
+          curl --fail --silent --show-error --max-time 30 "https://chargevoy-api.zombid.workers.dev/api/stations?lat=39.7&lon=-8.1" | grep -q '"stations"'
