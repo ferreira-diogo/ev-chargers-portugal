@@ -2,6 +2,9 @@ name: Deploy ChargeVoy API Worker
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy ChargeVoy web"]
+    types: [completed]
   push:
     paths:
       - "ev-charge-portugal-github-ready/worker-api/index.js"
@@ -10,6 +13,7 @@ on:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -60,3 +64,20 @@ jobs:
       - name: Deploy API Worker
         working-directory: ev-charge-portugal-github-ready
         run: wrangler deploy --config wrangler-api-deploy.toml
+      - name: Verify public API endpoint
+        env:
+          API_HEALTH_URL: https://chargevoy-api.zombid.workers.dev/api/catalog?table=vehicle_models
+        run: |
+          set -e
+          for attempt in $(seq 1 12); do
+            status="$(curl --silent --show-error --max-time 15 --output /tmp/chargevoy-api.json --write-out '%{http_code}' "$API_HEALTH_URL" || true)"
+            if [ "$status" = "200" ] && grep -q '"rows"' /tmp/chargevoy-api.json; then
+              echo "ChargeVoy API is serving D1 JSON (HTTP $status)"
+              exit 0
+            fi
+            echo "API check attempt $attempt returned HTTP $status; waiting for propagation"
+            sleep 5
+          done
+          echo "::error::Public API endpoint is not serving the deployed API Worker"
+          sed -n '1,20p' /tmp/chargevoy-api.json || true
+          exit 1
