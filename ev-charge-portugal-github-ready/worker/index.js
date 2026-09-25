@@ -1,4 +1,26 @@
-const AVAILABILITY_KEY = "mobie_nap_current";
+async function mergeAvailability(rows, env) {
+  if (!env.AVAILABILITY_KV || !rows.length) return rows;
+  try {
+    const snapshot = await env.AVAILABILITY_KV.get("mobie_nap_current", "json");
+    if (!snapshot?.statuses) return rows;
+    for (const connector of rows) {
+      const site = String(connector.station_id || "").replace(/^nap-/, "");
+      const external = String(connector.external_id || connector.id || "").replace(/^nap-/, "");
+      let point = external.startsWith(site + "-") ? external.slice(site.length + 1) : "";
+      let status = snapshot.statuses[site + "|" + point];
+      while (!status && /-\d+$/.test(point)) {
+        point = point.replace(/-\d+$/, "");
+        status = snapshot.statuses[site + "|" + point];
+      }
+      if (!status) continue;
+      connector.status = status;
+      connector.availability_updated_at = snapshot.publication_time;
+      connector.availability_source = "mobie_nap";
+      connector.available_count = status === "available" ? 1 : ["charging", "outOfOrder", "blocked", "inoperative", "reserved"].includes(status) ? 0 : null;
+    }
+  } catch (error) { console.error("NAP snapshot:", error); }
+  return rows;
+}
 
 const fields = [
   "id",
@@ -69,12 +91,14 @@ async function stations(request, env) {
       if (!batch.length) continue;
       const placeholders = batch.map(() => "?").join(", ");
       const connectorResult = await db.prepare(
-        `SELECT station_id, type, power_kw, quantity, available_count, status,
+        `SELECT id, external_id, station_id, type, power_kw, quantity, available_count, status,
                 availability_updated_at, availability_source
          FROM connectors WHERE station_id IN (${placeholders})`,
       ).bind(...batch).all();
       connectorRows.push(...(connectorResult.results || []));
     }
+
+    await mergeAvailability(connectorRows, env);
 
     return json({
       source: "cloudflare-d1-cache",
@@ -112,9 +136,10 @@ export default {
       if (!stationId || stationId.length > 180) return json({ connectors: [], error: "station_id inválido" }, 400);
       try {
         const result = await env.CHARGEVOY_DB.prepare(
-          "SELECT station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id",
+          "SELECT id, external_id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id",
         ).bind(stationId).all();
-        return json({ source: "cloudflare-d1", connectors: result.results || [] });
+        const connectors = await mergeAvailability(result.results || [], env);
+        return json({ source: "cloudflare-d1", connectors });
       } catch (error) {
         console.error("D1 connectors:", error);
         return json({ connectors: [], error: "D1 connector query failed" }, 503);
