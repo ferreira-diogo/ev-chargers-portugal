@@ -5,7 +5,9 @@ on:
   workflow_run:
     workflows: ["Deploy ChargeVoy web"]
     types: [completed]
+    branches: [main]
   push:
+    branches: [main]
     paths:
       - "ev-charge-portugal-github-ready/worker-api/index.js"
       - "ev-charge-portugal-github-ready/wrangler-api.toml"
@@ -13,7 +15,12 @@ on:
 
 jobs:
   deploy:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -44,6 +51,7 @@ jobs:
             DB_ID="$(node -e 'const fs=require("fs");const root=JSON.parse(fs.readFileSync("/tmp/d1-info.json","utf8"));const candidates=[root,root.result,root.database,root.result?.database].filter(Boolean);const d=candidates.find(x=>x.uuid||x.database_id||x.id);if(!d) process.exit(2);process.stdout.write(d.uuid||d.database_id||d.id||"")')"
           fi
           test -n "$DB_ID" || { echo "::error::D1 database ID could not be resolved; add D1_DATABASE_ID"; exit 1; }
+          export DB_ID
           cp wrangler-api.toml wrangler-api-deploy.toml
           node - <<'NODE'
           const fs = require("fs");
