@@ -1,3 +1,4 @@
+// Restore API after static Worker build separation: 2026-09-25T14:55Z
 // Deploy trigger: Cloudflare D1 primary API
 const CATALOGS = {
   stations: [
