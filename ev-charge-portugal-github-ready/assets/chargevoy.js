@@ -306,6 +306,27 @@
         return rows;
       }
 
+      const connectorRequests = new Map();
+      async function loadStationConnectors(stationId, force = false) {
+        if (!force && connectorMap.has(stationId))
+          return connectorMap.get(stationId) || [];
+        if (!force && connectorRequests.has(stationId))
+          return connectorRequests.get(stationId);
+        const request = getRows(
+          "connectors",
+          "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&station_id=eq." +
+            encodeURIComponent(stationId) +
+            "&order=id.asc",
+        )
+          .then((rows) => {
+            connectorMap.set(stationId, rows);
+            return rows;
+          })
+          .finally(() => connectorRequests.delete(stationId));
+        connectorRequests.set(stationId, request);
+        return request;
+      }
+
       function markerColor(status) {
         if (status === "available") return "#18b978";
         if (status === "unavailable" || status === "offline") return "#ed6464";
@@ -843,6 +864,30 @@
           })
           .join("");
       }
+      function updateStationConnectorPanel(station, stationConnectors) {
+        const connectorTypes = [
+          ...new Set(
+            stationConnectors.map((connector) =>
+              connectorCategory(connector.type),
+            ),
+          ),
+        ];
+        const totalPoints = stationConnectors.reduce(
+          (total, connector) => total + (Number(connector.quantity) || 1),
+          0,
+        );
+        const availability = stationAvailability(stationConnectors);
+        document.getElementById("station-status").innerHTML =
+          availabilityHtml(availability);
+        document.getElementById("station-connectors").textContent =
+          connectorTypes.join(" · ") || "—";
+        document.getElementById("station-points").textContent =
+          totalPoints || "—";
+        document.getElementById("station-live").innerHTML =
+          availabilityHtml(availability);
+        renderConnectorMatrix(stationConnectors);
+      }
+
       function selectStation(station, operatorName) {
         selectedStation = station;
         document
@@ -855,46 +900,33 @@
         loadStationPhoto(station);
         selectedStationPower = Number(station.max_power_kw) || null;
         const stationConnectors = connectorMap.get(station.id) || [];
-        const connectorTypes = [
-          ...new Set(
-            stationConnectors.map((connector) =>
-              connectorCategory(connector.type),
-            ),
-          ),
-        ];
-        const totalPoints = stationConnectors.reduce(
-          (total, connector) => total + (Number(connector.quantity) || 1),
-          0,
-        );
-        const connectorsWithAvailability = stationConnectors.filter(
-          (connector) => connector.available_count != null,
-        );
-        const availablePoints = connectorsWithAvailability.reduce(
-          (total, connector) =>
-            total + (Number(connector.available_count) || 0),
-          0,
-        );
         const location =
           [station.address, station.city].filter(Boolean).join(", ") ||
           "Morada não comunicada";
-        const availability = stationAvailability(stationConnectors);
         document.getElementById("sn").textContent =
           station.name || operatorName || "Posto de carregamento";
         document.getElementById("station-operator").textContent =
           operatorName || "Operador não indicado";
         document.getElementById("station-meta").textContent =
-          `⌖ ${location} · ${isOfficialTeslaStation(station) ? "Tesla oficial" : station.source === "nap" ? "NAP oficial" : station.source === "openchargemap" ? "OpenChargeMap" : station.source || "Fonte"} ${station.external_id || "—"}`;
-        document.getElementById("station-status").innerHTML =
-          availabilityHtml(availability);
+          `⌖ ${location} · ${isOfficialTeslaStation(station) ? "Tesla oficial" : station.source === "nap" ? "NAP oficial" : station.source === "openchargeMap" ? "OpenChargeMap" : station.source || "Fonte"} ${station.external_id || "—"}`;
         document.getElementById("station-power").textContent =
           station.max_power_kw ? `${station.max_power_kw} kW` : "—";
-        document.getElementById("station-connectors").textContent =
-          connectorTypes.join(" · ") || "—";
-        document.getElementById("station-points").textContent =
-          totalPoints || "—";
-        document.getElementById("station-live").innerHTML =
-          availabilityHtml(availability);
-        renderConnectorMatrix(stationConnectors);
+        updateStationConnectorPanel(station, stationConnectors);
+        if (!stationConnectors.length) {
+          document.getElementById("station-connectors").textContent =
+            "A consultar…";
+          document.getElementById("station-points").textContent = "—";
+        }
+        loadStationConnectors(station.id)
+          .then((connectors) => {
+            if (selectedStation?.id === station.id)
+              updateStationConnectorPanel(station, connectors);
+          })
+          .catch(() => {
+            if (selectedStation?.id === station.id)
+              document.getElementById("station-connectors").textContent =
+                "Disponibilidade indisponível";
+          });
         document.querySelector(".right")?.classList.add("station-open");
         if (window.innerWidth <= 780)
           requestAnimationFrame(() => map.invalidateSize());
@@ -1718,59 +1750,22 @@
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
         try {
-          const [
-            stations,
-            connectors,
-            operators,
-            vehicles,
-            cards,
-            reliability,
-          ] = await Promise.all([
+          const [stations, operators] = await Promise.all([
             getAllRows(
               "charging_stations",
               "select=id,external_id,source,name,address,city,latitude,longitude,max_power_kw,status,operator_id,amenities&order=max_power_kw.desc.nullslast",
             ),
-            getAllRows(
-              "connectors",
-              "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&order=id.asc",
-            ),
             getRows("operators", "select=id,name"),
-            getRows(
-              "vehicle_models",
-              "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
-            ),
-            getRows(
-              "ceme_cards",
-              "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
-            ),
-            getAllRows(
-              "station_reliability",
-              "select=station_id,review_count,average_rating,snapshot_count,availability_rate,last_observed_at",
-            ),
           ]);
           connectorMap = new Map();
-          connectors.forEach((c) => {
-            const list = connectorMap.get(c.station_id) || [];
-            list.push(c);
-            connectorMap.set(c.station_id, list);
-          });
+          reliabilityMap = new Map();
           operatorMap = new Map(operators.map((o) => [o.id, o.name]));
-          reliabilityMap = new Map(
-            reliability.map((item) => [item.station_id, item]),
-          );
           allStations = stations;
-          const today = new Date().toISOString().slice(0, 10);
-          cemeCards = cards.filter(
-            (card) =>
-              (!card.valid_from || card.valid_from <= today) &&
-              (!card.valid_to || card.valid_to >= today),
-          );
-          populateVehicles(vehicles);
           const operatorSelect = document.getElementById("operator-filter");
           [
             ...new Set(
               stations
-                .map((s) => operatorMap.get(s.operator_id))
+                .map((station) => operatorMap.get(station.operator_id))
                 .filter(Boolean),
             ),
           ]
@@ -1782,9 +1777,35 @@
               operatorSelect.appendChild(option);
             });
           renderStations(false);
-          // A localização é o ponto de partida padrão; se o utilizador
-          // recusar, o mapa mantém o comportamento nacional atual.
           useMyLocation({ setRouteOrigin: true, silent: true }).catch(() => {});
+
+          // O mapa não fica dependente de leituras volumosas. Conectores e
+          // fiabilidade são carregados apenas quando o utilizador abre um posto.
+          const [vehiclesResult, cardsResult] = await Promise.allSettled([
+            getRows(
+              "vehicle_models",
+              "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
+            ),
+            getRows(
+              "ceme_cards",
+              "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
+            ),
+          ]);
+          if (vehiclesResult.status === "fulfilled") {
+            populateVehicles(vehiclesResult.value);
+          } else {
+            console.warn("Catálogo de veículos indisponível", vehiclesResult.reason);
+          }
+          if (cardsResult.status === "fulfilled") {
+            const today = new Date().toISOString().slice(0, 10);
+            cemeCards = cardsResult.value.filter(
+              (card) =>
+                (!card.valid_from || card.valid_from <= today) &&
+                (!card.valid_to || card.valid_to >= today),
+            );
+          } else {
+            console.warn("Tarifários CEME indisponíveis", cardsResult.reason);
+          }
         } catch (error) {
           console.error(error);
           badge.textContent = "erro";
@@ -2784,35 +2805,21 @@
       loadRealStations();
       let availabilityRefreshBusy = false;
       async function refreshAvailability() {
-        if (document.hidden || availabilityRefreshBusy || !allStations.length)
+        if (
+          document.hidden ||
+          availabilityRefreshBusy ||
+          !allStations.length ||
+          !selectedStation
+        )
           return;
         availabilityRefreshBusy = true;
         try {
-          const connectors = await getAllRows(
-            "connectors",
-            "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&order=id.asc",
-          );
-          const next = new Map();
-          connectors.forEach((c) => {
-            const list = next.get(c.station_id) || [];
-            list.push(c);
-            next.set(c.station_id, list);
-          });
-          connectorMap = next;
+          const connectors = await loadStationConnectors(selectedStation.id, true);
+          updateStationConnectorPanel(selectedStation, connectors);
         } catch (error) {
           console.warn("Não foi possível atualizar a disponibilidade");
         } finally {
           availabilityRefreshBusy = false;
-          renderStations(false);
-          if (selectedStation) {
-            const info = stationAvailability(
-              connectorMap.get(selectedStation.id) || [],
-            );
-            document.getElementById("station-live").innerHTML =
-              availabilityHtml(info);
-            document.getElementById("station-status").innerHTML =
-              availabilityHtml(info);
-          }
         }
       }
       setInterval(refreshAvailability, 5 * 60000);
