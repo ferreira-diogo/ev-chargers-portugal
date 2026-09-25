@@ -51,7 +51,7 @@ async function fetchPage(table, offset) {
   url.searchParams.set("order", "id.asc");
 
   let lastError;
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
+  for (let attempt = 1; attempt <= 12; attempt += 1) {
     try {
       const response = await fetch(url, {
         headers: {
@@ -70,7 +70,11 @@ async function fetchPage(table, offset) {
       return { rows, total: Number.isFinite(total) ? total : null };
     } catch (error) {
       lastError = error;
-      if (attempt < 4) await sleep(attempt * 3000);
+      if (attempt < 12) {
+        const delay = Math.min(attempt * 5000, 30000);
+        console.warn(`${table}: attempt ${attempt} failed; retrying in ${delay / 1000}s`);
+        await sleep(delay);
+      }
     }
   }
   throw lastError;
