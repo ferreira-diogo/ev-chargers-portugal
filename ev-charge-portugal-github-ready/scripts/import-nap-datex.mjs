@@ -347,7 +347,7 @@ async function writeD1Snapshot(parsed) {
   ];
   await writeFile(
     join(outputDir, "001_reset.sql"),
-    "BEGIN TRANSACTION;\n" + resetTables.map((table) => `DELETE FROM ${table};`).join("\n") + "\nCOMMIT;\n",
+    resetTables.map((table) => `DELETE FROM ${table};`).join("\n") + "\n",
   );
 
   const columns = {
@@ -369,7 +369,7 @@ async function writeD1Snapshot(parsed) {
       const values = chunk.map((row) => "(" + columns[table].map((column) => d1Sql(row[column])).join(", ") + ")").join(",\n");
       await writeFile(
         join(outputDir, String(fileNumber).padStart(4, "0") + "_" + table + ".sql"),
-        "BEGIN TRANSACTION;\nINSERT OR REPLACE INTO " + table + " (" + columns[table].join(", ") + ") VALUES\n" + values + ";\nCOMMIT;\n",
+        "INSERT OR REPLACE INTO " + table + " (" + columns[table].join(", ") + ") VALUES\n" + values + ";\n",
       );
       fileNumber += 1;
     }
