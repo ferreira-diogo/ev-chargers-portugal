@@ -1,3 +1,5 @@
+const AVAILABILITY_KEY = "mobie_nap_current";
+
 const fields = [
   "id",
   "external_id",
