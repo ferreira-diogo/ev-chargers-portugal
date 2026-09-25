@@ -1,5 +1,5 @@
       const SUPABASE_URL = "https://ftnmdgiftdgaycotjixr.supabase.co";
-      const D1_FALLBACK_URL = "https://broken-mud-373e.zombid.workers.dev/api/stations";
+      const D1_FALLBACK_URL = window.location.origin + "/api/stations";
       const SUPABASE_KEY = "sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_";
       const API_HEADERS = {
         apikey: SUPABASE_KEY,
