@@ -224,12 +224,12 @@ const source = {
 
 function insertFile(table, rows, columns, fileNumber) {
   const values = rows.map((row) => `(${columns.map((column) => sql(row[column])).join(", ")})`).join(",\n");
-  return `BEGIN TRANSACTION;\nINSERT OR REPLACE INTO ${table} (${columns.join(", ")}) VALUES\n${values};\nCOMMIT;\n`;
+  return `INSERT OR REPLACE INTO ${table} (${columns.join(", ")}) VALUES\n${values};\n`;
 }
 
 await rm(outputDir, { recursive: true, force: true });
 await mkdir(outputDir, { recursive: true });
-await writeFile(join(outputDir, "001_reset.sql"), `BEGIN TRANSACTION;\n${d1Tables.map((table) => `DELETE FROM ${table};`).join("\n")}\nCOMMIT;\n`);
+await writeFile(join(outputDir, "001_reset.sql"), d1Tables.map((table) => `DELETE FROM ${table};`).join("\n") + "\n");
 
 const columns = {
   station_cache_v2: ["id", "external_id", "source", "name", "address", "city", "latitude", "longitude", "max_power_kw", "status", "operator_id", "amenities", "synced_at"],
