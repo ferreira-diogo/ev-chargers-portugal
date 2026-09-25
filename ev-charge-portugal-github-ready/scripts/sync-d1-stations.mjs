@@ -2,7 +2,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const outputDir = process.env.D1_SQL_DIR || "tmp/d1-sync";
-const pageSize = 100;
+const pageSize = 50;
 const REGIONS = [
   "41.5,-9.6,42.2,-6.0", "40.5,-9.6,41.5,-6.0",
   "39.5,-9.6,40.5,-6.0", "38.5,-9.6,39.5,-6.0",
