@@ -360,10 +360,13 @@
       async function getRows(table, query) {
         if (D1_PUBLIC_TABLES.has(table)) {
           try {
-            const d1Rows = await getD1Rows(table, query);
-            if (d1Rows.length) return d1Rows;
+            // Os catálogos públicos funcionam exclusivamente através da D1.
+            // Não fazemos fallback silencioso para a Supabase, para evitar
+            // que uma indisponibilidade daquele projeto volte a bloquear o site.
+            return await getD1Rows(table, query);
           } catch (error) {
-            console.warn(`D1 ${table} indisponível; usando Supabase`, error);
+            console.warn(`D1 ${table} indisponível`, error);
+            return [];
           }
         }
         const response = await fetchWithTimeout(
@@ -1915,24 +1918,10 @@
             console.warn("Localização indisponível; usando fallback nacional");
           }
 
-          let stations;
-          try {
-            // D1 é agora a fonte primária do catálogo público de postos.
-            // A Supabase permanece como fallback reversível enquanto validamos a migração.
-            stations = await loadFallbackStations(place);
-            if (!stations.length) throw new Error("D1 sem postos disponíveis");
-          } catch (d1Error) {
-            console.warn("D1 indisponível ou vazia; usando Supabase como fallback", d1Error);
-            try {
-              stations = await getRows(
-                "charging_stations",
-                place ? nearbyStationsQuery(place) : fallbackStationsQuery(),
-              );
-            } catch (supabaseError) {
-              console.warn("Supabase indisponível; tentando novamente D1", supabaseError);
-              stations = await loadFallbackStations(place);
-            }
-          }
+          // A D1 é a única fonte pública de postos. Se estiver vazia,
+          // o próprio Worker tenta a consulta geográfica ao OpenStreetMap.
+          const stations = await loadFallbackStations(place);
+          if (!stations.length) throw new Error("D1/OSM sem postos disponíveis");
           const operatorResult = (
             await Promise.allSettled([getRows("operators", "select=id,name")])
           )[0];
@@ -1977,7 +1966,7 @@
           if (vehiclesResult.status === "fulfilled" && vehiclesResult.value.length) {
             populateVehicles(vehiclesResult.value);
           } else {
-            console.warn("Catálogo remoto indisponível; usando catálogo local", vehiclesResult.reason);
+            console.warn("Catálogo D1 indisponível; usando catálogo local", vehiclesResult.reason);
             populateVehicles(LOCAL_VEHICLE_FALLBACK);
           }
           if (cardsResult.status === "fulfilled") {
@@ -1988,7 +1977,7 @@
                 (!card.valid_to || card.valid_to >= today),
             );
           } else {
-            console.warn("Tarifários CEME indisponíveis", cardsResult.reason);
+            console.warn("Tarifários D1 indisponíveis; a área de preços ficará sem valores até existir um snapshot válido", cardsResult.reason);
           }
         } catch (error) {
           console.error(error);
