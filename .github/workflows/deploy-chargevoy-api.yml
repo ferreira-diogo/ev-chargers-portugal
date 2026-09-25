@@ -41,8 +41,22 @@ jobs:
           fi
           test -n "$DB_ID" || { echo "::error::D1 database ID could not be resolved; add D1_DATABASE_ID"; exit 1; }
           cp wrangler-api.toml wrangler-api-deploy.toml
-          sed -i "s|# database_id = \\"ID_DA_BASE_D1\\"|database_id = \\"$DB_ID\\"|" wrangler-api-deploy.toml
-          grep -q "database_id" wrangler-api-deploy.toml
+          node - <<'NODE'
+          const fs = require("fs");
+          const file = "wrangler-api-deploy.toml";
+          const dbId = process.env.D1_DATABASE_ID || process.env.DB_ID;
+          if (!dbId) {
+            console.error("D1 database ID is empty");
+            process.exit(1);
+          }
+          let text = fs.readFileSync(file, "utf8");
+          text = text.replace(
+            /# database_id = "ID_DA_BASE_D1"/,
+            `database_id = "${dbId}"`,
+          );
+          fs.writeFileSync(file, text);
+          NODE
+          grep -q '^database_id = "' wrangler-api-deploy.toml
       - name: Deploy API Worker
         working-directory: ev-charge-portugal-github-ready
         run: wrangler deploy --config wrangler-api-deploy.toml
