@@ -33,6 +33,10 @@ jobs:
           test -n "$D1_DATABASE_NAME" || { echo "::error::Missing D1_DATABASE_NAME repository secret"; exit 1; }
       - name: Install Wrangler
         run: npm install --global wrangler@4
+      - name: Check Cloudflare D1 access
+        run: |
+          wrangler d1 list
+          wrangler d1 info "$D1_DATABASE_NAME"
       - name: Ensure D1 schema
         run: wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=cloudflare/d1/schema.sql
       - name: Download and prepare OpenStreetMap snapshot
