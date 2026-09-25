@@ -210,6 +210,24 @@ export default {
       return json(payload);
     } catch (error) {
       console.error("ChargeVoy API:", error);
+      const lat = validNumber(url.searchParams.get("lat"));
+      const lon = validNumber(url.searchParams.get("lon"));
+      if (
+        url.pathname.endsWith("/api/stations") &&
+        lat !== null &&
+        lon !== null
+      ) {
+        try {
+          return json({
+            source: "openstreetmap-overpass-fallback",
+            stale: true,
+            stations: await nearbyOpenStreetMap(lat, lon),
+            warning: "D1 indisponível; dados de localização temporários",
+          });
+        } catch (fallbackError) {
+          console.error("Overpass fallback:", fallbackError);
+        }
+      }
       return json({ error: "D1 query failed", stations: [], rows: [] }, 503);
     }
   },
