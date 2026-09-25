@@ -91,7 +91,7 @@ async function stations(request, env) {
       if (!batch.length) continue;
       const placeholders = batch.map(() => "?").join(", ");
       const connectorResult = await db.prepare(
-        `SELECT id, external_id, station_id, type, power_kw, quantity, available_count, status,
+        `SELECT id, station_id, type, power_kw, quantity, available_count, status,
                 availability_updated_at, availability_source
          FROM connectors WHERE station_id IN (${placeholders})`,
       ).bind(...batch).all();
@@ -136,7 +136,7 @@ export default {
       if (!stationId || stationId.length > 180) return json({ connectors: [], error: "station_id inválido" }, 400);
       try {
         const result = await env.CHARGEVOY_DB.prepare(
-          "SELECT id, external_id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id",
+          "SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id",
         ).bind(stationId).all();
         const connectors = await mergeAvailability(result.results || [], env);
         return json({ source: "cloudflare-d1", connectors });
