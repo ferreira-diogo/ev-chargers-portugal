@@ -3,6 +3,7 @@ name: Deploy ChargeVoy web
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
       - "ev-charge-portugal-github-ready/index.html"
       - "ev-charge-portugal-github-ready/assets/**"
