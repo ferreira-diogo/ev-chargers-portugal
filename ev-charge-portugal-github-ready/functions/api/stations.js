@@ -49,7 +49,7 @@ export async function onRequestGet({ request, env }) {
            FROM station_cache
            WHERE latitude BETWEEN ? AND ?
              AND longitude BETWEEN ? AND ?
-           ORDER BY max_power_kw DESC NULLS LAST
+           ORDER BY COALESCE(max_power_kw, 0) DESC
            LIMIT 500`,
         )
         .bind(lat - latDelta, lat + latDelta, lon - lonDelta, lon + lonDelta)
@@ -59,7 +59,7 @@ export async function onRequestGet({ request, env }) {
         .prepare(
           `SELECT ${fields}
            FROM station_cache
-           ORDER BY max_power_kw DESC NULLS LAST
+           ORDER BY COALESCE(max_power_kw, 0) DESC
            LIMIT 500`,
         )
         .all();
