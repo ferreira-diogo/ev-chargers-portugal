@@ -1789,14 +1789,12 @@
               fallbackStationsQuery(),
             );
           }
-          const operatorsResult = await Promise.allSettled([
-            getRows("operators", "select=id,name"),
-          ]);
+          const operatorResult = (
+            await Promise.allSettled([getRows("operators", "select=id,name")])
+          )[0];
           const operators =
-            operatorsResult.status === "fulfilled"
-              ? operatorsResult.value[0]
-              : [];
-          if (operatorsResult.status !== "fulfilled")
+            operatorResult.status === "fulfilled" ? operatorResult.value : [];
+          if (operatorResult.status !== "fulfilled")
             console.warn("Operadores indisponíveis; mostrando postos sem operador");
 
           connectorMap = new Map();
