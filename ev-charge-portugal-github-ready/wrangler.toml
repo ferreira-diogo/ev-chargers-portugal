@@ -11,6 +11,3 @@ binding = "CHARGEVOY_DB"
 database_name = "chargevoy-fallback"
 # database_id = "ID_DA_BASE_D1"
 
-[[kv_namespaces]]
-binding = "AVAILABILITY_KV"
-id = "KV_NAMESPACE_ID_PLACEHOLDER"
