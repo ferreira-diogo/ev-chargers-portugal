@@ -2,6 +2,10 @@ name: Refresh NAP availability snapshot
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/refresh-nap-availability.yml"
+      - "ev-charge-portugal-github-ready/scripts/refresh-nap-availability-kv.mjs"
   schedule:
     - cron: "3,18,33,48 * * * *"
 
