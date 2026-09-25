@@ -6,6 +6,8 @@ authentication, favorites, reviews, tokens or private user data.
 ## One-time Cloudflare setup
 
 1. Create a D1 database called `chargevoy-fallback`.
+
+The Worker deployment is configured through `wrangler.toml`; a new push to `main` triggers the Cloudflare build.
 2. Bind it to the production Worker/Pages project as `CHARGEVOY_DB`.
 3. Keep the binding read-only from the public site. Only the GitHub Action writes snapshots.
 
