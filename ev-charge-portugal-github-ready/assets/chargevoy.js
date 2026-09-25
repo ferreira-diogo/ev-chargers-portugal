@@ -908,7 +908,7 @@
         document.getElementById("station-operator").textContent =
           operatorName || "Operador não indicado";
         document.getElementById("station-meta").textContent =
-          `⌖ ${location} · ${isOfficialTeslaStation(station) ? "Tesla oficial" : station.source === "nap" ? "NAP oficial" : station.source === "openchargeMap" ? "OpenChargeMap" : station.source || "Fonte"} ${station.external_id || "—"}`;
+          `⌖ ${location} · ${isOfficialTeslaStation(station) ? "Tesla oficial" : station.source === "nap" ? "NAP oficial" : station.source === "openchargemap" ? "OpenChargeMap" : station.source || "Fonte"} ${station.external_id || "—"}`;
         document.getElementById("station-power").textContent =
           station.max_power_kw ? `${station.max_power_kw} kW` : "—";
         updateStationConnectorPanel(station, stationConnectors);
