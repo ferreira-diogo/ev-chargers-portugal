@@ -130,3 +130,24 @@ CREATE INDEX IF NOT EXISTS tariffs_station_idx ON official_opc_tariffs(station_i
 CREATE INDEX IF NOT EXISTS adhoc_station_idx ON station_ad_hoc_price_components(station_id);
 CREATE INDEX IF NOT EXISTS reviews_station_idx ON station_reviews(station_id);
 CREATE INDEX IF NOT EXISTS vehicles_active_make_idx ON vehicle_models(active, make, model);
+
+-- Versioned station cache used by the Cloudflare-first API.
+-- Kept separate from the legacy cache so migration is non-destructive.
+CREATE TABLE IF NOT EXISTS station_cache_v2 (
+  id TEXT PRIMARY KEY NOT NULL,
+  external_id TEXT,
+  source TEXT,
+  name TEXT,
+  address TEXT,
+  city TEXT,
+  latitude REAL NOT NULL,
+  longitude REAL NOT NULL,
+  max_power_kw REAL,
+  status TEXT,
+  operator_id TEXT,
+  amenities TEXT,
+  synced_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS station_cache_v2_latitude_idx ON station_cache_v2(latitude);
+CREATE INDEX IF NOT EXISTS station_cache_v2_longitude_idx ON station_cache_v2(longitude);
+CREATE INDEX IF NOT EXISTS station_cache_v2_power_idx ON station_cache_v2(max_power_kw DESC);
