@@ -55,9 +55,13 @@ async function stations(request, env) {
   if (!db) return json({ stations: [], error: "D1 binding unavailable" }, 503);
 
   const url = new URL(request.url);
-  const lat = Number(url.searchParams.get("lat"));
-  const lon = Number(url.searchParams.get("lon"));
+  const latParam = url.searchParams.get("lat");
+  const lonParam = url.searchParams.get("lon");
+  const lat = Number(latParam);
+  const lon = Number(lonParam);
   const hasLocation =
+    latParam !== null && lonParam !== null &&
+    latParam.trim() !== "" && lonParam.trim() !== "" &&
     Number.isFinite(lat) &&
     Number.isFinite(lon) &&
     lat >= -90 &&
