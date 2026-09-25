@@ -1,0 +1,98 @@
+name: Patch route corridor planner
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/patch-route-corridor-main.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Patch planner safely
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('ev-charge-portugal-github-ready/assets/chargevoy.js')
+          s=p.read_text()
+          old='''          let candidates = allStations
+            .filter(
+              (station) =>
+                stationCompatibleWithVehicle(station) &&
+                Number(station.max_power_kw) > 0,
+            )'''
+          new='''          // Load candidates for the complete route before calculating charging stops.
+          const routeLats = coordinates.map((point) => Number(point[1]));
+          const routeLons = coordinates.map((point) => Number(point[0]));
+          const corridorPadding = 0.18;
+          const corridorParams = new URLSearchParams({
+            min_lat: String(Math.max(-90, Math.min(...routeLats) - corridorPadding)),
+            max_lat: String(Math.min(90, Math.max(...routeLats) + corridorPadding)),
+            min_lon: String(Math.max(-180, Math.min(...routeLons) - corridorPadding)),
+            max_lon: String(Math.min(180, Math.max(...routeLons) + corridorPadding)),
+            limit: "1500",
+          });
+          const corridorResponse = await fetchWithTimeout(
+            `${D1_FALLBACK_URL}?${corridorParams.toString()}`,
+            { headers: { Accept: "application/json", "Cache-Control": "no-cache" } },
+            15000,
+          );
+          if (!corridorResponse.ok)
+            throw new Error(`Postos da rota HTTP ${corridorResponse.status}`);
+          const corridorPayload = await corridorResponse.json();
+          const routeStations = Array.isArray(corridorPayload.stations) ? corridorPayload.stations : [];
+          const routeConnectors = Array.isArray(corridorPayload.connectors) ? corridorPayload.connectors : [];
+          for (const connector of routeConnectors) {
+            if (!connector?.station_id) continue;
+            const rows = connectorMap.get(connector.station_id) || [];
+            if (!rows.some((row) => row.id === connector.id)) rows.push(connector);
+            connectorMap.set(connector.station_id, rows);
+          }
+          if (!routeStations.length)
+            throw new Error("Não foram recebidos postos para o corredor completo da rota.");
+          let candidates = routeStations
+            .filter(
+              (station) =>
+                stationCompatibleWithVehicle(station) &&
+                Number(station.max_power_kw) > 0,
+            )'''
+          if old not in s:
+            raise SystemExit('Expected planner block not found; refusing patch')
+          s=s.replace(old,new,1)
+          # When D1/OSM has no connector rows, do not reject every station solely because
+          # connector metadata is absent. Known incompatible connectors are still rejected.
+          old2='''        return (connectorMap.get(station.id) || []).some((connector) =>
+          vehicleConnectors.has(connectorCategory(connector.type)),
+        );'''
+          new2='''        const stationConnectors = connectorMap.get(station.id) || [];
+        if (!stationConnectors.length) return true;
+        return stationConnectors.some((connector) =>
+          vehicleConnectors.has(connectorCategory(connector.type)),
+        );'''
+          if old2 not in s:
+            raise SystemExit('Expected compatibility block not found; refusing patch')
+          s=s.replace(old2,new2,1)
+          p.write_text(s)
+          PY
+      - name: Validate JavaScript and patch
+        run: |
+          node --check ev-charge-portugal-github-ready/assets/chargevoy.js
+          grep -q 'const routeStations = Array.isArray(corridorPayload.stations)' ev-charge-portugal-github-ready/assets/chargevoy.js
+          grep -q 'if (!stationConnectors.length) return true' ev-charge-portugal-github-ready/assets/chargevoy.js
+      - name: Commit route fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ev-charge-portugal-github-ready/assets/chargevoy.js
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: calculate charging stops from full route corridor"
+          git push origin HEAD:main
