@@ -5,12 +5,8 @@ async function readAvailabilitySnapshot(env) {
     if (!snapshot?.statuses) return null;
     const published = Date.parse(snapshot.publication_time || snapshot.refreshed_at || "");
     return { ...snapshot, age_minutes: Number.isFinite(published) ? Math.max(0, (Date.now() - published) / 60000) : null };
-  } catch (error) {
-    console.error("NAP snapshot:", error);
-    return null;
-  }
+  } catch (error) { console.error("NAP snapshot:", error); return null; }
 }
-
 async function mergeAvailability(rows, env, snapshot = null) {
   if (!rows.length) return rows;
   snapshot ||= await readAvailabilitySnapshot(env);
@@ -21,10 +17,7 @@ async function mergeAvailability(rows, env, snapshot = null) {
     const external = String(connector.external_id || connector.id || "").replace(/^nap-/, "");
     let point = external.startsWith(site + "-") ? external.slice(site.length + 1) : external;
     let status = snapshot.statuses[site + "|" + point];
-    while (!status && /-\d+$/.test(point)) {
-      point = point.replace(/-\d+$/, "");
-      status = snapshot.statuses[site + "|" + point];
-    }
+    while (!status && /-\d+$/.test(point)) { point = point.replace(/-\d+$/, ""); status = snapshot.statuses[site + "|" + point]; }
     if (!status) continue;
     connector.status = fresh ? status : "unknown";
     connector.availability_updated_at = snapshot.publication_time;
@@ -33,11 +26,8 @@ async function mergeAvailability(rows, env, snapshot = null) {
   }
   return rows;
 }
-
 const fields = ["id","external_id","source","name","address","city","latitude","longitude","max_power_kw","status","operator_id","amenities"].join(", ");
-function json(body, status = 200, cacheControl = "no-store") {
-  return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": cacheControl, "access-control-allow-origin": "*", "access-control-allow-methods": "GET,OPTIONS", "access-control-allow-headers": "Content-Type" } });
-}
+function json(body, status = 200, cacheControl = "no-store") { return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": cacheControl, "access-control-allow-origin": "*", "access-control-allow-methods": "GET,OPTIONS", "access-control-allow-headers": "Content-Type" } }); }
 function numberParam(url, name) { const raw=url.searchParams.get(name); if(raw==null||raw.trim()==="") return null; const n=Number(raw); return Number.isFinite(n)?n:null; }
 async function stations(request, env) {
   const db=env.CHARGEVOY_DB; if(!db) return json({stations:[],error:"D1 binding unavailable"},503);
@@ -59,4 +49,22 @@ async function stations(request, env) {
     return json({source:"cloudflare-d1+kv",stale:false,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,stations:stationRows,connectors:connectorRows});
   } catch(error){console.error("D1 stations:",error);return json({stations:[],connectors:[],error:"D1 query failed"},503);}
 }
-export default {async fetch(request,env){const url=new URL(request.url);if(request.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type"}});if(url.pathname==="/api/stations"||url.pathname.startsWith("/api/stations/"))return stations(request,env);if(url.pathname==="/api/connectors"){if(!env.CHARGEVOY_DB)return json({connectors:[],error:"D1 binding unavailable"},503);const stationId=url.searchParams.get("station_id");if(!stationId||stationId.length>180)return json({connectors:[],error:"station_id inválido"},400);try{const result=await env.CHARGEVOY_DB.prepare("SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id").bind(stationId).all();const snapshot=await readAvailabilitySnapshot(env);const connectors=await mergeAvailability(result.results||[],env,snapshot);return json({source:"cloudflare-d1+kv",availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,connectors});}catch(error){console.error("D1 connectors:",error);return json({connectors:[],error:"D1 connector query failed"},503);}}return env.ASSETS.fetch(request);}};
+async function staticAssetWithPlanner(request, env) {
+  const response = await env.ASSETS.fetch(request);
+  if (!response.ok) return response;
+  const url = new URL(request.url);
+  const type = response.headers.get("content-type") || "";
+  if (!(url.pathname === "/" || url.pathname.endsWith("/index.html")) || !type.includes("text/html")) return response;
+  return new HTMLRewriter().on("body", { element(element) { element.append('<script src="./assets/route-corridor.js"></script>', { html: true }); } }).transform(response);
+}
+export default {async fetch(request,env){
+  const url=new URL(request.url);
+  if(request.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type"}});
+  if(url.pathname==="/api/stations"||url.pathname.startsWith("/api/stations/"))return stations(request,env);
+  if(url.pathname==="/api/connectors"){
+    if(!env.CHARGEVOY_DB)return json({connectors:[],error:"D1 binding unavailable"},503);
+    const stationId=url.searchParams.get("station_id");if(!stationId||stationId.length>180)return json({connectors:[],error:"station_id inválido"},400);
+    try{const result=await env.CHARGEVOY_DB.prepare("SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id").bind(stationId).all();const snapshot=await readAvailabilitySnapshot(env);const connectors=await mergeAvailability(result.results||[],env,snapshot);return json({source:"cloudflare-d1+kv",availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,connectors});}catch(error){console.error("D1 connectors:",error);return json({connectors:[],error:"D1 connector query failed"},503);}
+  }
+  return staticAssetWithPlanner(request,env);
+}};
