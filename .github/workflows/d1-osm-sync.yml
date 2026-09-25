@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/d1-osm-sync.yml"
       - "ev-charge-portugal-github-ready/scripts/sync-d1-openstreetmap.mjs"
+      - "ev-charge-portugal-github-ready/cloudflare/d1/schema.sql"
   schedule:
     - cron: "30 */6 * * *"
 
