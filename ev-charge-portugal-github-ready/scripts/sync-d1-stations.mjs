@@ -4,15 +4,19 @@ import { join } from "node:path";
 const outputDir = process.env.D1_SQL_DIR || "tmp/d1-sync";
 const pageSize = 50;
 const REGIONS = [
-  "41.5,-9.6,42.2,-6.0", "40.5,-9.6,41.5,-6.0",
-  "39.5,-9.6,40.5,-6.0", "38.5,-9.6,39.5,-6.0",
-  "37.8,-9.6,38.5,-6.0", "37.0,-9.6,37.8,-6.0",
-  "36.3,-9.6,37.0,-6.0", "35.8,-9.6,36.3,-6.0",
+  "41.5,-9.6,42.2,-7.8", "41.5,-7.8,42.2,-6.0",
+  "40.5,-9.6,41.5,-7.8", "40.5,-7.8,41.5,-6.0",
+  "39.5,-9.6,40.5,-7.8", "39.5,-7.8,40.5,-6.0",
+  "38.5,-9.6,39.5,-7.8", "38.5,-7.8,39.5,-6.0",
+  "37.8,-9.6,38.5,-7.8", "37.8,-7.8,38.5,-6.0",
+  "37.0,-9.6,37.8,-7.8", "37.0,-7.8,37.8,-6.0",
+  "36.3,-9.6,37.0,-7.8", "36.3,-7.8,37.0,-6.0",
+  "35.8,-9.6,36.3,-7.8", "35.8,-7.8,36.3,-6.0",
 ];
 const OVERPASS_ENDPOINTS = [
-  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 ];
 
 const fields = [
