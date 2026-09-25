@@ -32,8 +32,9 @@ jobs:
       - name: Resolve D1 database ID
         working-directory: ev-charge-portugal-github-ready
         run: |
-          DB_ID="$(wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s);const d=a.find(x=>x.name===process.env.D1_DATABASE_NAME);if(!d) process.exit(2);process.stdout.write(d.uuid||d.id||"")})')"
-          test -n "$DB_ID" || { echo "::error::D1 database not found"; exit 1; }
+          wrangler d1 info "$D1_DATABASE_NAME" --json > /tmp/d1-info.json
+          DB_ID="$(node -e 'const fs=require("fs");const root=JSON.parse(fs.readFileSync("/tmp/d1-info.json","utf8"));const candidates=[root,root.result,root.database,root.result?.database].filter(Boolean);const d=candidates.find(x=>x.uuid||x.database_id||x.id);if(!d) process.exit(2);process.stdout.write(d.uuid||d.database_id||d.id||"")')"
+          test -n "$DB_ID" || { echo "::error::D1 database ID could not be resolved"; exit 1; }
           cp wrangler-api.toml wrangler-api-deploy.toml
           sed -i "s|# database_id = \\"ID_DA_BASE_D1\\"|database_id = \\"$DB_ID\\"|" wrangler-api-deploy.toml
           grep -q "database_id" wrangler-api-deploy.toml
