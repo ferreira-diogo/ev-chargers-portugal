@@ -9,9 +9,9 @@ const REGIONS = [
   "37.5,-9.6,38.5,-6.0", "35.8,-9.6,37.5,-6.0",
 ];
 const OVERPASS_ENDPOINTS = [
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
-  "https://overpass.private.coffee/api/interpreter",
 ];
 
 const fields = [
@@ -89,7 +89,7 @@ async function fetchOverpass() {
             "user-agent": "ChargeVoy/1.0 (evchargeportugal@gmail.com)",
           },
           body: new URLSearchParams({ data: query }),
-          signal: AbortSignal.timeout(45000),
+          signal: AbortSignal.timeout(60000),
         });
         if (!response.ok) throw new Error(`${endpoint} HTTP ${response.status}`);
         const payload = JSON.parse(await response.text());
@@ -143,6 +143,7 @@ await writeFile(
   join(outputDir, "999_promote.sql"),
   `BEGIN TRANSACTION;
 DELETE FROM station_cache;
+DELETE FROM station_cache_v2;
 INSERT INTO station_cache_v2 (${fields.join(", ")}, synced_at)
 SELECT ${fields.join(", ")}, synced_at FROM station_cache_v2_next;
 DELETE FROM station_cache_v2_next;
