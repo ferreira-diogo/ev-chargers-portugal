@@ -35,12 +35,24 @@ jobs:
       - name: Build web bundle
         working-directory: ev-charge-portugal-github-ready
         run: npm run build:web
+      - name: Ensure availability KV namespace
+        run: |
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          NS_ID=$(curl --fail --silent --show-error -H "$AUTH" "$API" | jq -r '.result[]? | select(.title == "chargevoy-availability") | .id' | head -n 1)
+          if [ -z "$NS_ID" ]; then
+            BODY=$(jq -n --arg title "chargevoy-availability" '{title: $title}')
+            NS_ID=$(curl --fail --silent --show-error -X POST -H "$AUTH" -H "Content-Type: application/json" --data "$BODY" "$API" | jq -er '.result.id')
+          fi
+          test -n "$NS_ID"
+          echo "AVAILABILITY_KV_ID=$NS_ID" >> "$GITHUB_ENV"
       - name: Prepare D1 binding
         working-directory: ev-charge-portugal-github-ready
         run: |
           test -n "$D1_DATABASE_ID" || exit 1
           cp wrangler.toml wrangler-deploy.toml
           sed -i "s/# database_id = \\\"ID_DA_BASE_D1\\\"/database_id = \\\"$D1_DATABASE_ID\\\"/" wrangler-deploy.toml
+          sed -i "s/KV_NAMESPACE_ID_PLACEHOLDER/$AVAILABILITY_KV_ID/" wrangler-deploy.toml
       - name: Deploy static Worker with D1
         working-directory: ev-charge-portugal-github-ready
         run: npx wrangler@4 deploy --config wrangler-deploy.toml
