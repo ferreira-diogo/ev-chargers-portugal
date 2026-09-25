@@ -19,6 +19,9 @@ function json(body, status = 200) {
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "public, max-age=60, stale-while-revalidate=300",
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET,OPTIONS",
+      "access-control-allow-headers": "Content-Type",
     },
   });
 }
@@ -56,10 +59,26 @@ async function stations(request, env) {
             LIMIT 500`)
           .all();
 
+    const stationRows = result.results || [];
+    let connectorRows = [];
+    const stationIds = stationRows.map((station) => station.id).filter(Boolean);
+    for (let offset = 0; offset < stationIds.length; offset += 80) {
+      const batch = stationIds.slice(offset, offset + 80);
+      if (!batch.length) continue;
+      const placeholders = batch.map(() => "?").join(", ");
+      const connectorResult = await db.prepare(
+        `SELECT station_id, type, power_kw, quantity, available_count, status,
+                availability_updated_at, availability_source
+         FROM connectors WHERE station_id IN (${placeholders})`,
+      ).bind(...batch).all();
+      connectorRows.push(...(connectorResult.results || []));
+    }
+
     return json({
       source: "cloudflare-d1-cache",
       stale: true,
-      stations: result.results || [],
+      stations: stationRows,
+      connectors: connectorRows,
     });
   } catch (error) {
     console.error("D1 station fallback:", error);
@@ -71,8 +90,33 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "GET,OPTIONS",
+          "access-control-allow-headers": "Content-Type",
+        },
+      });
+    }
+
     if (url.pathname === "/api/stations" || url.pathname.startsWith("/api/stations/")) {
       return stations(request, env);
+    }
+
+    if (url.pathname === "/api/connectors") {
+      if (!env.CHARGEVOY_DB) return json({ connectors: [], error: "D1 binding unavailable" }, 503);
+      const stationId = url.searchParams.get("station_id");
+      if (!stationId || stationId.length > 180) return json({ connectors: [], error: "station_id inválido" }, 400);
+      try {
+        const result = await env.CHARGEVOY_DB.prepare(
+          "SELECT station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id",
+        ).bind(stationId).all();
+        return json({ source: "cloudflare-d1", connectors: result.results || [] });
+      } catch (error) {
+        console.error("D1 connectors:", error);
+        return json({ connectors: [], error: "D1 connector query failed" }, 503);
+      }
     }
 
     return env.ASSETS.fetch(request);
