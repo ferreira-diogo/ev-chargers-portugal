@@ -42,6 +42,7 @@
       const searchLayer = L.layerGroup().addTo(map);
       const routeLayer = L.layerGroup().addTo(map);
       let allStations = [];
+      let stationLoadRetryScheduled = false;
       let connectorMap = new Map();
       let operatorMap = new Map();
       let reliabilityMap = new Map();
@@ -1788,7 +1789,15 @@
               fallbackStationsQuery(),
             );
           }
-          const operators = await getRows("operators", "select=id,name");
+          const operatorsResult = await Promise.allSettled([
+            getRows("operators", "select=id,name"),
+          ]);
+          const operators =
+            operatorsResult.status === "fulfilled"
+              ? operatorsResult.value[0]
+              : [];
+          if (operatorsResult.status !== "fulfilled")
+            console.warn("Operadores indisponíveis; mostrando postos sem operador");
 
           connectorMap = new Map();
           reliabilityMap = new Map();
@@ -1842,7 +1851,14 @@
           console.error(error);
           badge.textContent = "erro";
           cards.innerHTML =
-            '<article class="card"><div class="op">Não foi possível carregar os postos</div><div class="st">Confirme a localização, o acesso à Supabase ou tente novamente.</div></article>';
+            '<article class="card"><div class="op">Os postos estão temporariamente indisponíveis</div><div class="st">A tentar novamente automaticamente quando a base de dados responder.</div></article>';
+          if (!stationLoadRetryScheduled) {
+            stationLoadRetryScheduled = true;
+            setTimeout(() => {
+              stationLoadRetryScheduled = false;
+              loadRealStations();
+            }, 60000);
+          }
         }
       }
 
