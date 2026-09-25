@@ -49,7 +49,22 @@ async function readConnectors(db, url) {
   const stationId = url.searchParams.get("station_id");
   if (!stationId) return json({ error: "station_id is required", rows: [] }, 400);
   const result = await db.prepare(`SELECT ${CATALOGS.connectors.join(", ")} FROM connectors WHERE station_id = ? ORDER BY COALESCE(power_kw, 0) DESC LIMIT ?`).bind(stationId, clampLimit(url, 100)).all();
-  return json({ source: "cloudflare-d1", stale: true, rows: result.results || [] });
+  const rows = result.results || [];
+  return json({ source: "cloudflare-d1", stale: true, connectors: rows, rows });
+}
+
+async function connectorsForStations(db, stations) {
+  const ids = stations.map(station => station.id).filter(Boolean);
+  if (!ids.length) return [];
+  const rows = [];
+  const chunkSize = 80;
+  for (let offset = 0; offset < ids.length; offset += chunkSize) {
+    const chunk = ids.slice(offset, offset + chunkSize);
+    const placeholders = chunk.map(() => "?").join(",");
+    const result = await db.prepare(`SELECT ${CATALOGS.connectors.join(", ")} FROM connectors WHERE station_id IN (${placeholders}) ORDER BY station_id, COALESCE(power_kw, 0) DESC`).bind(...chunk).all();
+    rows.push(...(result.results || []));
+  }
+  return rows;
 }
 
 async function readStations(db, url) {
@@ -60,14 +75,16 @@ async function readStations(db, url) {
   const hasLocation = lat !== null && lon !== null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
   let query;
   if (hasBounds) {
-    query = db.prepare(`SELECT ${CATALOGS.stations.join(", ")} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw, 0) DESC LIMIT ?`).bind(minLat, maxLat, minLon, maxLon, clampLimit(url));
+    query = db.prepare(`SELECT ${CATALOGS.stations.join(", ")} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw, 0) DESC LIMIT ?`).bind(minLat, maxLat, minLon, maxLon, clampLimit(url, 1000));
   } else if (hasLocation) {
     query = db.prepare(`SELECT ${CATALOGS.stations.join(", ")} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw, 0) DESC LIMIT ?`).bind(lat - 0.45, lat + 0.45, lon - 0.65, lon + 0.65, clampLimit(url));
   } else {
     query = db.prepare(`SELECT ${CATALOGS.stations.join(", ")} FROM station_cache_v2 ORDER BY COALESCE(max_power_kw, 0) DESC LIMIT ?`).bind(clampLimit(url));
   }
   const result = await query.all();
-  return json({ source: "cloudflare-d1-cache", stale: true, stations: result.results || [] });
+  const stations = result.results || [];
+  const connectors = await connectorsForStations(db, stations);
+  return json({ source: "cloudflare-d1-cache", stale: true, stations, connectors });
 }
 
 async function nearbyOpenStreetMap(lat, lon) {
@@ -94,14 +111,14 @@ export default { async fetch(request, env) {
       const result = await readStations(env.CHARGEVOY_DB, url), payload = await result.json();
       if (payload.stations?.length) return json(payload);
       const lat = validNumber(url.searchParams.get("lat")), lon = validNumber(url.searchParams.get("lon"));
-      if (lat !== null && lon !== null) return json({ source: "cloudflare-d1-empty", stale: true, stations: await nearbyOpenStreetMap(lat, lon) });
+      if (lat !== null && lon !== null) return json({ source: "cloudflare-d1-empty", stale: true, stations: await nearbyOpenStreetMap(lat, lon), connectors: [] });
       return json(payload);
     }
     return json({ error: "Not found" }, 404);
   } catch (error) {
     console.error("ChargeVoy API:", error);
     const lat = validNumber(url.searchParams.get("lat")), lon = validNumber(url.searchParams.get("lon"));
-    if (url.pathname.endsWith("/api/stations") && lat !== null && lon !== null) try { return json({ source: "openstreetmap-overpass-fallback", stale: true, stations: await nearbyOpenStreetMap(lat, lon), warning: "D1 indisponível; dados de localização temporários" }); } catch (fallbackError) { console.error("Overpass fallback:", fallbackError); }
-    return json({ error: "D1 query failed", stations: [], rows: [] }, 503);
+    if (url.pathname.endsWith("/api/stations") && lat !== null && lon !== null) try { return json({ source: "openstreetmap-overpass-fallback", stale: true, stations: await nearbyOpenStreetMap(lat, lon), connectors: [], warning: "D1 indisponível; dados de localização temporários" }); } catch (fallbackError) { console.error("Overpass fallback:", fallbackError); }
+    return json({ error: "D1 query failed", stations: [], connectors: [], rows: [] }, 503);
   }
 }};
