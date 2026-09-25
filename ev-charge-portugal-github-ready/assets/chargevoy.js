@@ -52,6 +52,37 @@
       let selectedPower = "all";
       let searchPosition = null;
       let lastGeocodeAt = 0;
+      const LOCAL_VEHICLE_FALLBACK = [
+        ["Tesla", "Model 3", "RWD", 2023, 60, 145, 513, 11, 170, "sedan"],
+        ["Tesla", "Model Y", "RWD", 2023, 60, 160, 455, 11, 170, "suv"],
+        ["Tesla", "Model S", "Dual Motor", 2023, 100, 180, 634, 11, 250, "sedan"],
+        ["Tesla", "Model X", "Dual Motor", 2023, 100, 210, 576, 11, 250, "suv"],
+        ["Volkswagen", "ID.3", "Pro", 2023, 58, 155, 426, 11, 135, "hatchback"],
+        ["Volkswagen", "ID.4", "Pro", 2023, 77, 175, 520, 11, 135, "suv"],
+        ["Renault", "5 E-Tech", "52 kWh", 2024, 52, 150, 410, 11, 100, "hatchback"],
+        ["Peugeot", "e-208", "50 kWh", 2023, 50, 160, 362, 11, 100, "hatchback"],
+        ["Hyundai", "Ioniq 5", "77 kWh", 2023, 77, 180, 507, 11, 235, "suv"],
+        ["Kia", "EV6", "77.4 kWh", 2023, 77, 180, 528, 11, 240, "suv"],
+        ["Mercedes-Benz", "EQA", "250+", 2023, 70, 180, 424, 11, 100, "suv"],
+        ["Mercedes-Benz", "GLC", "300e", 2024, 31, 220, 130, 11, 0, "suv"],
+        ["BMW", "i4", "eDrive40", 2023, 81, 165, 590, 11, 205, "sedan"],
+        ["Volvo", "EX30", "Single Motor Extended Range", 2024, 69, 160, 476, 11, 153, "suv"],
+      ].map(([make, model, variant, year, battery, consumption, range, ac, dc, body], index) => ({
+        id: `local-vehicle-${index + 1}`,
+        external_id: `local-${index + 1}`,
+        source: "local-fallback",
+        make, model, variant, model_year_start: year,
+        battery_capacity_kwh: battery,
+        consumption_wh_km: consumption,
+        wltp_range_km: range,
+        max_ac_power_kw: ac,
+        max_dc_power_kw: dc,
+        connector_types: JSON.stringify(["CCS2", "Type 2"]),
+        body_style: body,
+        data_quality: "fallback",
+        consumption_basis: "catalogue-estimate",
+      }));
+
       let vehicleModels = [];
       let currentVehicle = null;
       let selectedStationPower = null;
@@ -1802,19 +1833,57 @@
         }
       }
 
+      async function loadOverpassStations(place) {
+        if (!place) return [];
+        const query =
+          `[out:json][timeout:12];nwr[amenity=charging_station](around:50000,${Number(place.lat)},${Number(place.lon)});out center tags;`;
+        const response = await fetch("https://overpass.kumi.systems/api/interpreter", {
+          method: "POST",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+            Accept: "application/json",
+          },
+          body: new URLSearchParams({ data: query }),
+        });
+        if (!response.ok) throw new Error(`Overpass HTTP ${response.status}`);
+        const payload = await response.json();
+        return (payload.elements || []).map((item) => {
+          const tags = item.tags || {};
+          const latitude = Number(item.lat ?? item.center?.lat);
+          const longitude = Number(item.lon ?? item.center?.lon);
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+          return {
+            id: `osm-${item.type}-${item.id}`,
+            external_id: String(item.id),
+            source: "openstreetmap-live",
+            name: tags.name || tags.ref || "Posto de carregamento",
+            address: [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(" "),
+            city: tags["addr:city"] || tags["addr:municipality"] || "",
+            latitude, longitude, max_power_kw: null, status: "unknown",
+            operator_id: tags.operator || null, amenities: JSON.stringify(tags),
+          };
+        }).filter(Boolean).slice(0, 500);
+      }
+
       async function loadFallbackStations(place) {
         const params = new URLSearchParams();
         if (place) {
           params.set("lat", String(place.lat));
           params.set("lon", String(place.lon));
         }
-        const response = await fetch(`${D1_FALLBACK_URL}?${params.toString()}`, {
-          headers: { Accept: "application/json" },
-        });
-        if (!response.ok)
-          throw new Error(`Fallback D1 HTTP ${response.status}`);
-        const payload = await response.json();
-        return Array.isArray(payload.stations) ? payload.stations : [];
+        try {
+          const response = await fetch(`${D1_FALLBACK_URL}?${params.toString()}`, {
+            headers: { Accept: "application/json" },
+          });
+          if (response.ok) {
+            const payload = await response.json();
+            const stations = Array.isArray(payload.stations) ? payload.stations : [];
+            if (stations.length) return stations;
+          }
+        } catch (error) {
+          console.warn("D1 indisponível; consulta Overpass direta", error);
+        }
+        return loadOverpassStations(place);
       }
 
       const stationFields =
@@ -1905,10 +1974,11 @@
               "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
             ),
           ]);
-          if (vehiclesResult.status === "fulfilled") {
+          if (vehiclesResult.status === "fulfilled" && vehiclesResult.value.length) {
             populateVehicles(vehiclesResult.value);
           } else {
-            console.warn("Catálogo de veículos indisponível", vehiclesResult.reason);
+            console.warn("Catálogo remoto indisponível; usando catálogo local", vehiclesResult.reason);
+            populateVehicles(LOCAL_VEHICLE_FALLBACK);
           }
           if (cardsResult.status === "fulfilled") {
             const today = new Date().toISOString().slice(0, 10);
