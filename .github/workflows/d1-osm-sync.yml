@@ -46,3 +46,5 @@ jobs:
           for file in tmp/d1-osm-sync/*.sql; do
             wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"
           done
+
+# Manual connectivity test
