@@ -280,7 +280,61 @@
       // Dynamic map data can contain thousands of elements. Translation is intentionally
       // applied only on explicit language changes so it never blocks map interactions.
 
+      const D1_PUBLIC_TABLES = new Set([
+        "operators",
+        "connectors",
+        "station_reviews",
+        "station_reliability",
+        "official_opc_tariffs",
+        "station_ad_hoc_price_components",
+        "vehicle_models",
+        "ceme_cards",
+      ]);
+
+      function d1Query(table, query) {
+        const source = new URLSearchParams(query || "");
+        const target = new URLSearchParams();
+        target.set("table", table);
+        for (const [key, value] of source.entries()) {
+          if (key === "select" || key === "limit" || key === "offset") {
+            target.set(key, value);
+            continue;
+          }
+          const match = key.match(/^([^=]+)$/);
+          if (match && value.startsWith("eq.")) {
+            target.set(`${match[1]}_eq`, value.slice(3));
+          } else if (match && value.startsWith("gte.")) {
+            target.set(`${match[1]}_gte`, value.slice(4));
+          } else if (match && value.startsWith("lte.")) {
+            target.set(`${match[1]}_lte`, value.slice(4));
+          } else if (key === "order") {
+            target.set("order", value.split(",")[0]);
+          }
+        }
+        return target;
+      }
+
+      async function getD1Rows(table, query) {
+        const response = await fetchWithTimeout(
+          `${D1_FALLBACK_URL.replace(/\/api\/stations$/, "")}/api/catalog?${d1Query(table, query)}`,
+          { headers: { Accept: "application/json" } },
+          15000,
+        );
+        if (!response.ok)
+          throw new Error(`D1 ${table}: HTTP ${response.status}`);
+        const payload = await response.json();
+        return Array.isArray(payload.rows) ? payload.rows : [];
+      }
+
       async function getRows(table, query) {
+        if (D1_PUBLIC_TABLES.has(table)) {
+          try {
+            const d1Rows = await getD1Rows(table, query);
+            if (d1Rows.length) return d1Rows;
+          } catch (error) {
+            console.warn(`D1 ${table} indisponível; usando Supabase`, error);
+          }
+        }
         const response = await fetchWithTimeout(
           `${SUPABASE_URL}/rest/v1/${table}?${query}`,
           { headers: API_HEADERS },
