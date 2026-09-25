@@ -1,0 +1,7 @@
+name = "broken-mud-373e"
+main = "worker/index.js"
+compatibility_date = "2026-09-25"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
