@@ -126,13 +126,13 @@ await mkdir(outputDir, { recursive: true });
 
 await writeFile(
   join(outputDir, "001_prepare.sql"),
-  "CREATE TABLE IF NOT EXISTS station_cache_v2_next AS SELECT * FROM station_cache_v2 WHERE 0;\\nDELETE FROM station_cache_v2_next;\\n",
+  "CREATE TABLE IF NOT EXISTS station_cache_v2_next AS SELECT * FROM station_cache_v2 WHERE 0;\nDELETE FROM station_cache_v2_next;\n",
 );
 
 for (let index = 0; index < stations.length; index += pageSize) {
   const chunk = stations.slice(index, index + pageSize);
-  const values = chunk.map((row) => `(${rowValues(row)})`).join(",\\n");
-  const sql = `INSERT INTO station_cache_v2_next (${fields.join(", ")}, synced_at) VALUES\\n${values};\\n`;
+  const values = chunk.map((row) => `(${rowValues(row)})`).join(",\n");
+  const sql = `INSERT INTO station_cache_v2_next (${fields.join(", ")}, synced_at) VALUES\n${values};\n`;
   await writeFile(
     join(outputDir, `${String(index / pageSize + 2).padStart(3, "0")}_stations.sql`),
     sql,
