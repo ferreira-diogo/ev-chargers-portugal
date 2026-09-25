@@ -10,6 +10,10 @@ on:
   schedule:
     - cron: "0 */6 * * *"
 
+concurrency:
+  group: d1-station-sync
+  cancel-in-progress: true
+
 jobs:
   sync:
     runs-on: ubuntu-latest
