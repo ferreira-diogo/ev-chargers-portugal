@@ -5,6 +5,8 @@ on:
     paths:
       - "ev-charge-portugal-github-ready/assets/**"
       - "ev-charge-portugal-github-ready/worker/**"
+      - "ev-charge-portugal-github-ready/worker-api/**"
+      - "ev-charge-portugal-github-ready/service-worker.js"
       - "ev-charge-portugal-github-ready/scripts/verify-*.mjs"
       - "ev-charge-portugal-github-ready/package.json"
       - ".github/workflows/validate-live-map.yml"
