@@ -16,6 +16,10 @@ The initial station catalogue is now the 1,500 highest-power stations nationally
 
 `npm test` now includes `verify-live-map-contract.mjs`, covering the live-source contract, green-marker mapping, national catalogue behavior, explicit bounds, stale-state behavior, and route-planner access to the station catalogue. The PR workflow also runs the existing web regression suite and `build:web`.
 
+A post-deploy production workflow validates HTTP 200, a national geographic span, high-power stations, MOBI.E live connectors and at least one currently available connector.
+
 ## Rollback
 
 The existing rollback baseline remains unchanged: `rollback/pre-station-photos-live-xml`.
+
+A dedicated rollback point for this corrective change was also created at `rollback/pre-live-map-national-coverage-fix`, pinned to `995c67d2e2fb4c9e7e2a0b819b5b982990e07a5d`.
