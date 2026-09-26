@@ -69,7 +69,7 @@ jobs:
             health="$(curl --silent --show-error --max-time 15 "$API_BASE/api/health" || true)"
             code="$(curl --silent --show-error --max-time 15 -o /tmp/stations.json -w '%{http_code}' "$API_BASE/api/stations?limit=100" || true)"
             if echo "$health" | grep -q '"ok":true' && echo "$health" | grep -q '"d1":true' && echo "$health" | grep -q '"kv":true' && echo "$health" | grep -q '"availability_fresh":true' && [ "$code" = 200 ]; then
-              node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/stations.json","utf8"));const c=x.connectors||[];const m=c.filter(v=>String(v.availability_source||"").startsWith("mobie_nap_"));const k=m.filter(v=>v.status&&v.status!=="unknown");console.log(JSON.stringify({connectors:c.length,mapped:m.length,known_live:k.length,availability_age_minutes:x.availability_age_minutes}));if(!c.length||!m.length||!k.length)process.exit(2)'
+              node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/stations.json","utf8"));const c=x.connectors||[];const m=c.filter(v=>v.availability_source==="mobie_nap");const k=m.filter(v=>v.status&&v.status!=="unknown");console.log(JSON.stringify({connectors:c.length,live:m.length,known_live:k.length,availability_age_minutes:x.availability_age_minutes}));if(!c.length||!m.length||!k.length)process.exit(2)'
               echo "$health"
               exit 0
             fi
