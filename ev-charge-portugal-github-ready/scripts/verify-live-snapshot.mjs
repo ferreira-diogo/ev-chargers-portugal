@@ -1,0 +1,18 @@
+const base = process.env.CHARGEVOY_API_URL || 'https://chargevoy-api.zombid.workers.dev';
+const healthResponse = await fetch(base + '/api/health', { signal: AbortSignal.timeout(30000) });
+if (!healthResponse.ok) throw new Error(`health HTTP ${healthResponse.status}`);
+const health = await healthResponse.json();
+if (!health.ok || !health.d1 || !health.kv) throw new Error('D1/KV health check failed: ' + JSON.stringify(health));
+if (!health.availability_fresh) throw new Error('Availability snapshot is not fresh: ' + JSON.stringify(health));
+const stationsResponse = await fetch(base + '/api/stations?limit=500', { signal: AbortSignal.timeout(30000) });
+if (!stationsResponse.ok) throw new Error(`stations HTTP ${stationsResponse.status}`);
+const body = await stationsResponse.json();
+if (!Array.isArray(body.stations) || !body.stations.length) throw new Error('No stations returned');
+if (!Array.isArray(body.connectors) || !body.connectors.length) throw new Error('No connectors returned');
+const live = body.connectors.filter(c => c.availability_source === 'mobie_nap_d1_mapping' || c.availability_source === 'mobie_nap_legacy_mapping');
+const known = live.filter(c => c.status && c.status !== 'unknown');
+const mapped = body.connectors.filter(c => String(c.availability_source || '').startsWith('mobie_nap_'));
+const statuses = Object.fromEntries([...new Set(known.map(c => c.status))].sort().map(status => [status, known.filter(c => c.status === status).length]));
+if (!mapped.length) throw new Error('No NAP-mapped connectors returned by production API');
+if (!known.length) throw new Error('All mapped connectors are unknown; live merge is not working');
+console.log(JSON.stringify({ok:true, availability_age_minutes:body.availability_age_minutes, stations:body.stations.length, connectors:body.connectors.length, mapped:mapped.length, known_live:known.length, statuses}, null, 2));
