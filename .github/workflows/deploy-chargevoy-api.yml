@@ -2,10 +2,8 @@ name: Deploy ChargeVoy API Worker
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Deploy ChargeVoy web"]
-    types: [completed]
   push:
+    branches: [main, feat/station-photos-live-xml]
     paths:
       - "ev-charge-portugal-github-ready/worker-api/index.js"
       - "ev-charge-portugal-github-ready/wrangler-api.toml"
@@ -14,7 +12,6 @@ on:
 
 jobs:
   deploy:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,42 +29,37 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
-          test -n "$D1_DATABASE_NAME" || { echo "::error::Missing D1_DATABASE_NAME"; exit 1; }
+          test -n "$D1_DATABASE_NAME" || test -n "$D1_DATABASE_ID" || { echo "::error::Missing D1 database configuration"; exit 1; }
       - name: Install Wrangler
         run: npm install --global wrangler@4
       - name: Resolve D1 and KV bindings
         working-directory: ev-charge-portugal-github-ready
         run: |
           set -euo pipefail
-          if [ -n "$D1_DATABASE_ID" ]; then
-            DB_ID="$D1_DATABASE_ID"
-          else
+          if [ -n "$D1_DATABASE_ID" ]; then DB_ID="$D1_DATABASE_ID"; else
             wrangler d1 info "$D1_DATABASE_NAME" --json > /tmp/d1-info.json
             DB_ID="$(node -e 'const fs=require("fs");const root=JSON.parse(fs.readFileSync("/tmp/d1-info.json","utf8"));const c=[root,root.result,root.database,root.result?.database].filter(Boolean);const d=c.find(x=>x.uuid||x.database_id||x.id);if(!d)process.exit(2);process.stdout.write(d.uuid||d.database_id||d.id||"")')"
           fi
-          test -n "$DB_ID" || { echo "::error::D1 database ID could not be resolved"; exit 1; }
+          test -n "$DB_ID"
           curl --fail --silent --show-error -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces?per_page=100" > /tmp/kv.json
           KV_ID="$(node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/kv.json","utf8"));const n=(x.result||[]).find(v=>v.title==="chargevoy-availability");if(!n?.id)process.exit(2);process.stdout.write(n.id)')"
-          test -n "$KV_ID" || { echo "::error::KV namespace chargevoy-availability could not be resolved"; exit 1; }
+          test -n "$KV_ID"
           cp wrangler-api.toml wrangler-api-deploy.toml
-          DB_ID="$DB_ID" KV_ID="$KV_ID" node - <<'NODE'
-          const fs=require("fs"); const file="wrangler-api-deploy.toml";
-          let text=fs.readFileSync(file,"utf8");
-          text=text.replace('# database_id = "ID_DA_BASE_D1"',`database_id = "${process.env.DB_ID}"`);
-          text=text.replace('# id = "ID_DO_KV_AVAILABILITY"',`id = "${process.env.KV_ID}"`);
-          fs.writeFileSync(file,text);
-          NODE
-          grep -q '^database_id = "' wrangler-api-deploy.toml
-          grep -q '^id = "' wrangler-api-deploy.toml
-      - name: Refresh NAP live snapshot before validation
+          DB_ID="$DB_ID" KV_ID="$KV_ID" node -e 'const fs=require("fs");const f="wrangler-api-deploy.toml";let t=fs.readFileSync(f,"utf8");t=t.replace("# database_id = \"ID_DA_BASE_D1\"",`database_id = "${process.env.DB_ID}"`).replace("# id = \"ID_DO_KV_AVAILABILITY\"",`id = "${process.env.KV_ID}"`);if(!t.includes(`database_id = "${process.env.DB_ID}"`)||!t.includes(`id = "${process.env.KV_ID}"`))process.exit(3);fs.writeFileSync(f,t)'
+          ! grep -q 'PLACEHOLDER\|ID_DA_BASE_D1\|ID_DO_KV_AVAILABILITY' wrangler-api-deploy.toml
+      - name: Refresh NAP live snapshot
         working-directory: ev-charge-portugal-github-ready
         run: |
-          set -euo pipefail
           npm ci --ignore-scripts
           node scripts/refresh-nap-availability-kv.mjs
-      - name: Deploy API Worker
+      - name: Deploy API Worker only
         working-directory: ev-charge-portugal-github-ready
         run: wrangler deploy --config wrangler-api-deploy.toml
+      - name: Verify deployed Worker bindings
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/chargevoy-api/environments/production/settings" > /tmp/settings.json
+          node -e 'const x=require("/tmp/settings.json");const n=new Set((x.result?.bindings||[]).map(v=>v.name));console.log("bindings="+[...n].sort().join(","));if(!n.has("CHARGEVOY_DB")||!n.has("AVAILABILITY_KV"))process.exit(2)'
       - name: Verify API routes and fresh live availability
         env:
           API_BASE: https://chargevoy-api.zombid.workers.dev
@@ -75,20 +67,14 @@ jobs:
           set -euo pipefail
           for attempt in $(seq 1 12); do
             health="$(curl --silent --show-error --max-time 15 "$API_BASE/api/health" || true)"
-            stations_status="$(curl --silent --show-error --max-time 15 --output /tmp/stations.json --write-out '%{http_code}' "$API_BASE/api/stations?limit=25" || true)"
-            if echo "$health" | grep -q '"ok":true' \
-              && echo "$health" | grep -q '"d1":true' \
-              && echo "$health" | grep -q '"kv":true' \
-              && echo "$health" | grep -q '"availability_fresh":true' \
-              && [ "$stations_status" = "200" ] \
-              && grep -q '"connectors"' /tmp/stations.json; then
-              echo "API Worker routes, D1, KV and fresh NAP snapshot are healthy"
+            code="$(curl --silent --show-error --max-time 15 -o /tmp/stations.json -w '%{http_code}' "$API_BASE/api/stations?limit=100" || true)"
+            if echo "$health" | grep -q '"ok":true' && echo "$health" | grep -q '"d1":true' && echo "$health" | grep -q '"kv":true' && echo "$health" | grep -q '"availability_fresh":true' && [ "$code" = 200 ]; then
+              node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/stations.json","utf8"));const c=x.connectors||[];const m=c.filter(v=>String(v.availability_source||"").startsWith("mobie_nap_"));const k=m.filter(v=>v.status&&v.status!=="unknown");console.log(JSON.stringify({connectors:c.length,mapped:m.length,known_live:k.length,availability_age_minutes:x.availability_age_minutes}));if(!c.length||!m.length||!k.length)process.exit(2)'
               echo "$health"
               exit 0
             fi
-            echo "API check $attempt failed; health=$health stations_http=$stations_status"
+            echo "API check $attempt failed; health=$health stations_http=$code"
             sleep 5
           done
           echo "::error::API Worker is not serving a fresh D1+KV live path"
-          cat /tmp/stations.json || true
           exit 1

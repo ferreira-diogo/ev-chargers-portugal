@@ -6,12 +6,6 @@ compatibility_date = "2026-09-25"
 directory = "./dist"
 binding = "ASSETS"
 
-[[d1_databases]]
-binding = "CHARGEVOY_DB"
-database_name = "chargevoy-fallback"
-# database_id = "ID_DA_BASE_D1"
-
-[[kv_namespaces]]
-binding = "AVAILABILITY_KV"
-id = "KV_NAMESPACE_ID_PLACEHOLDER"
-
+# Cloudflare resource IDs are injected by the deployment workflow.
+# Do not commit placeholder IDs here: Wrangler treats them as real resources
+# and rejects the deployment before the Worker can be published.

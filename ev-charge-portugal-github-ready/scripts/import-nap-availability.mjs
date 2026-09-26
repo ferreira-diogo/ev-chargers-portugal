@@ -2,7 +2,6 @@ import { createReadStream } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { Readable } from 'node:stream';
 import { SaxesParser } from 'saxes';
-import { createClient } from '@supabase/supabase-js';
 
 export const SOURCE_URL = 'https://ev-nap.mobie.pt/integration/nap/evActualStatus';
 const STATES = new Set(['available','charging','outOfOrder','unknown','blocked','planned','inoperative','reserved']);
@@ -29,7 +28,7 @@ export async function parseAvailability(stream, { minimum = 15000, now = Date.no
     if (node.local === 'publicationTime') publication = text.trim();
     if (node.local === 'status' && stack.at(-2) === 'refillPointStatus') point.status = text.trim();
     if (node.local === 'refillPointStatus') {
-      if (!point.site_id || !point.point_id || !STATES.has(point.status)) throw new Error('Invalid point ID or status');
+      if (!point?.site_id || !point.point_id || !STATES.has(point.status)) throw new Error('Invalid point ID or status');
       rows.push(point); point = null;
     }
     stack.pop(); text = '';
@@ -53,28 +52,16 @@ export async function parseAvailability(stream, { minimum = 15000, now = Date.no
 }
 
 async function main() {
-  const apply = process.argv.includes('--apply');
   const file = process.argv.find(a=>a.startsWith('--file='))?.slice(7);
   let stream;
   if (file) stream = createReadStream(file);
   else {
-    const response = await fetch(SOURCE_URL, { signal: AbortSignal.timeout(180000), headers: { Accept: 'application/xml' } });
+    const response = await fetch(SOURCE_URL, { signal: AbortSignal.timeout(180000), headers: { Accept: 'application/xml', 'User-Agent': 'ChargeVoy NAP validator/2.0' } });
     if (!response.ok || !response.body) throw new Error(`NAP HTTP ${response.status}`);
     stream = Readable.fromWeb(response.body);
   }
   const parsed = await parseAvailability(stream);
-  let database = null;
-  if (apply || process.argv.includes('--check-db')) {
-    const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) throw new Error('Required server-side secrets are missing');
-    const client = createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
-    const {data,error} = await client.rpc('import_nap_availability',{
-      p_publication_time: parsed.publication_time, p_rows: parsed.rows, p_apply: apply
-    });
-    if(error) throw new Error(error.message);
-    database=data;
-  }
-  console.log(JSON.stringify({mode:apply?'apply':'dry-run',publication_time:parsed.publication_time,...parsed.summary,database},null,2));
+  console.log(JSON.stringify({mode:'validate',publication_time:parsed.publication_time,...parsed.summary},null,2));
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch(error=>{ console.error(error.message); process.exitCode=1; });

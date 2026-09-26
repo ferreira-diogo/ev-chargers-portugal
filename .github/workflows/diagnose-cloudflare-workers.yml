@@ -1,0 +1,62 @@
+name: Diagnose Cloudflare Workers
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-cloudflare-workers.yml"
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Validate credentials exist
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+      - name: Install Wrangler
+        run: npm install --global wrangler@4
+      - name: Inspect account resources safely
+        run: |
+          set -euo pipefail
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          BASE="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID"
+          echo '=== Wrangler identity ==='
+          wrangler whoami || true
+          echo '=== D1 databases ==='
+          wrangler d1 list || true
+          echo '=== KV namespaces ==='
+          curl --fail --silent --show-error -H "$AUTH" "$BASE/storage/kv/namespaces?per_page=100" > /tmp/kv.json
+          node - <<'NODE'
+          const x=require('/tmp/kv.json'); for(const n of x.result||[]) console.log(`${n.title}\t${n.id}`)
+          NODE
+          echo '=== Worker scripts ==='
+          curl --fail --silent --show-error -H "$AUTH" "$BASE/workers/scripts" > /tmp/scripts.json
+          node - <<'NODE'
+          const x=require('/tmp/scripts.json'); for(const s of x.result||[]) console.log(`${s.id}\tmodified=${s.modified_on||''}`)
+          NODE
+          echo '=== chargevoy-api settings/bindings ==='
+          code=$(curl --silent --show-error -o /tmp/settings.json -w '%{http_code}' -H "$AUTH" "$BASE/workers/services/chargevoy-api/environments/production/settings")
+          echo "settings_http=$code"
+          if [ "$code" = 200 ]; then
+            node - <<'NODE'
+            const x=require('/tmp/settings.json'); const r=x.result||{};
+            const bindings=(r.bindings||[]).map(b=>({name:b.name,type:b.type,namespace_id:b.namespace_id,database_id:b.id||b.database_id}));
+            console.log(JSON.stringify({compatibility_date:r.compatibility_date,usage_model:r.usage_model,bindings},null,2));
+          NODE
+          fi
+          echo '=== Production endpoint probes ==='
+          for path in / /api/health '/api/stations?limit=3'; do
+            echo "--- $path"
+            curl --silent --show-error --max-time 20 -D /tmp/h -o /tmp/b "https://chargevoy-api.zombid.workers.dev$path" || true
+            head -n 1 /tmp/h || true
+            head -c 800 /tmp/b || true
+            echo
+          done

@@ -23,6 +23,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
       D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
     steps:
       - uses: actions/checkout@v5
@@ -33,27 +34,39 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          test -n "$D1_DATABASE_NAME" || test -n "$D1_DATABASE_ID" || { echo "::error::Missing D1 database configuration"; exit 1; }
       - name: Build web bundle
         working-directory: ev-charge-portugal-github-ready
         run: npm run build:web
-      - name: Ensure availability KV namespace
+      - name: Install Wrangler
+        run: npm install --global wrangler@4
+      - name: Resolve D1 and availability KV
+        working-directory: ev-charge-portugal-github-ready
         run: |
+          set -euo pipefail
+          if [ -n "$D1_DATABASE_ID" ]; then
+            DB_ID="$D1_DATABASE_ID"
+          else
+            wrangler d1 info "$D1_DATABASE_NAME" --json > /tmp/d1-info.json
+            DB_ID="$(node -e 'const fs=require("fs");const root=JSON.parse(fs.readFileSync("/tmp/d1-info.json","utf8"));const c=[root,root.result,root.database,root.result?.database].filter(Boolean);const d=c.find(x=>x.uuid||x.database_id||x.id);if(!d)process.exit(2);process.stdout.write(d.uuid||d.database_id||d.id||"")')"
+          fi
+          test -n "$DB_ID" || { echo "::error::D1 database ID could not be resolved"; exit 1; }
           API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces"
           AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-          NS_ID=$(curl --fail --silent --show-error -H "$AUTH" "$API" | jq -r '.result[]? | select(.title == "chargevoy-availability") | .id' | head -n 1)
-          if [ -z "$NS_ID" ]; then
-            BODY=$(jq -n --arg title "chargevoy-availability" '{title: $title}')
-            NS_ID=$(curl --fail --silent --show-error -X POST -H "$AUTH" -H "Content-Type: application/json" --data "$BODY" "$API" | jq -er '.result.id')
-          fi
-          test -n "$NS_ID"
-          echo "AVAILABILITY_KV_ID=$NS_ID" >> "$GITHUB_ENV"
-      - name: Prepare D1 binding
-        working-directory: ev-charge-portugal-github-ready
-        run: |
-          test -n "$D1_DATABASE_ID" || exit 1
+          curl --fail --silent --show-error -H "$AUTH" "$API?per_page=100" > /tmp/kv.json
+          KV_ID="$(node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/kv.json","utf8"));const n=(x.result||[]).find(v=>v.title==="chargevoy-availability");if(!n?.id)process.exit(2);process.stdout.write(n.id)')"
+          test -n "$KV_ID" || { echo "::error::KV namespace chargevoy-availability could not be resolved"; exit 1; }
           cp wrangler.toml wrangler-deploy.toml
-          sed -i "s/# database_id = \\\"ID_DA_BASE_D1\\\"/database_id = \\\"$D1_DATABASE_ID\\\"/" wrangler-deploy.toml
-          sed -i "s/KV_NAMESPACE_ID_PLACEHOLDER/$AVAILABILITY_KV_ID/" wrangler-deploy.toml
-      - name: Deploy static Worker with D1
+          DB_ID="$DB_ID" KV_ID="$KV_ID" node - <<'NODE'
+          const fs=require('fs'); const file='wrangler-deploy.toml';
+          let text=fs.readFileSync(file,'utf8');
+          text += `\n[[d1_databases]]\nbinding = "CHARGEVOY_DB"\ndatabase_name = "${process.env.D1_DATABASE_NAME || 'chargevoy-fallback'}"\ndatabase_id = "${process.env.DB_ID}"\n`;
+          text += `\n[[kv_namespaces]]\nbinding = "AVAILABILITY_KV"\nid = "${process.env.KV_ID}"\n`;
+          fs.writeFileSync(file,text);
+          NODE
+          grep -q '^database_id = "' wrangler-deploy.toml
+          grep -q '^id = "' wrangler-deploy.toml
+          ! grep -q 'PLACEHOLDER' wrangler-deploy.toml
+      - name: Deploy static Worker with D1 + KV
         working-directory: ev-charge-portugal-github-ready
-        run: npx wrangler@4 deploy --config wrangler-deploy.toml
+        run: wrangler deploy --config wrangler-deploy.toml
