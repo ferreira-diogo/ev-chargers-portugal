@@ -7,10 +7,10 @@ on:
       - ".github/workflows/d1-stations-sync.yml"
       - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
       - "ev-charge-portugal-github-ready/scripts/build-nap-d1-mapping.mjs"
+      - "ev-charge-portugal-github-ready/scripts/optimize-d1-nap-sql.mjs"
       - "ev-charge-portugal-github-ready/cloudflare/d1/schema.sql"
   schedule:
-    # The NAP catalogue is structural data. Live availability is refreshed separately
-    # through KV every five minutes, so rewriting the D1 catalogue every six hours is wasteful.
+    # Structural catalogue only. Live availability is refreshed separately in KV.
     - cron: "17 3 * * *"
 
 concurrency:
@@ -49,18 +49,26 @@ jobs:
         run: node scripts/import-nap-datex.mjs --d1
       - name: Prepare explicit NAP live mapping
         run: node scripts/build-nap-d1-mapping.mjs
-      - name: Estimate D1 write budget
+      - name: Convert snapshot to incremental D1 writes
+        run: node scripts/optimize-d1-nap-sql.mjs
+      - name: Estimate D1 write ceiling
         run: |
           set -e
           stations=$(grep -Rho "('nap-" tmp/d1-nap-sync/*station_cache_v2.sql 2>/dev/null | wc -l || true)
           connectors=$(grep -Rho "('nap-" tmp/d1-nap-sync/*connectors.sql 2>/dev/null | wc -l || true)
           mappings=$(grep -Rho "('" tmp/d1-nap-sync/0001_nap_mapping.sql 2>/dev/null | wc -l || true)
-          estimated=$((stations + connectors + mappings))
-          echo "Estimated catalogue rows written: $estimated (stations=$stations connectors=$connectors mappings=$mappings)"
-          if [ "$estimated" -gt 95000 ]; then
-            echo "::error::Refusing D1 sync: estimated writes $estimated exceed 95,000-row safety budget"
+          ceiling=$((stations + connectors + mappings))
+          echo "Maximum candidate rows: $ceiling (stations=$stations connectors=$connectors mappings=$mappings)"
+          echo "Unchanged existing rows use conditional UPSERT/IGNORE and therefore do not execute an UPDATE."
+          if [ "$ceiling" -gt 95000 ]; then
+            echo "::error::Refusing D1 sync: candidate write ceiling $ceiling exceeds 95,000-row safety budget"
             exit 1
           fi
+      - name: Guard against destructive full refresh
+        run: |
+          set -e
+          ! grep -R "DELETE FROM station_cache\|DELETE FROM station_cache_v2\|DELETE FROM connectors\|DELETE FROM nap_connector_mapping" tmp/d1-nap-sync/*.sql
+          ! ls tmp/d1-nap-sync/*_station_cache.sql >/dev/null 2>&1
       - name: Group NAP snapshot batches
         run: |
           set -e
@@ -79,7 +87,7 @@ jobs:
               count=0
             fi
           done
-      - name: Upload grouped NAP station snapshot
+      - name: Upload grouped incremental NAP catalogue
         run: |
           set -e
           for file in tmp/d1-nap-upload/*.sql; do
@@ -90,7 +98,7 @@ jobs:
                 success=1
                 break
               fi
-              echo "Upload failed (attempt $attempt); retrying without replaying successful files..."
+              echo "Upload failed (attempt $attempt); retrying current batch..."
               sleep $((attempt * 5))
             done
             test "$success" = "1" || exit 1
