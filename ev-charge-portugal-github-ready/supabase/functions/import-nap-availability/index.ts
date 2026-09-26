@@ -7,6 +7,24 @@ const reply = (data: unknown, status = 200) => new Response(JSON.stringify(data)
   status, headers: {'Content-Type':'application/json'}
 });
 
+async function publishCloudflareSnapshot(rows: Array<{site_id:string;point_id:string;status:string}>, publicationTime: string) {
+  const account = Deno.env.get('CF_ACCOUNT_ID');
+  const namespace = Deno.env.get('CF_AVAILABILITY_KV_ID');
+  const token = Deno.env.get('CF_AVAILABILITY_KV_TOKEN');
+  if (![account, namespace, token].every(Boolean)) throw Error('Cloudflare KV secrets are incomplete');
+  const statuses: Record<string,string> = Object.create(null);
+  for (const row of rows) statuses[row.site_id+'|'+row.point_id] = row.status;
+  const snapshot = {publication_time:publicationTime,refreshed_at:new Date().toISOString(),point_count:rows.length,statuses};
+  const result = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/storage/kv/namespaces/${namespace}/values/mobie_nap_current`, {
+    method:'PUT',
+    headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+    body:JSON.stringify(snapshot),signal:AbortSignal.timeout(20000)
+  });
+  const response = await result.json();
+  if (!result.ok || response.success !== true) throw Error('Cloudflare KV snapshot write failed: HTTP '+result.status);
+  return snapshot.point_count;
+}
+
 async function parse(stream: ReadableStream<Uint8Array>) {
   const parser = new SaxesParser({xmlns:true});
   const decoder = new TextDecoder('utf-8',{fatal:true});
@@ -93,16 +111,23 @@ Deno.serve(async request=>{
   const auth=await client.rpc('verify_nap_cron_token',{p_token:token});
   if(auth.error||auth.data!==true)return reply({error:'Unauthorized'},401);
   try{
+    const kvSecrets = ['CF_ACCOUNT_ID','CF_AVAILABILITY_KV_ID','CF_AVAILABILITY_KV_TOKEN'].map(name=>Deno.env.get(name));
+    if (kvSecrets.some(Boolean) && !kvSecrets.every(Boolean)) throw Error('Cloudflare KV secrets are incomplete');
+    const publishKv = kvSecrets.every(Boolean);
     const etagResult=await client.rpc('get_nap_live_etag');
     if(etagResult.error)throw Error('ETag read failed: '+etagResult.error.message);
     const previousEtag=typeof etagResult.data==='string'?etagResult.data:null;
     const requestHeaders: Record<string,string>={Accept:'application/xml'};
-    if(previousEtag)requestHeaders['If-None-Match']=previousEtag;
+    // The KV snapshot needs every current publication; a 304 provides no rows
+    // to publish when the GitHub writer is retired.
+    if(previousEtag && !publishKv)requestHeaders['If-None-Match']=previousEtag;
     const response=await fetch(SOURCE_URL,{headers:requestHeaders,signal:AbortSignal.timeout(115_000)});
     if(response.status===304)return reply({success:true,unchanged:true,source_status:304,etag:previousEtag});
     if(!response.ok||!response.body)throw Error('NAP HTTP '+response.status);
     const currentEtag=response.headers.get('etag');
     const {rows,prices,publication_time,source_points,source_price_components,source_bytes}=await parse(response.body);
+    // Availability remains usable even if the subsequent price/database import fails.
+    const kvPoints = publishKv ? await publishCloudflareSnapshot(rows,publication_time) : null;
     const result=await client.rpc('import_nap_availability',{
       p_publication_time:publication_time,p_rows:rows,p_apply:true
     });
@@ -115,7 +140,7 @@ Deno.serve(async request=>{
       const saved=await client.rpc('set_nap_live_etag',{p_etag:currentEtag});
       if(saved.error)throw Error('ETag save failed: '+saved.error.message);
     }
-    return reply({success:true,unchanged:false,source_points,source_price_components,source_bytes,publication_time,etag:currentEtag,database:result.data,prices:priceResult.data});
+    return reply({success:true,unchanged:false,source_points,source_price_components,source_bytes,publication_time,etag:currentEtag,database:result.data,prices:priceResult.data,kv_points:kvPoints});
   }catch(error){
     console.error('NAP availability import:',error);
     return reply({success:false,error:String(error)},502);

@@ -1895,13 +1895,13 @@
       async function loadFallbackStations(place) {
         // Both APIs must return a national seed. The dedicated API interprets
         // lat/lon as a hard local bounding box, unlike the site Worker.
-        const params = new URLSearchParams({ limit: "1500" });
+        const params = new URLSearchParams({ limit: "300" });
         for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
           try {
             const response = await fetchWithTimeout(
               `${endpoint}?${params.toString()}`,
               { headers: { Accept: "application/json" } },
-              9000,
+              20000,
             );
             if (!response.ok) throw new Error(`Station API HTTP ${response.status}`);
             const payload = await response.json();
@@ -1923,14 +1923,14 @@
       }
 
       async function loadRemainingNationalStations(generation) {
-        // Load the rest in the background. The first 1,500 markers are already
+        // Load the rest in the background. The first 300 markers are already
         // interactive while later pages fill gaps across the country.
-        for (let offset = 1500; offset < 30000; offset += 1500) {
+        for (let offset = 300; offset < 30000; offset += 500) {
           let payload;
           for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
             try {
-              const params = new URLSearchParams({ limit: "1500", offset: String(offset) });
-              const response = await fetchWithTimeout(`${endpoint}?${params}`, { cache: "no-store" }, 15000);
+              const params = new URLSearchParams({ limit: "500", offset: String(offset) });
+              const response = await fetchWithTimeout(`${endpoint}?${params}`, { cache: "no-store" }, 20000);
               if (!response.ok) throw new Error(`Station API HTTP ${response.status}`);
               payload = await response.json();
               if (!Array.isArray(payload.stations)) throw new Error("Invalid station page");
@@ -1948,7 +1948,7 @@
             connectorMap.set(connector.station_id, list);
           }
           renderStations(false);
-          if (payload.stations.length < 1500) return;
+          if (payload.stations.length < 500) return;
         }
       }
 
@@ -2094,7 +2094,7 @@
               operatorSelect.appendChild(option);
             });
           renderStations(false);
-          if (stations.length === 1500) void loadRemainingNationalStations(generation);
+          if (stations.length === 300) void loadRemainingNationalStations(generation);
 
           const vehicles = await vehiclePromise;
           if (vehicles.length) cacheVehicleRows(vehicles);
