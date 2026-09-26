@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Validate production map data contract
         env:
-          WEB_BASE: https://chargevoy.zombid.workers.dev
+          WEB_BASE: https://broken-mud-373e.zombid.workers.dev
         run: |
           set -euo pipefail
           code="$(curl --silent --show-error --max-time 30 -o /tmp/stations.json -w '%{http_code}' "$WEB_BASE/api/stations?limit=1500")"
