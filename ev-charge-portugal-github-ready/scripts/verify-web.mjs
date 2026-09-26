@@ -17,6 +17,7 @@ const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScri
 const canParse = (source) => { try { new Function(source); return true; } catch (error) { console.error(error.message); return false; } };
 const canParseWorkerModule = (source) => canParse(source.replace(/export\s+default/, "return"));
 const canParseModuleWithoutImports = (source) => canParse(source.replace(/^import .*;$/gm, "").replace(/^const response = await /m, "const response = "));
+const npmTest = JSON.parse(packageJson).scripts?.test || "";
 
 const checks = [
   ["HTML references extracted CSS", html.includes("./assets/chargevoy.css")],
@@ -43,7 +44,7 @@ const checks = [
   ["Legacy mapping is fallback only", staticWorker.includes("legacyNapKey") && staticWorker.includes("mapping ?")],
   ["NAP mapping generator has expected safety bound", mappingScript.includes("rows.length < 15000") && mappingScript.includes("rows.length > 100000")],
   ["Availability workflow runs every five minutes", refreshWorkflow.includes('cron: "*/5 * * * *"')],
-  ["Package exposes npm test", JSON.parse(packageJson).scripts?.test === "node scripts/verify-web.mjs"],
+  ["Package exposes npm test", npmTest.split(/\s*&&\s*/).includes("node scripts/verify-web.mjs") && npmTest.includes("node scripts/verify-live-map-contract.mjs")],
 ];
 
 const failed = checks.filter(([, ok]) => !ok);

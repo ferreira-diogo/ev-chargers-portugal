@@ -52,7 +52,9 @@ async function mergeAvailability(rows, env, snapshot = null) {
     if (!status) continue;
     connector.status = fresh ? status : "unknown";
     connector.availability_updated_at = snapshot.publication_time || snapshot.refreshed_at || null;
-    connector.availability_source = fresh ? (mapping ? "mobie_nap_d1_mapping" : "mobie_nap_legacy_mapping") : "mobie_nap_stale";
+    // The web UI consumes this stable public source name. Mapping provenance stays internal
+    // to the Worker/API implementation so live readings are not discarded by the browser.
+    connector.availability_source = fresh ? "mobie_nap" : "mobie_nap_stale";
     connector.available_count = !fresh ? null : status === "available" ? 1 : ["charging", "outOfOrder", "blocked", "inoperative", "reserved"].includes(status) ? 0 : null;
   }
   return rows;
@@ -66,13 +68,10 @@ async function stations(request, env) {
   const url=new URL(request.url);
   const minLat=numberParam(url,"min_lat"), maxLat=numberParam(url,"max_lat"), minLon=numberParam(url,"min_lon"), maxLon=numberParam(url,"max_lon");
   const hasBounds=[minLat,maxLat,minLon,maxLon].every(v=>v!==null)&&minLat<=maxLat&&minLon<=maxLon;
-  const lat=numberParam(url,"lat"), lon=numberParam(url,"lon");
-  const hasLocation=lat!==null&&lon!==null&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180;
-  const limit=Math.min(Math.max(Number(url.searchParams.get("limit")||500),1),1500);
+  const limit=Math.min(Math.max(Number(url.searchParams.get("limit")||1500),1),1500);
   try {
     let stmt;
     if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw,0) DESC LIMIT ?`).bind(minLat,maxLat,minLon,maxLon,limit);
-    else if(hasLocation) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw,0) DESC LIMIT ?`).bind(lat-.45,lat+.45,lon-.65,lon+.65,limit);
     else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY COALESCE(max_power_kw,0) DESC LIMIT ?`).bind(limit);
     const result=await stmt.all(); const stationRows=result.results||[]; let connectorRows=[];
     const stationIds=stationRows.map(s=>s.id).filter(Boolean);
