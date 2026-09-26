@@ -1,0 +1,28 @@
+name: Validate live map
+
+on:
+  pull_request:
+    paths:
+      - "ev-charge-portugal-github-ready/assets/**"
+      - "ev-charge-portugal-github-ready/worker/**"
+      - "ev-charge-portugal-github-ready/scripts/verify-*.mjs"
+      - "ev-charge-portugal-github-ready/package.json"
+      - ".github/workflows/validate-live-map.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        working-directory: ev-charge-portugal-github-ready
+        run: npm ci --ignore-scripts
+      - name: Regression tests
+        working-directory: ev-charge-portugal-github-ready
+        run: npm test
+      - name: Build web bundle
+        working-directory: ev-charge-portugal-github-ready
+        run: npm run build:web
