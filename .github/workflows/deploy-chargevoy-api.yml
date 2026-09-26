@@ -3,7 +3,7 @@ name: Deploy ChargeVoy API Worker
 on:
   workflow_dispatch:
   push:
-    branches: [main, feat/station-photos-live-xml]
+    branches: [main, feat/station-photos-live-xml, fix/d1-api-verification-retry]
     paths:
       - "ev-charge-portugal-github-ready/worker-api/index.js"
       - "ev-charge-portugal-github-ready/wrangler-api.toml"
@@ -45,7 +45,7 @@ jobs:
           KV_ID="$(node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/kv.json","utf8"));const n=(x.result||[]).find(v=>v.title==="chargevoy-availability");if(!n?.id)process.exit(2);process.stdout.write(n.id)')"
           test -n "$KV_ID"
           cp wrangler-api.toml wrangler-api-deploy.toml
-          DB_ID="$DB_ID" KV_ID="$KV_ID" node -e 'const fs=require("fs");const f="wrangler-api-deploy.toml";let t=fs.readFileSync(f,"utf8");t=t.replace("# database_id = \"ID_DA_BASE_D1\"",`database_id = "${process.env.DB_ID}"`).replace("# id = \"ID_DO_KV_AVAILABILITY\"",`id = "${process.env.KV_ID}"`);if(!t.includes(`database_id = "${process.env.DB_ID}"`)||!t.includes(`id = "${process.env.KV_ID}"`))process.exit(3);fs.writeFileSync(f,t)'
+          DB_ID="$DB_ID" KV_ID="$KV_ID" node -e 'const fs=require("fs");const f="wrangler-api-deploy.toml";let t=fs.readFileSync(f,"utf8");t=t.replace("# database_id = \\"ID_DA_BASE_D1\\"",`database_id = "${process.env.DB_ID}"`).replace("# id = \\"ID_DO_KV_AVAILABILITY\\"",`id = "${process.env.KV_ID}"`);if(!t.includes(`database_id = "${process.env.DB_ID}"`)||!t.includes(`id = "${process.env.KV_ID}"`))process.exit(3);fs.writeFileSync(f,t)'
           ! grep -q 'PLACEHOLDER\|ID_DA_BASE_D1\|ID_DO_KV_AVAILABILITY' wrangler-api-deploy.toml
       - name: Refresh NAP live snapshot
         working-directory: ev-charge-portugal-github-ready
