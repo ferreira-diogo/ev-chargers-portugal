@@ -1,0 +1,1 @@
+Corrective validation branch for the 2026-09-26 live-map regression. Do not merge until PR checks pass and post-deploy production validation is completed after approval.
