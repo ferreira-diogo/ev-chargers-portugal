@@ -1,0 +1,34 @@
+name: Validate live map production
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy ChargeVoy web"]
+    types: [completed]
+
+jobs:
+  validate:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate production map data contract
+        env:
+          WEB_BASE: https://chargevoy.zombid.workers.dev
+        run: |
+          set -euo pipefail
+          code="$(curl --silent --show-error --max-time 30 -o /tmp/stations.json -w '%{http_code}' "$WEB_BASE/api/stations?limit=1500")"
+          test "$code" = 200
+          node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('/tmp/stations.json','utf8'));
+          const stations=x.stations||[], connectors=x.connectors||[];
+          const live=connectors.filter(c=>c.availability_source==='mobie_nap');
+          const available=live.filter(c=>c.status==='available' && Number(c.available_count)>0);
+          const unavailable=live.filter(c=>c.status!=='available' && Number(c.available_count)===0);
+          const coords=stations.filter(s=>Number.isFinite(Number(s.latitude))&&Number.isFinite(Number(s.longitude)));
+          const latSpan=coords.length ? Math.max(...coords.map(s=>Number(s.latitude)))-Math.min(...coords.map(s=>Number(s.latitude))) : 0;
+          const lonSpan=coords.length ? Math.max(...coords.map(s=>Number(s.longitude)))-Math.min(...coords.map(s=>Number(s.longitude))) : 0;
+          const major=stations.filter(s=>Number(s.max_power_kw)>=150);
+          console.log(JSON.stringify({stations:stations.length,connectors:connectors.length,live:live.length,available:available.length,unavailable:unavailable.length,major_150kw:major.length,lat_span:latSpan,lon_span:lonSpan,age:x.availability_age_minutes}));
+          if(stations.length<500||connectors.length===0||live.length===0||available.length===0||major.length===0||latSpan<4||lonSpan<4) process.exit(2);
+          NODE
