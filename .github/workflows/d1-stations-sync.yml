@@ -110,4 +110,18 @@ jobs:
           echo "$result" | grep -q 'mapping_count'
       - name: Verify D1 station API
         run: |
-          curl --fail --silent --show-error --max-time 30 "https://chargevoy-api.zombid.workers.dev/api/stations?lat=39.7&lon=-8.1" | grep -q '"stations"'
+          set -euo pipefail
+          API_BASE="https://chargevoy-api.zombid.workers.dev"
+          for attempt in $(seq 1 12); do
+            health="$(curl --silent --show-error --max-time 15 "$API_BASE/api/health" || true)"
+            code="$(curl --silent --show-error --max-time 30 -o /tmp/stations.json -w '%{http_code}' "$API_BASE/api/stations?lat=39.7&lon=-8.1&limit=100" || true)"
+            if echo "$health" | grep -q '"ok":true' && echo "$health" | grep -q '"d1":true' && echo "$health" | grep -q '"kv":true' && [ "$code" = 200 ] && grep -q '"stations"' /tmp/stations.json; then
+              echo "D1 station API ready on attempt $attempt"
+              echo "$health"
+              exit 0
+            fi
+            echo "API verification attempt $attempt failed; stations_http=$code health=$health"
+            sleep 5
+          done
+          echo "::error::D1 station API did not become ready after retries"
+          exit 1
