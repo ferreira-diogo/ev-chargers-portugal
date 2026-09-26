@@ -2,9 +2,12 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const [web, worker] = await Promise.all([
+const [web, worker, apiWorker, corridor, serviceWorker] = await Promise.all([
   readFile(resolve(root, "assets/chargevoy.js"), "utf8"),
   readFile(resolve(root, "worker/index.js"), "utf8"),
+  readFile(resolve(root, "worker-api/index.js"), "utf8"),
+  readFile(resolve(root, "assets/route-corridor.js"), "utf8"),
+  readFile(resolve(root, "service-worker.js"), "utf8"),
 ]);
 
 const checks = [
@@ -18,6 +21,11 @@ const checks = [
   ["route planner still consumes allStations", /let\s+candidates\s*=\s*allStations/.test(web)],
   ["national map markers survive the nearby sidebar shortlist", /const mapStations\s*=\s*filtered\.slice\(\)/.test(web) && /const markerStations\s*=\s*mapStations\.filter/.test(web)],
   ["browser retries the dedicated API when the site D1 binding is missing", /for\s*\(const endpoint of \[D1_FALLBACK_URL, D1_API_WORKER_URL\]\)/.test(web)],
+  ["dedicated API receives a national request", /new URLSearchParams\(\{ limit: "1500" \}\)/.test(web)],
+  ["route requests each section with a dedicated API fallback", corridor.includes("coordinates.slice(start, end + 1)") && corridor.includes("[D1_FALLBACK_URL, D1_API_WORKER_URL]")],
+  ["service worker does not replay stale API availability", /if\(url\.pathname\.startsWith\('\/api\/'\)\)\s*\{\s*[^}]*fetch\(event\.request\)/.test(serviceWorker)],
+  ["both APIs paginate national stations in a stable order", worker.includes("id ASC LIMIT ? OFFSET ?") && apiWorker.includes("id ASC LIMIT ? OFFSET ?")],
+  ["map progressively loads all station pages", web.includes("loadRemainingNationalStations(generation)") && web.includes('offset: String(offset)')],
 ];
 
 let failed = false;

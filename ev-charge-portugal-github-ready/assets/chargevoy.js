@@ -45,6 +45,7 @@
       const routeLayer = L.layerGroup().addTo(map);
       let allStations = [];
       let stationLoadRetryScheduled = false;
+      let nationalLoadGeneration = 0;
       let connectorMap = new Map();
       let operatorMap = new Map();
       let reliabilityMap = new Map();
@@ -1892,10 +1893,9 @@
       }
 
       async function loadFallbackStations(place) {
-        const params = new URLSearchParams();
-        const area = place || { lat: 39.55, lon: -8 };
-        params.set("lat", String(area.lat));
-        params.set("lon", String(area.lon));
+        // Both APIs must return a national seed. The dedicated API interprets
+        // lat/lon as a hard local bounding box, unlike the site Worker.
+        const params = new URLSearchParams({ limit: "1500" });
         for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
           try {
             const response = await fetchWithTimeout(
@@ -1920,6 +1920,36 @@
           }
         }
         return loadOverpassStations(place);
+      }
+
+      async function loadRemainingNationalStations(generation) {
+        // Load the rest in the background. The first 1,500 markers are already
+        // interactive while later pages fill gaps across the country.
+        for (let offset = 1500; offset < 30000; offset += 1500) {
+          let payload;
+          for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+            try {
+              const params = new URLSearchParams({ limit: "1500", offset: String(offset) });
+              const response = await fetchWithTimeout(`${endpoint}?${params}`, { cache: "no-store" }, 15000);
+              if (!response.ok) throw new Error(`Station API HTTP ${response.status}`);
+              payload = await response.json();
+              if (!Array.isArray(payload.stations)) throw new Error("Invalid station page");
+              break;
+            } catch (error) { console.warn("Página nacional indisponível:", offset, endpoint, error); }
+          }
+          if (!payload || generation !== nationalLoadGeneration) return;
+          const known = new Set(allStations.map((station) => station.id));
+          for (const station of payload.stations) {
+            if (!known.has(station.id)) { allStations.push(station); known.add(station.id); }
+          }
+          for (const connector of payload.connectors || []) {
+            const list = connectorMap.get(connector.station_id) || [];
+            if (!list.some((item) => item.id === connector.id)) list.push(connector);
+            connectorMap.set(connector.station_id, list);
+          }
+          renderStations(false);
+          if (payload.stations.length < 1500) return;
+        }
       }
 
       const stationFields =
@@ -2048,6 +2078,7 @@
             station.operator_name || "Operador não indicado",
           ]));
           allStations = stations;
+          const generation = ++nationalLoadGeneration;
           cacheStationRows(stations, [...connectorMap.values()].flat());
           const operatorSelect = document.getElementById("operator-filter");
           const seenOperators = new Set(
@@ -2063,6 +2094,7 @@
               operatorSelect.appendChild(option);
             });
           renderStations(false);
+          if (stations.length === 1500) void loadRemainingNationalStations(generation);
 
           const vehicles = await vehiclePromise;
           if (vehicles.length) cacheVehicleRows(vehicles);

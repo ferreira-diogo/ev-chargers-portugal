@@ -69,10 +69,11 @@ async function stations(request, env) {
   const minLat=numberParam(url,"min_lat"), maxLat=numberParam(url,"max_lat"), minLon=numberParam(url,"min_lon"), maxLon=numberParam(url,"max_lon");
   const hasBounds=[minLat,maxLat,minLon,maxLon].every(v=>v!==null)&&minLat<=maxLat&&minLon<=maxLon;
   const limit=Math.min(Math.max(Number(url.searchParams.get("limit")||1500),1),1500);
+  const offset=Math.min(Math.max(Number(url.searchParams.get("offset")||0),0),30000);
   try {
     let stmt;
-    if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw,0) DESC LIMIT ?`).bind(minLat,maxLat,minLon,maxLon,limit);
-    else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY COALESCE(max_power_kw,0) DESC LIMIT ?`).bind(limit);
+    if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw,0) DESC, id ASC LIMIT ? OFFSET ?`).bind(minLat,maxLat,minLon,maxLon,limit,offset);
+    else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY COALESCE(max_power_kw,0) DESC, id ASC LIMIT ? OFFSET ?`).bind(limit,offset);
     const result=await stmt.all(); const stationRows=result.results||[]; let connectorRows=[];
     const stationIds=stationRows.map(s=>s.id).filter(Boolean);
     for(let offset=0;offset<stationIds.length;offset+=80){const batch=stationIds.slice(offset,offset+80);const placeholders=batch.map(()=>"?").join(", ");const r=await db.prepare(`SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id IN (${placeholders})`).bind(...batch).all();connectorRows.push(...(r.results||[]));}
