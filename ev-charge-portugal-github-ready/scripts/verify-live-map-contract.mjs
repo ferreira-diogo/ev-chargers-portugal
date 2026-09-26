@@ -16,6 +16,8 @@ const checks = [
   ["location hint does not collapse the station catalogue to a local bounding box", !worker.includes("else if(hasLocation)")],
   ["available live stations render green", /if\s*\(status\s*===\s*["']available["']\)\s*return\s*["']#18b978["']/.test(web)],
   ["route planner still consumes allStations", /let\s+candidates\s*=\s*allStations/.test(web)],
+  ["national map markers survive the nearby sidebar shortlist", /const mapStations\s*=\s*filtered\.slice\(\)/.test(web) && /const markerStations\s*=\s*mapStations\.filter/.test(web)],
+  ["browser retries the dedicated API when the site D1 binding is missing", /for\s*\(const endpoint of \[D1_FALLBACK_URL, D1_API_WORKER_URL\]\)/.test(web)],
 ];
 
 let failed = false;

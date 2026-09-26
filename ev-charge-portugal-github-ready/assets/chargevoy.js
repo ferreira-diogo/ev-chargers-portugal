@@ -1,5 +1,6 @@
       const SUPABASE_URL = "https://ftnmdgiftdgaycotjixr.supabase.co";
       const D1_FALLBACK_URL = window.location.origin + "/api/stations";
+      const D1_API_WORKER_URL = "https://chargevoy-api.zombid.workers.dev/api/stations";
       const SUPABASE_KEY = "sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_";
       const API_HEADERS = {
         apikey: SUPABASE_KEY,
@@ -1895,15 +1896,17 @@
         const area = place || { lat: 39.55, lon: -8 };
         params.set("lat", String(area.lat));
         params.set("lon", String(area.lon));
-        try {
-          const response = await fetchWithTimeout(
-            `${D1_FALLBACK_URL}?${params.toString()}`,
-            { headers: { Accept: "application/json" } },
-            9000,
-          );
-          if (response.ok) {
+        for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+          try {
+            const response = await fetchWithTimeout(
+              `${endpoint}?${params.toString()}`,
+              { headers: { Accept: "application/json" } },
+              9000,
+            );
+            if (!response.ok) throw new Error(`Station API HTTP ${response.status}`);
             const payload = await response.json();
             const stations = Array.isArray(payload.stations) ? payload.stations : [];
+            if (!stations.length) throw new Error("Station API returned no stations");
             const rows = Array.isArray(payload.connectors) ? payload.connectors : [];
             connectorMap = new Map();
             for (const row of rows) {
@@ -1911,10 +1914,10 @@
               list.push(row);
               connectorMap.set(row.station_id, list);
             }
-            if (stations.length) return stations;
+            return stations;
+          } catch (error) {
+            console.warn("Catálogo D1 indisponível:", endpoint, error);
           }
-        } catch (error) {
-          console.warn("D1 indisponível; consulta Overpass direta", error);
         }
         return loadOverpassStations(place);
       }
@@ -2152,6 +2155,9 @@
             (selectedOperator === "all" || operatorName === selectedOperator)
           );
         });
+        // The nearby shortlist belongs to the sidebar. Keep the complete filtered
+        // catalogue for markers so zooming out never empties the national map.
+        const mapStations = filtered.slice();
         if (searchPosition) {
           filtered = filtered.map((s) => ({
             ...s,
@@ -2188,7 +2194,7 @@
         const markerZoom = map.getZoom();
         const markerSeen = new Set();
         const viewport = markerZoom >= 10 ? map.getBounds() : null;
-        const markerStations = filtered.filter((s) => {
+        const markerStations = mapStations.filter((s) => {
           if (
             viewport &&
             !viewport.contains([Number(s.latitude), Number(s.longitude)])
@@ -3520,4 +3526,3 @@
           showHistory();
         }
       });
-
