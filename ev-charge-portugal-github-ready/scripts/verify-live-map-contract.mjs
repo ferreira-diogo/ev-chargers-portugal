@@ -13,6 +13,7 @@ const [web, worker, apiWorker, corridor, serviceWorker] = await Promise.all([
 const checks = [
   ["web accepts the public MOBI.E live source", /c\.availability_source\s*===\s*["']mobie_nap["']/.test(web)],
   ["site Worker emits the public MOBI.E live source", /connector\.availability_source\s*=\s*fresh\s*\?\s*["']mobie_nap["']/.test(worker)],
+  ["dedicated API emits the same MOBI.E live source", apiWorker.includes('availability_source=fresh?"mobie_nap":"mobie_nap_stale"')],
   ["site Worker keeps stale readings non-live", worker.includes('"mobie_nap_stale"')],
   ["national station request defaults to 1500 major stations", /url\.searchParams\.get\(["']limit["']\)\s*\|\|\s*1500/.test(worker)],
   ["explicit route/map bounds remain supported", /if\s*\(hasBounds\)\s*stmt\s*=\s*db\.prepare/.test(worker)],
