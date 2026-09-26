@@ -9,7 +9,9 @@ on:
       - "ev-charge-portugal-github-ready/scripts/build-nap-d1-mapping.mjs"
       - "ev-charge-portugal-github-ready/cloudflare/d1/schema.sql"
   schedule:
-    - cron: "0 */6 * * *"
+    # The NAP catalogue is structural data. Live availability is refreshed separately
+    # through KV every five minutes, so rewriting the D1 catalogue every six hours is wasteful.
+    - cron: "17 3 * * *"
 
 concurrency:
   group: d1-station-sync
@@ -47,6 +49,18 @@ jobs:
         run: node scripts/import-nap-datex.mjs --d1
       - name: Prepare explicit NAP live mapping
         run: node scripts/build-nap-d1-mapping.mjs
+      - name: Estimate D1 write budget
+        run: |
+          set -e
+          stations=$(grep -Rho "('nap-" tmp/d1-nap-sync/*station_cache_v2.sql 2>/dev/null | wc -l || true)
+          connectors=$(grep -Rho "('nap-" tmp/d1-nap-sync/*connectors.sql 2>/dev/null | wc -l || true)
+          mappings=$(grep -Rho "('" tmp/d1-nap-sync/0001_nap_mapping.sql 2>/dev/null | wc -l || true)
+          estimated=$((stations + connectors + mappings))
+          echo "Estimated catalogue rows written: $estimated (stations=$stations connectors=$connectors mappings=$mappings)"
+          if [ "$estimated" -gt 95000 ]; then
+            echo "::error::Refusing D1 sync: estimated writes $estimated exceed 95,000-row safety budget"
+            exit 1
+          fi
       - name: Group NAP snapshot batches
         run: |
           set -e
@@ -71,12 +85,12 @@ jobs:
           for file in tmp/d1-nap-upload/*.sql; do
             echo "Uploading $file"
             success=0
-            for attempt in 1 2 3 4 5; do
+            for attempt in 1 2 3; do
               if wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"; then
                 success=1
                 break
               fi
-              echo "Upload failed (attempt $attempt); retrying..."
+              echo "Upload failed (attempt $attempt); retrying without replaying successful files..."
               sleep $((attempt * 5))
             done
             test "$success" = "1" || exit 1
