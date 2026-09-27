@@ -2,6 +2,12 @@ name = "chargevoy-api"
 main = "worker-api/index.js"
 compatibility_date = "2026-09-25"
 
+[triggers]
+crons = ["2-59/5 * * * *"]
+
+[secrets]
+required = ["GITHUB_ACTIONS_TOKEN"]
+
 [[d1_databases]]
 binding = "CHARGEVOY_DB"
 database_name = "chargevoy-fallback"
