@@ -9,9 +9,10 @@ if (!stationsResponse.ok) throw new Error(`stations HTTP ${stationsResponse.stat
 const body = await stationsResponse.json();
 if (!Array.isArray(body.stations) || !body.stations.length) throw new Error('No stations returned');
 if (!Array.isArray(body.connectors) || !body.connectors.length) throw new Error('No connectors returned');
-const live = body.connectors.filter(c => c.availability_source === 'mobie_nap_d1_mapping' || c.availability_source === 'mobie_nap_legacy_mapping');
+const live = body.connectors.filter(c => c.availability_source === 'mobie_nap');
 const known = live.filter(c => c.status && c.status !== 'unknown');
-const mapped = body.connectors.filter(c => String(c.availability_source || '').startsWith('mobie_nap_'));
+const mapped = body.connectors.filter(c => ['mobie_nap', 'mobie_nap_stale'].includes(c.availability_source));
+if (body.stale || body.availability_age_minutes == null || body.availability_age_minutes > 5) throw new Error('Station response does not contain a fresh snapshot');
 const statuses = Object.fromEntries([...new Set(known.map(c => c.status))].sort().map(status => [status, known.filter(c => c.status === status).length]));
 if (!mapped.length) throw new Error('No NAP-mapped connectors returned by production API');
 if (!known.length) throw new Error('All mapped connectors are unknown; live merge is not working');
