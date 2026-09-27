@@ -362,10 +362,11 @@ async function writeD1Snapshot(parsed) {
     connectors,
     operators,
   };
+  const chunkSize = 100;
   let fileNumber = 2;
   for (const [table, rows] of Object.entries(datasets)) {
-    for (let index = 0; index < rows.length; index += 250) {
-      const chunk = rows.slice(index, index + 100);
+    for (let index = 0; index < rows.length; index += chunkSize) {
+      const chunk = rows.slice(index, index + chunkSize);
       const values = chunk.map((row) => "(" + columns[table].map((column) => d1Sql(row[column])).join(", ") + ")").join(",\n");
       await writeFile(
         join(outputDir, String(fileNumber).padStart(4, "0") + "_" + table + ".sql"),
@@ -374,5 +375,6 @@ async function writeD1Snapshot(parsed) {
       fileNumber += 1;
     }
   }
+  await writeFile(join(outputDir, "expected-counts.json"), JSON.stringify({stations: stations.length, connectors: connectors.length}));
   await writeFile(join(outputDir, "999_validate.sql"), "SELECT 'stations' AS table_name, count(*) AS row_count FROM station_cache_v2 UNION ALL SELECT 'connectors', count(*) FROM connectors UNION ALL SELECT 'operators', count(*) FROM operators;\n");
 }

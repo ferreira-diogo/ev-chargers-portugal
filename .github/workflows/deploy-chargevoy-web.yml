@@ -3,7 +3,7 @@ name: Deploy ChargeVoy web
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, fix/d1-api-verification-retry]
     paths:
       - "ev-charge-portugal-github-ready/index.html"
       - "ev-charge-portugal-github-ready/assets/**"
@@ -37,7 +37,7 @@ jobs:
           test -n "$D1_DATABASE_NAME" || test -n "$D1_DATABASE_ID" || { echo "::error::Missing D1 database configuration"; exit 1; }
       - name: Build web bundle
         working-directory: ev-charge-portugal-github-ready
-        run: npm run build:web
+        run: npm test && npm run build:web
       - name: Install Wrangler
         run: npm install --global wrangler@4
       - name: Resolve D1 and availability KV

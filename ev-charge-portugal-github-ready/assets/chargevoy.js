@@ -46,6 +46,9 @@
       let allStations = [];
       let stationLoadRetryScheduled = false;
       let nationalLoadGeneration = 0;
+      let nationalLoadState = "loading";
+      let nationalNextOffset = 300;
+      let nationalLoadBusy = false;
       let connectorMap = new Map();
       let operatorMap = new Map();
       let reliabilityMap = new Map();
@@ -105,6 +108,17 @@
       const geocodeCache = new Map();
       // Interface translations: all platforms (web, PWA and Capacitor) share this file.
       const I18N_EN = {
+        "Ver Portugal": "Show Portugal",
+        "Retomar carregamento": "Resume loading",
+        "A carregar o país…": "Loading Portugal…",
+        "Carregamento parcial": "Partially loaded",
+        "postos carregados": "stations loaded",
+        "postos — aproximar": "stations — zoom in",
+        "↻ Atualizar este posto": "↻ Refresh this station",
+        "Consulta a última leitura publicada para este posto.": "Checks the latest published reading for this station.",
+        "A carregar o mapa de Portugal…": "Loading the map of Portugal…",
+        "Não foi possível atualizar. Última leitura mantida.": "Could not refresh. Last reading retained.",
+
         "Encontra · Compara · Calcula · Decide":
           "Find · Compare · Plan · Decide",
         "☰ Filtros": "☰ Filters",
@@ -341,15 +355,19 @@
       }
 
       async function getD1Rows(table, query) {
-        const response = await fetchWithTimeout(
-          `${D1_FALLBACK_URL.replace(/\/api\/stations$/, "")}/api/catalog?${d1Query(table, query)}`,
-          { headers: { Accept: "application/json" } },
-          15000,
-        );
-        if (!response.ok)
-          throw new Error(`D1 ${table}: HTTP ${response.status}`);
-        const payload = await response.json();
-        return Array.isArray(payload.rows) ? payload.rows : [];
+        for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+          try {
+            const response = await fetchWithTimeout(
+              `${endpoint.replace(/\/api\/stations$/, "")}/api/catalog?${d1Query(table, query)}`,
+              { headers: { Accept: "application/json" }, cache: "no-store" }, 15000,
+            );
+            if (!response.ok) throw new Error(`D1 ${table}: HTTP ${response.status}`);
+            const payload = await response.json();
+            if (!Array.isArray(payload.rows)) throw new Error("Invalid catalogue response");
+            return payload.rows;
+          } catch (error) { console.warn("Catalogue unavailable", endpoint, error); }
+        }
+        throw new Error(`Catalogue ${table} unavailable`);
       }
 
       async function getRows(table, query) {
@@ -395,31 +413,25 @@
       async function loadStationConnectors(stationId, force = false) {
         if (!force && connectorMap.has(stationId))
           return connectorMap.get(stationId) || [];
-        if (!force && connectorRequests.has(stationId))
+        if (connectorRequests.has(stationId))
           return connectorRequests.get(stationId);
         const request = (async () => {
-          let rows = [];
-          try {
-            const response = await fetchWithTimeout(
-              `${D1_FALLBACK_URL.replace(/\/api\/stations$/, "")}/api/connectors?station_id=${encodeURIComponent(stationId)}`,
-              { headers: { Accept: "application/json" } },
-              7000,
-            );
-            if (response.ok) {
+          let rows = null;
+          for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+            try {
+              const response = await fetchWithTimeout(
+                `${endpoint.replace(/\/api\/stations$/, "")}/api/connectors?station_id=${encodeURIComponent(stationId)}`,
+                { headers: { Accept: "application/json" }, cache: "no-store" },
+                7000,
+              );
+              if (!response.ok) throw new Error(`Posto HTTP ${response.status}`);
               const payload = await response.json();
-              rows = Array.isArray(payload.connectors) ? payload.connectors : [];
-            }
-          } catch (error) {
-            console.warn("D1 connectors indisponíveis", error);
+              if (!Array.isArray(payload.connectors)) throw new Error("Resposta inválida do posto");
+              rows = payload.connectors;
+              break;
+            } catch (error) { console.warn("Consulta do posto indisponível", error); }
           }
-          if (!rows.length) {
-            rows = await getRows(
-              "connectors",
-              "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&station_id=eq." +
-                encodeURIComponent(stationId) +
-                "&order=id.asc",
-            );
-          }
+          if (rows === null) throw new Error("Não foi possível consultar este posto. A última leitura foi mantida.");
           connectorMap.set(stationId, rows);
           return rows;
         })().finally(() => connectorRequests.delete(stationId));
@@ -446,10 +458,12 @@
           0,
         );
         const now = Date.now();
-        const valid = connectors.filter((c) => {
+        const valid = connectors.map((c) => ({
+          ...c, available_count: c.available_count ?? c.last_known_available_count,
+        })).filter((c) => {
           const age = now - Date.parse(c.availability_updated_at);
           return (
-            c.availability_source === "mobie_nap" &&
+            ["mobie_nap", "mobie_nap_stale"].includes(c.availability_source) &&
             Number.isInteger(c.available_count) &&
             c.available_count >= 0 &&
             c.available_count <= Number(c.quantity) &&
@@ -458,10 +472,10 @@
           );
         });
         const fresh = valid.filter(
-          (c) => now - Date.parse(c.availability_updated_at) <= 20 * 60000,
+          (c) => c.availability_source === "mobie_nap" && now - Date.parse(c.availability_updated_at) <= 5 * 60000,
         );
         const recent = valid.filter(
-          (c) => now - Date.parse(c.availability_updated_at) <= 45 * 60000,
+          (c) => now - Date.parse(c.availability_updated_at) <= 20 * 60000,
         );
         const readings = fresh.length ? fresh : recent;
         if (!readings.length)
@@ -915,6 +929,7 @@
 
       function closeStationPanel() {
         selectedStation = null;
+        document.getElementById("refresh-station").disabled = true;
         setNavigationMode("map");
         document.querySelector(".main")?.classList.remove("station-selected");
         document.querySelector(".right")?.classList.remove("station-open");
@@ -932,17 +947,17 @@
         target.innerHTML = connectors
           .map((connector, index) => {
             const quantity = Math.max(1, Number(connector.quantity) || 1);
+            const reading = stationAvailability([connector]);
+            const previous = reading.kind === "stale";
             const free =
-              connector.available_count == null
-                ? null
-                : Math.max(0, Number(connector.available_count) || 0);
+              reading.kind === "live" || previous ? reading.available : null;
             const state =
               free == null
                 ? "unknown"
                 : free > 0
                   ? "available"
-                  : connector.status === "occupied" ||
-                      connector.status === "charging"
+                  : (connector.last_known_status || connector.status) === "occupied" ||
+                      (connector.last_known_status || connector.status) === "charging"
                     ? "occupied"
                     : "unavailable";
             const label =
@@ -954,13 +969,13 @@
                   ? "Ocupado"
                   : state === "unavailable"
                     ? "Indisponível"
-                    : "Sem live";
+                    : "Sem leitura atual";
             const type =
               connectorCategory(connector.type) || connector.type || "Conector";
             const power = connector.power_kw
               ? `${connector.power_kw} kW`
               : "Potência não comunicada";
-            return `<div class="connector-row"><div><b>Tomada ${index + 1} · ${escapeHtml(type)}</b><small>${escapeHtml(power)}${quantity > 1 ? ` · ${quantity} tomadas` : ""}</small></div><span class="connector-state ${state}">${escapeHtml(label)}</span></div>`;
+            return `<div class="connector-row"><div><b>Tomada ${index + 1} · ${escapeHtml(type)}</b><small>${escapeHtml(power)}${quantity > 1 ? ` · ${quantity} tomadas` : ""}</small></div><span class="connector-state ${previous ? "stale" : state}">${previous ? "Anterior: " : ""}${escapeHtml(label)}</span></div>`;
           })
           .join("");
       }
@@ -990,6 +1005,8 @@
 
       function selectStation(station, operatorName) {
         selectedStation = station;
+        document.getElementById("refresh-station").disabled = false;
+        document.getElementById("station-refresh-message").textContent = t("Consulta a última leitura publicada para este posto.");
         document
           .getElementById("route-planner")
           ?.classList.remove("route-visible");
@@ -1008,7 +1025,7 @@
         document.getElementById("station-operator").textContent =
           operatorName || "Operador não indicado";
         document.getElementById("station-meta").textContent =
-          `⌖ ${location} · ${isOfficialTeslaStation(station) ? "Tesla oficial" : station.source === "nap" ? "NAP oficial" : station.source === "openchargemap" ? "OpenChargeMap" : station.source || "Fonte"} ${station.external_id || "—"}`;
+          `⌖ ${location} · ${isOfficialTeslaStation(station) ? "Tesla oficial" : String(station.source).startsWith("nap") ? "NAP oficial" : station.source === "openchargemap" ? "OpenChargeMap" : station.source || "Fonte"} ${station.external_id || "—"}`;
         document.getElementById("station-power").textContent =
           station.max_power_kw ? `${station.max_power_kw} kW` : "—";
         updateStationConnectorPanel(station, stationConnectors);
@@ -1017,7 +1034,7 @@
             "A consultar…";
           document.getElementById("station-points").textContent = "—";
         }
-        loadStationConnectors(station.id)
+        loadStationConnectors(station.id, true)
           .then((connectors) => {
             if (selectedStation?.id === station.id)
               updateStationConnectorPanel(station, connectors);
@@ -1922,21 +1939,27 @@
       }
 
       async function loadRemainingNationalStations(generation) {
+        if (nationalLoadBusy) return;
+        nationalLoadBusy = true;
+        nationalLoadState = "loading";
+        try {
         // Load the rest in the background. The first 300 markers are already
         // interactive while later pages fill gaps across the country.
-        for (let offset = 300; offset < 30000; offset += 500) {
+        for (let offset = nationalNextOffset; offset < 30000; offset += 500) {
           let payload;
           for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
             try {
               const params = new URLSearchParams({ limit: "500", offset: String(offset) });
               const response = await fetchWithTimeout(`${endpoint}?${params}`, { cache: "no-store" }, 20000);
               if (!response.ok) throw new Error(`Station API HTTP ${response.status}`);
-              payload = await response.json();
-              if (!Array.isArray(payload.stations)) throw new Error("Invalid station page");
+              const candidate = await response.json();
+              if (!Array.isArray(candidate.stations)) throw new Error("Invalid station page");
+              payload = candidate;
               break;
             } catch (error) { console.warn("Página nacional indisponível:", offset, endpoint, error); }
           }
-          if (!payload || generation !== nationalLoadGeneration) return;
+          if (generation !== nationalLoadGeneration) return;
+          if (!payload) { nationalLoadState = "partial"; return; }
           const known = new Set(allStations.map((station) => station.id));
           for (const station of payload.stations) {
             if (!known.has(station.id)) { allStations.push(station); known.add(station.id); }
@@ -1946,8 +1969,33 @@
             if (!list.some((item) => item.id === connector.id)) list.push(connector);
             connectorMap.set(connector.station_id, list);
           }
+          hydrateStationOperators(payload.stations);
+          nationalNextOffset = offset + payload.stations.length;
           renderStations(false);
-          if (payload.stations.length < 500) return;
+          if (payload.stations.length < 500) { nationalLoadState = "ready"; return; }
+        }
+        nationalLoadState = "partial";
+        } finally {
+          nationalLoadBusy = false;
+          renderStations(false);
+        }
+      }
+
+      function hydrateStationOperators(stations) {
+        const selector = document.getElementById("operator-filter");
+        const existing = new Set([...selector.options].map((option) => option.value));
+        for (const station of stations) {
+          let amenities = station.amenities || {};
+          if (typeof amenities === "string") {
+            try { amenities = JSON.parse(amenities); } catch { amenities = {}; }
+          }
+          const name = station.operator_name || amenities.operator_name;
+          if (!name) continue;
+          station.operator_name = name;
+          if (station.operator_id) operatorMap.set(station.operator_id, name);
+          if (!existing.has(name)) {
+            selector.add(new Option(name, name)); existing.add(name);
+          }
         }
       }
 
@@ -2044,6 +2092,7 @@
               station.operator_name || "Operador não indicado",
             ]),
           );
+          hydrateStationOperators(allStations);
           renderStations(false);
         }
 
@@ -2077,7 +2126,10 @@
             station.operator_name || "Operador não indicado",
           ]));
           allStations = stations;
+          hydrateStationOperators(stations);
           const generation = ++nationalLoadGeneration;
+          nationalNextOffset = stations.length;
+          nationalLoadState = stations.length === 300 ? "loading" : "ready";
           cacheStationRows(stations, [...connectorMap.values()].flat());
           const operatorSelect = document.getElementById("operator-filter");
           const seenOperators = new Set(
@@ -2188,6 +2240,7 @@
         });
         // Keep map markers separate from the nearby sidebar shortlist.
         const mapStations = filtered.slice();
+        let nearbyCount = 0;
         if (searchPosition) {
           filtered = filtered.map((s) => ({
             ...s,
@@ -2197,6 +2250,7 @@
             }),
           }));
           const nearby = filtered.filter((s) => s.distance_km <= 75);
+          nearbyCount = nearby.length;
           filtered = nearby.length
             ? nearby
             : filtered
@@ -2218,11 +2272,16 @@
             );
           return (Number(b.max_power_kw) || 0) - (Number(a.max_power_kw) || 0);
         });
-        badge.textContent = filtered.length.toLocaleString("pt-PT");
+        badge.textContent = mapStations.length.toLocaleString("pt-PT");
+        document.getElementById("station-count-label").textContent = currentLanguage === "en" ? "stations on the map" : "postos no mapa";
+        const coverage = [];
+        if (searchPosition) coverage.push(currentLanguage === "en" ? `${nearbyCount} nearby (up to 75 km)` : `${nearbyCount} próximos (até 75 km)`);
+        coverage.push(nationalLoadState === "loading" ? t("A carregar o país…") : nationalLoadState === "partial" ? t("Carregamento parcial") : `${allStations.length.toLocaleString("pt-PT")} ${t("postos carregados")}`);
+        document.getElementById("station-coverage").textContent = coverage.join(" · ");
+        document.getElementById("retry-national").hidden = nationalLoadState !== "partial";
         stationLayer.clearLayers();
         markerMap.clear();
         const markerZoom = map.getZoom();
-        const markerSeen = new Set();
         const viewport = markerZoom >= 10 ? map.getBounds() : null;
         const markerStations = mapStations.filter((s) => {
           if (
@@ -2230,12 +2289,25 @@
             !viewport.contains([Number(s.latitude), Number(s.longitude)])
           )
             return false;
-          const cell = markerCellKey(s, markerZoom);
-          if (markerSeen.has(cell)) return false;
-          markerSeen.add(cell);
           return true;
         });
-        markerStations.forEach((s) => {
+        const markerGroups = new Map();
+        for (const station of markerStations) {
+          const cell = markerCellKey(station, markerZoom);
+          const group = markerGroups.get(cell) || [];
+          group.push(station); markerGroups.set(cell, group);
+        }
+        markerGroups.forEach((group) => {
+          if (group.length > 1) {
+            const bounds = L.latLngBounds(group.map((s) => [s.latitude, s.longitude]));
+            const count = group.length.toLocaleString("pt-PT");
+            L.marker(bounds.getCenter(), {
+              icon: L.divIcon({className: "station-cluster", html: `<span>${count}</span>`, iconSize: [40, 40]}),
+              title: `${count} ${t("postos — aproximar")}`,
+            }).addTo(stationLayer).on("click", () => map.fitBounds(bounds, {padding: [35,35], maxZoom: Math.max(12, markerZoom + 2)}));
+            return;
+          }
+          const s = group[0];
           const stationConnectors = connectorMap.get(s.id) || [];
           const connectorText =
             [...new Set(stationConnectors.map((c) => c.type))].join(" · ") ||
@@ -2284,7 +2356,7 @@
                 ? `${s.distance_km.toFixed(1).replace(".", ",")} km`
                 : isOfficialTeslaStation(s)
                   ? "Tesla oficial"
-                  : s.source === "nap"
+                  : String(s.source).startsWith("nap")
                     ? "NAP oficial"
                     : "Dados comunitários";
             const totalPoints = stationConnectors.reduce(
@@ -3104,7 +3176,7 @@
       setupAnalyticsConsent();
       loadRealStations();
       let availabilityRefreshBusy = false;
-      async function refreshAvailability() {
+      async function refreshAvailability(manual = false) {
         if (
           document.hidden ||
           availabilityRefreshBusy ||
@@ -3113,19 +3185,50 @@
         )
           return;
         availabilityRefreshBusy = true;
+        const station = selectedStation;
+        const button = document.getElementById("refresh-station");
+        const message = document.getElementById("station-refresh-message");
+        button.disabled = true;
+        button.textContent = t("A consultar…");
         try {
-          const connectors = await loadStationConnectors(selectedStation.id, true);
-          updateStationConnectorPanel(selectedStation, connectors);
+          const connectors = await loadStationConnectors(station.id, true);
+          if (selectedStation?.id === station.id) {
+            updateStationConnectorPanel(station, connectors);
+            const time = new Date().toLocaleTimeString(currentLanguage === "en" ? "en-GB" : "pt-PT", {hour: "2-digit", minute: "2-digit"});
+            message.textContent = currentLanguage === "en" ? `Checked at ${time}. Source time is shown above.` : `Consultado às ${time}. A hora da fonte está indicada acima.`;
+          }
+          renderStations(false);
         } catch (error) {
           console.warn("Não foi possível atualizar a disponibilidade");
+          if (selectedStation?.id === station.id) {
+            message.textContent = t("Não foi possível atualizar. Última leitura mantida.");
+            if (manual) notifyUser(message.textContent, {kind: "error"});
+          }
         } finally {
           availabilityRefreshBusy = false;
+          button.disabled = !selectedStation;
+          button.textContent = t("↻ Atualizar este posto");
         }
       }
-      setInterval(refreshAvailability, 5 * 60000);
+      document.getElementById("refresh-station").addEventListener("click", () => refreshAvailability(true));
+      setInterval(() => {
+        if (!document.hidden) renderStations(false);
+        refreshAvailability();
+      }, 60000);
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) refreshAvailability();
       });
+
+      document.getElementById("show-portugal").addEventListener("click", () => {
+        searchPosition = null;
+        searchLayer.clearLayers();
+        document.getElementById("global-search").value = "";
+        document.getElementById("location-search").value = "";
+        closeStationPanel();
+        renderStations(false);
+        if (allStations.length) map.fitBounds(L.latLngBounds(allStations.map((s) => [s.latitude, s.longitude])), {padding: [35,35], maxZoom: 7});
+      });
+      document.getElementById("retry-national").addEventListener("click", () => loadRemainingNationalStations(nationalLoadGeneration));
 
       // Simulator controls are initialized above with energy/time modes.
       document.querySelectorAll("#power-filter .chip").forEach((button) =>

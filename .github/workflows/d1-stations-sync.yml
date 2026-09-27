@@ -103,6 +103,17 @@ jobs:
             done
             test "$success" = "1" || exit 1
           done
+      - name: Verify catalogue completeness
+        run: |
+          wrangler d1 execute "$D1_DATABASE_NAME" --remote --json --command="SELECT (SELECT count(*) FROM station_cache_v2 WHERE source='nap-mobie') AS stations, (SELECT count(*) FROM connectors WHERE id LIKE 'nap-%') AS connectors" > /tmp/d1-counts.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const expected = JSON.parse(fs.readFileSync('tmp/d1-nap-sync/expected-counts.json', 'utf8'));
+          const raw = JSON.parse(fs.readFileSync('/tmp/d1-counts.json', 'utf8'));
+          const actual = (Array.isArray(raw) ? raw : [raw]).flatMap(x => x.results || [])[0];
+          if (!actual || actual.stations < expected.stations || actual.connectors < expected.connectors) throw new Error(`Incomplete catalogue: ${JSON.stringify({expected, actual})}`);
+          console.log(JSON.stringify({expected, actual}));
+          NODE
       - name: Verify D1 NAP mapping
         run: |
           result="$(wrangler d1 execute "$D1_DATABASE_NAME" --remote --command="SELECT count(*) AS mapping_count FROM nap_connector_mapping")"

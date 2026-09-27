@@ -2634,3 +2634,17 @@
     border-radius: 0 0 12px 12px;
   }
 }
+
+/* National coverage and refresh controls. */
+.mapbadge { display: grid; gap: 5px; max-width: calc(100% - 74px); }
+.mapbadge small { display: block; font-size: 11px; font-weight: 400; color: #b9cbd8; }
+.map-coverage-actions { display: flex; gap: 7px; }
+.map-coverage-actions button { padding: 4px 9px; min-height: 28px; font-size: 11px; border-radius: 7px; }
+.map-coverage-actions [hidden] { display: none; }
+.station-cluster { display: grid; place-items: center; border-radius: 50%; background: #163a5d; border: 2px solid #93c5fd; color: #fff; box-shadow: 0 2px 12px #0006; font-size: 12px; font-weight: 800; }
+.station-cluster:focus { outline: 3px solid #fff; outline-offset: 3px; }
+.station-refresh { display: grid; gap: 7px; margin: 12px 0; }
+.station-refresh button { width: 100%; min-height: 40px; }
+.station-refresh small { color: #a9bfce; line-height: 1.4; font-size: 11px; }
+.connector-state.stale { background: rgba(245,158,11,.12); color: #f8c575; border-color: rgba(245,158,11,.3); }
+@media (max-width: 780px) { .mapbadge { padding: 8px 10px; font-size: 12px; } .mapbadge small { font-size: 10px; } }

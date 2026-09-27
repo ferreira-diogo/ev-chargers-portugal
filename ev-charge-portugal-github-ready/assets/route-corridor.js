@@ -29,8 +29,9 @@
         try {
           const response = await fetchWithTimeout(`${endpoint}?${params}`, { cache: "no-store" }, 15000);
           if (!response.ok) throw new Error(`API de postos HTTP ${response.status}`);
-          payload = await response.json();
-          if (!Array.isArray(payload?.stations)) throw new Error("Resposta de postos inválida");
+          const candidate = await response.json();
+          if (!Array.isArray(candidate?.stations)) throw new Error("Resposta de postos inválida");
+          payload = candidate;
           break;
         } catch (error) { console.warn("API de rota indisponível:", endpoint, error); }
       }
@@ -43,10 +44,13 @@
     for (const connector of connectors) {
       if (!connector?.station_id) continue;
       const list = connectorMap.get(connector.station_id) || [];
-      if (!list.some((item) => item.id === connector.id)) list.push(connector);
+      const index = list.findIndex((item) => item.id === connector.id);
+      if (index < 0) list.push(connector); else list[index] = connector;
       connectorMap.set(connector.station_id, list);
     }
-    return [...stationsById.values()];
+    const stations = [...stationsById.values()];
+    hydrateStationOperators(stations);
+    return stations;
   }
 
   async function planRouteCorridor() {

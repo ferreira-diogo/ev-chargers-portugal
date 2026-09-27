@@ -43,6 +43,7 @@ async function mergeAvailability(rows, env, snapshot = null) {
   snapshot ||= await readAvailabilitySnapshot(env);
   if (!snapshot?.statuses) return rows;
   const fresh = snapshot.age_minutes != null && snapshot.age_minutes <= 5;
+  const recent = snapshot.age_minutes != null && snapshot.age_minutes <= 20;
   const mappings = await readNapMappings(env.CHARGEVOY_DB, rows);
   for (const connector of rows) {
     const mapping = mappings.get(connector.id);
@@ -55,6 +56,8 @@ async function mergeAvailability(rows, env, snapshot = null) {
     // The web UI consumes this stable public source name. Mapping provenance stays internal
     // to the Worker/API implementation so live readings are not discarded by the browser.
     connector.availability_source = fresh ? "mobie_nap" : "mobie_nap_stale";
+    connector.last_known_status = recent ? status : null;
+    connector.last_known_available_count = !recent ? null : status === "available" ? 1 : ["charging", "outOfOrder", "blocked", "inoperative", "reserved"].includes(status) ? 0 : null;
     connector.available_count = !fresh ? null : status === "available" ? 1 : ["charging", "outOfOrder", "blocked", "inoperative", "reserved"].includes(status) ? 0 : null;
   }
   return rows;

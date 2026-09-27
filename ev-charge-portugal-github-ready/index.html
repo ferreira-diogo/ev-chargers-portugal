@@ -227,7 +227,12 @@
         <div class="mapbox" id="map-section">
           <div id="map" role="region" aria-label="Mapa de postos de carregamento" style="height: 100%"></div>
           <div class="mapbadge">
-            🚗 Mostrando <b id="station-count">…</b> postos reais em Portugal
+            <div>⚡ <b id="station-count">…</b> <span id="station-count-label">postos carregados</span></div>
+            <small id="station-coverage" aria-live="polite">A carregar o mapa de Portugal…</small>
+            <div class="map-coverage-actions">
+              <button id="show-portugal" type="button">Ver Portugal</button>
+              <button id="retry-national" type="button" hidden>Retomar carregamento</button>
+            </div>
           </div>
           <div
             class="map-location-cta"
@@ -321,6 +326,10 @@
             </div>
             <div class="status" id="station-status">
               ● Estado ainda não selecionado
+            </div>
+            <div class="station-refresh">
+              <button class="secondary" id="refresh-station" type="button" disabled>↻ Atualizar este posto</button>
+              <small id="station-refresh-message" role="status" aria-live="polite">Consulta a última leitura publicada para este posto.</small>
             </div>
             <div class="station-links">
               <button class="secondary" id="station-google-maps" disabled>

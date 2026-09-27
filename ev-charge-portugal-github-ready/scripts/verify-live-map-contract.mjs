@@ -26,7 +26,7 @@ const checks = [
   ["route requests each section with a dedicated API fallback", corridor.includes("coordinates.slice(start, end + 1)") && corridor.includes("[D1_FALLBACK_URL, D1_API_WORKER_URL]")],
   ["service worker does not replay stale API availability", /if\(url\.pathname\.startsWith\('\/api\/'\)\)\s*\{\s*[^}]*fetch\(event\.request\)/.test(serviceWorker)],
   ["both APIs paginate national stations in a stable order", worker.includes("id ASC LIMIT ? OFFSET ?") && apiWorker.includes("id ASC LIMIT ? OFFSET ?")],
-  ["map progressively loads all station pages", web.includes("loadRemainingNationalStations(generation)") && web.includes('offset: String(offset)') && web.includes('offset = 300; offset < 30000; offset += 500')],
+  ["map progressively loads all station pages", web.includes("loadRemainingNationalStations(generation)") && web.includes('offset: String(offset)') && web.includes('offset = nationalNextOffset; offset < 30000; offset += 500')],
 ];
 
 let failed = false;
