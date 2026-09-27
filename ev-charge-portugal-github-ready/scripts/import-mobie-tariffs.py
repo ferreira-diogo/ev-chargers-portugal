@@ -67,7 +67,7 @@ def build(rows):
         if amount is None:
             continue
         groups[key][kind].add(amount)
-        meta = (row["NIVELTENSAO"].strip(), connector_type(row["TIPO_TOMADA"].strip()), row["POTENCIA_TOMADA"].strip())
+        meta = (row["NIVELTENSAO"].strip(), connector_type(row["TIPO_TOMADA"].strip()), row["POTENCIA_TOMADA"].strip(), row["OPERADOR"].strip().upper())
         if key in metadata and metadata[key] != meta:
             incomplete.add(key)
         metadata[key] = meta
@@ -77,16 +77,17 @@ def build(rows):
         if key in incomplete or any(len(v) != 1 for v in components.values()):
             continue
         site, uid, period = key
-        voltage, kind, raw_power = metadata[key]
+        voltage, kind, raw_power, operator = metadata[key]
         try:
             power = float(raw_power.replace(",", "."))
         except ValueError:
             continue
-        if not 0 < power <= 1000 or kind == "Unknown":
+        if not 0 < power <= 1000 or kind == "Unknown" or not operator.isalnum():
             continue
         # The CSV omits components that are not charged (e.g. TIME-only rows).
         id_ = hashlib.sha256("|".join(key).encode()).hexdigest()[:24]
-        output.append(("mobie-" + id_, "nap-" + site, uid, voltage, period, kind, power,
+        # NAP DATEX II site IDs include the operator prefix omitted by this CSV.
+        output.append(("mobie-" + id_, "nap-" + operator + "-" + site, uid, voltage, period, kind, power,
                        *[next(iter(components[k])) if components[k] else 0 for k in ("FLAT", "ENERGY", "TIME")]))
     return sorted(output)
 
@@ -119,7 +120,7 @@ def main():
     for batch, start in enumerate(range(0, len(parsed), 80), 1):
         values = ["(" + ",".join(quote(v) for v in (*row, updated_at)) + ")" for row in parsed[start:start + 80]]
         sql = f"INSERT INTO official_opc_tariffs ({cols}) VALUES\n" + ",\n".join(values)
-        sql += "\nON CONFLICT(id) DO UPDATE SET voltage_level=excluded.voltage_level,connector_type=excluded.connector_type,power_kw=excluded.power_kw,activation_fee_eur=excluded.activation_fee_eur,energy_price_eur_kwh=excluded.energy_price_eur_kwh,time_price_eur_min=excluded.time_price_eur_min,updated_at=excluded.updated_at WHERE voltage_level IS NOT excluded.voltage_level OR connector_type IS NOT excluded.connector_type OR power_kw IS NOT excluded.power_kw OR activation_fee_eur IS NOT excluded.activation_fee_eur OR energy_price_eur_kwh IS NOT excluded.energy_price_eur_kwh OR time_price_eur_min IS NOT excluded.time_price_eur_min OR updated_at < datetime('now','-2 days');\n"
+        sql += "\nON CONFLICT(id) DO UPDATE SET station_id=excluded.station_id,voltage_level=excluded.voltage_level,connector_type=excluded.connector_type,power_kw=excluded.power_kw,activation_fee_eur=excluded.activation_fee_eur,energy_price_eur_kwh=excluded.energy_price_eur_kwh,time_price_eur_min=excluded.time_price_eur_min,updated_at=excluded.updated_at WHERE station_id IS NOT excluded.station_id OR voltage_level IS NOT excluded.voltage_level OR connector_type IS NOT excluded.connector_type OR power_kw IS NOT excluded.power_kw OR activation_fee_eur IS NOT excluded.activation_fee_eur OR energy_price_eur_kwh IS NOT excluded.energy_price_eur_kwh OR time_price_eur_min IS NOT excluded.time_price_eur_min OR updated_at < datetime('now','-2 days');\n"
         (args.out / f"{batch:04d}.sql").write_text(sql)
     print(json.dumps({"source": SOURCE, "source_sha256": hashlib.sha256(content).hexdigest(), "connectors": len(parsed), "stations": sites, "sql_batches": batch, "updated_at": updated_at}))
 

@@ -138,7 +138,7 @@ jobs:
           done
       - name: Verify official tariff coverage
         run: |
-          wrangler d1 execute "$D1_DATABASE_NAME" --remote --json --command="SELECT count(*) AS tariff_count, count(DISTINCT station_id) AS station_count FROM official_opc_tariffs WHERE updated_at > datetime('now','-2 days')" > /tmp/tariff-counts.json
+          wrangler d1 execute "$D1_DATABASE_NAME" --remote --json --command="SELECT count(*) AS tariff_count, count(DISTINCT t.station_id) AS station_count FROM official_opc_tariffs t JOIN station_cache_v2 s ON s.id=t.station_id WHERE t.updated_at > datetime('now','-2 days')" > /tmp/tariff-counts.json
           python3 - <<'PY'
           import json
           row = json.load(open('/tmp/tariff-counts.json'))[0]['results'][0]

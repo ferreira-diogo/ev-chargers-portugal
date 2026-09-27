@@ -7,7 +7,7 @@ tariffs = SourceFileLoader("tariffs", str(Path(__file__).with_name("import-mobie
 
 def row(kind, value, **overrides):
     item = {"ID": "LIS-00001", "UID_TOMADA": "LIS-00001-01-01", "TIPO_TARIFARIO": "REGULAR",
-            "TIPO_TARIFA": kind, "TARIFA": value, "NIVELTENSAO": "BTE", "TIPO_TOMADA": "MENNEKES", "POTENCIA_TOMADA": "22"}
+            "TIPO_TARIFA": kind, "TARIFA": value, "NIVELTENSAO": "BTE", "TIPO_TOMADA": "MENNEKES", "POTENCIA_TOMADA": "22", "OPERADOR": "EDP"}
     item.update(overrides)
     return item
 
@@ -15,6 +15,7 @@ def row(kind, value, **overrides):
 class TariffTests(unittest.TestCase):
     def test_time_only_tariff_has_zero_unlisted_components(self):
         result = tariffs.build([row("TIME", "€ 0.04 /min")])
+        self.assertEqual(result[0][1], "nap-EDP-LIS-00001")
         self.assertEqual(result[0][-3:], (0, 0, .04))
 
     def test_ambiguous_price_or_extra_parking_is_excluded(self):
