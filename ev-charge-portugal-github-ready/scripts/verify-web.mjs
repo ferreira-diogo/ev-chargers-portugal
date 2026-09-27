@@ -27,7 +27,7 @@ const checks = [
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA shell caches corridor planner", worker.includes("./assets/route-corridor.js")],
-  ["PWA cache version is current", worker.includes("ev-charge-shell-v15")],
+  ["PWA cache version is current", worker.includes("ev-charge-shell-v16")],
   ["Route timeout helper is present", js.includes("fetchWithTimeout")],
   ["Application JavaScript syntax is valid", canParse(js)],
   ["Route corridor JavaScript syntax is valid", canParse(routeJs)],

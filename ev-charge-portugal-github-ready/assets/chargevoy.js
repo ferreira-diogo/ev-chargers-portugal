@@ -327,9 +327,8 @@
       // Dynamic map data can contain thousands of elements. Translation is intentionally
       // applied only on explicit language changes so it never blocks map interactions.
 
-      // Stations use the site Worker D1 path. Auxiliary catalogues remain
-      // on Supabase until the separate API Worker is attached to a public route.
-      const D1_PUBLIC_TABLES = new Set();
+      // Public catalogue reads use D1; private account data keeps its auth path.
+      const D1_PUBLIC_TABLES = new Set(["vehicle_models", "ceme_cards", "official_opc_tariffs", "station_ad_hoc_price_components", "station_reviews", "station_reliability", "operators", "connectors"]);
 
       function d1Query(table, query) {
         const source = new URLSearchParams(query || "");
@@ -631,8 +630,16 @@
         return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
       }
 
+      function normalizeVehicle(vehicle) {
+        let types = vehicle.connector_types || [];
+        if (typeof types === "string") {
+          try { types = JSON.parse(types); } catch { types = types.split(","); }
+        }
+        return { ...vehicle, connector_types: (Array.isArray(types) ? types : []).map(connectorCategory) };
+      }
+
       function populateVehicles(vehicles) {
-        vehicleModels = vehicles;
+        vehicleModels = vehicles.map(normalizeVehicle);
         const brandSelect = document.getElementById("vehicle-brand");
         const brands = [
           ...new Set(vehicles.map((vehicle) => vehicle.make).filter(Boolean)),

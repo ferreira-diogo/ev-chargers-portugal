@@ -2648,3 +2648,8 @@
 .station-refresh small { color: #a9bfce; line-height: 1.4; font-size: 11px; }
 .connector-state.stale { background: rgba(245,158,11,.12); color: #f8c575; border-color: rgba(245,158,11,.3); }
 @media (max-width: 780px) { .mapbadge { padding: 8px 10px; font-size: 12px; } .mapbadge small { font-size: 10px; } }
+
+.mapbadge { left: 58px; right: auto; border-radius: 12px; max-width: calc(100% - 74px); }
+.map-coverage-actions button { border: 1px solid #446078; background: #17344d; color: #eaf4fc; cursor: pointer; }
+#station-status:has(.stale-pill) { color: #f8c575; }
+#station-status:not(:has(.live-pill)):not(:has(.stale-pill)) { color: #b9cbd8; }

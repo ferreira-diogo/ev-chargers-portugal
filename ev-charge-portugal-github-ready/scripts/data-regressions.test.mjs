@@ -10,6 +10,19 @@ import apiWorker from '../worker-api/index.js';
 const web = await readFile(new URL('../assets/chargevoy.js', import.meta.url), 'utf8');
 function extract(start, end) { return web.slice(web.indexOf(start), web.indexOf(end, web.indexOf(start))); }
 
+test('vehicle connector arrays and D1 JSON strings match CCS stations', () => {
+  const context = vm.createContext({connectorMap: new Map([['s', [{type:'CCS'}]]])});
+  vm.runInContext(extract('function connectorCategory(', 'function isOfficialTeslaStation('), context);
+  vm.runInContext(extract('function normalizeVehicle(', 'function populateVehicles('), context);
+  vm.runInContext(extract('function stationCompatibleWithVehicle(', 'function routeAvailabilityPenalty('), context);
+  for (const types of ['["CCS2","Type 2"]', ['CCS2', 'Type 2']]) {
+    context.currentVehicle = context.normalizeVehicle({connector_types:types});
+    assert.equal(context.stationCompatibleWithVehicle({id:'s'}), true);
+  }
+  context.currentVehicle = context.normalizeVehicle({connector_types:['CHAdeMO']});
+  assert.equal(context.stationCompatibleWithVehicle({id:'s'}), false);
+});
+
 test('D1 export writes every record exactly once across batch boundaries', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'chargevoy-test-'));
   try {
