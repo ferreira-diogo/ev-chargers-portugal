@@ -1,0 +1,23 @@
+name: Inspect ChargeVoy cron trigger
+
+on:
+  push:
+    branches: [fix/d1-api-verification-retry]
+    paths:
+      - ".github/workflows/inspect-chargevoy-cron.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Read production schedule
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/chargevoy-api/schedules" > /tmp/cron.json
+          node -e 'const x=require("/tmp/cron.json");if(!x.success)process.exit(1);console.log(JSON.stringify(x.result.schedules.map(s=>({cron:s.cron,modified_on:s.modified_on}))))'
