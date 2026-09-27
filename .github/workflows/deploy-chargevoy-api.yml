@@ -59,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --silent --show-error -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/chargevoy-api/environments/production/settings" > /tmp/settings.json
-          node -e 'const x=require("/tmp/settings.json");const n=new Set((x.result?.bindings||[]).map(v=>v.name));console.log("bindings="+[...n].sort().join(","));if(!n.has("CHARGEVOY_DB")||!n.has("AVAILABILITY_KV"))process.exit(2)'
+          node -e 'const x=require("/tmp/settings.json");const b=x.result?.bindings||[];const n=new Set(b.map(v=>v.name));console.log("bindings="+b.map(v=>v.name+":"+v.type).sort().join(","));if(!n.has("CHARGEVOY_DB")||!n.has("AVAILABILITY_KV")||!n.has("GITHUB_ACTIONS_TOKEN"))process.exit(2)'
       - name: Verify API routes and fresh live availability
         env:
           API_BASE: https://chargevoy-api.zombid.workers.dev

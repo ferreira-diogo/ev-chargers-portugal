@@ -1,6 +1,7 @@
 name = "chargevoy-api"
 main = "worker-api/index.js"
 compatibility_date = "2026-09-25"
+keep_vars = true
 
 [triggers]
 crons = ["2-59/5 * * * *"]
