@@ -85,14 +85,6 @@ async function stations(request, env) {
     return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,stations:stationRows,connectors:connectorRows});
   } catch(error){console.error("D1 stations:",error);return json({stations:[],connectors:[],error:"D1 query failed"},503);}
 }
-async function staticAssetWithPlanner(request, env) {
-  const response = await env.ASSETS.fetch(request);
-  if (!response.ok) return response;
-  const url = new URL(request.url);
-  const type = response.headers.get("content-type") || "";
-  if (!(url.pathname === "/" || url.pathname.endsWith("/index.html")) || !type.includes("text/html")) return response;
-  return new HTMLRewriter().on("body", { element(element) { element.append('<script src="./assets/route-corridor.js"></script>', { html: true }); } }).transform(response);
-}
 export default {async fetch(request,env){
   const url=new URL(request.url);
   if(request.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type"}});
@@ -102,5 +94,5 @@ export default {async fetch(request,env){
     const stationId=url.searchParams.get("station_id");if(!stationId||stationId.length>180)return json({connectors:[],error:"station_id inválido"},400);
     try{const result=await env.CHARGEVOY_DB.prepare("SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id").bind(stationId).all();const snapshot=await readAvailabilitySnapshot(env);const connectors=await mergeAvailability(result.results||[],env,snapshot);const fresh=snapshot?.age_minutes!=null&&snapshot.age_minutes<=5;return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,connectors});}catch(error){console.error("D1 connectors:",error);return json({connectors:[],error:"D1 connector query failed"},503);}
   }
-  return staticAssetWithPlanner(request,env);
+  return env.ASSETS.fetch(request);
 }};

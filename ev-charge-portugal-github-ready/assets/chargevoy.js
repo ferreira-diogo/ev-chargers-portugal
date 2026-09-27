@@ -1777,7 +1777,7 @@
         }
         const directPrice = adHocPriceMarkup();
         if (
-          selectedStation.source !== "nap" ||
+          !["nap", "nap-mobie"].includes(selectedStation.source) ||
           Number(selectedStation.max_power_kw) < 22
         ) {
           headline.textContent = "Preço oficial indisponível";
@@ -1832,7 +1832,7 @@
         selectedOpcTariffs = [];
         selectedAdHocPriceComponents = [];
         const container = document.getElementById("price-comparison");
-        if (station.source !== "nap" || Number(station.max_power_kw) < 22) {
+        if (!["nap", "nap-mobie"].includes(station.source) || Number(station.max_power_kw) < 22) {
           renderPriceComparison();
           return;
         }
@@ -3411,7 +3411,7 @@
       function openPriceComparator() {
         if (!selectedStation) {
           const station = allStations.find(
-            (item) => item.source === "nap" && Number(item.max_power_kw) >= 22,
+            (item) => ["nap", "nap-mobie"].includes(item.source) && Number(item.max_power_kw) >= 22,
           );
           if (station)
             selectStation(station, operatorMap.get(station.operator_id));
