@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScript, refreshWorkflow] = await Promise.all([
+const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScript, refreshWorkflow, cardCatalog] = await Promise.all([
   readFile(resolve(root, "index.html"), "utf8"),
   readFile(resolve(root, "assets/chargevoy.js"), "utf8"),
   readFile(resolve(root, "assets/route-corridor.js"), "utf8"),
@@ -12,6 +12,7 @@ const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScri
   readFile(resolve(root, "cloudflare/d1/schema.sql"), "utf8"),
   readFile(resolve(root, "scripts/build-nap-d1-mapping.mjs"), "utf8"),
   readFile(resolve(root, "../.github/workflows/refresh-nap-availability.yml"), "utf8"),
+  readFile(resolve(root, "assets/ceme-cards.json"), "utf8"),
 ]);
 
 const canParse = (source) => { try { new Function(source); return true; } catch (error) { console.error(error.message); return false; } };
@@ -27,7 +28,9 @@ const checks = [
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA shell caches corridor planner", worker.includes("./assets/route-corridor.js")],
-  ["PWA cache version is current", worker.includes("ev-charge-shell-v17")],
+  ["PWA cache version is current", worker.includes("ev-charge-shell-v18")],
+  ["PWA shell includes card catalog", worker.includes("./assets/ceme-cards.json")],
+  ["Six sourced card providers available", JSON.parse(cardCatalog).length === 6 && JSON.parse(cardCatalog).every(card => card.name && card.source_url && Number.isFinite(card.energy_price_eur_kwh))],
   ["Route timeout helper is present", js.includes("fetchWithTimeout")],
   ["Application JavaScript syntax is valid", canParse(js)],
   ["Route corridor JavaScript syntax is valid", canParse(routeJs)],

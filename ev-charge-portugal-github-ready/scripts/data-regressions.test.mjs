@@ -10,6 +10,28 @@ import apiWorker from '../worker-api/index.js';
 const web = await readFile(new URL('../assets/chargevoy.js', import.meta.url), 'utf8');
 function extract(start, end) { return web.slice(web.indexOf(start), web.indexOf(end, web.indexOf(start))); }
 
+test('six sourced card tariffs preserve period prices and fixed-price eligibility', async () => {
+  const cards = JSON.parse(await readFile(new URL('../assets/ceme-cards.json', import.meta.url), 'utf8'));
+  assert.equal(new Set(cards.map(card => card.name)).size, 6);
+  const context = vm.createContext({ currentVehicle: {max_dc_power_kw: 100}, operatorMap: new Map([['other', 'Other'], ['atlante', 'Atlante']]), selectedStation: {operator_id:'other'} });
+  vm.runInContext(extract('function networkTariff(', 'let simMode ='), context);
+  vm.runInContext(extract('function cardEnergyRate(', 'function cardSourceLink('), context);
+  vm.runInContext(extract('function calculateCardPrice(', 'function adHocPriceMarkup('), context);
+  const scenario = { energyKwh: 20 };
+  const opc = {connector_type:'CCS',power_kw:50,voltage_level:'BT',activation_fee_eur:0,energy_price_eur_kwh:0.20,time_price_eur_min:0};
+  const galp = cards.find(card => card.id === 'galp-electric');
+  const prio = cards.find(card => card.id === 'prio-electric-kwh');
+  assert.equal(context.cardEnergyRate(galp, 'vazio'), 0.1954);
+  assert.equal(context.cardEnergyRate(prio, 'fora_vazio'), 0.1399);
+  assert(context.calculateCardPrice(galp, opc, scenario, 'vazio').total < context.calculateCardPrice(galp, opc, scenario, 'fora_vazio').total);
+  const atlante = cards.find(card => card.id === 'myatlante');
+  context.selectedStation = {operator_id:'atlante'};
+  assert.equal(context.calculateCardPrice(atlante, opc, scenario, 'fora_vazio').total, 9.8);
+  context.selectedStation = {operator_id:'other'};
+  assert.equal(context.calculateCardPrice(atlante, {...opc,power_kw:22}, scenario, 'fora_vazio').finalFixed, undefined);
+  assert.equal(cards.find(card => card.id === 'edp-charge').estimate_enabled, false);
+});
+
 test('vehicle connector arrays and D1 JSON strings match CCS stations', () => {
   const context = vm.createContext({connectorMap: new Map([['s', [{type:'CCS'}]]])});
   vm.runInContext(extract('function connectorCategory(', 'function isOfficialTeslaStation('), context);

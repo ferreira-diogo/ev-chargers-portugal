@@ -1655,6 +1655,31 @@
         return compatible;
       }
 
+      function cardEnergyRate(card, period) {
+        return Number(period === "vazio" && card.energy_price_vazio_eur_kwh != null
+          ? card.energy_price_vazio_eur_kwh : card.energy_price_eur_kwh);
+      }
+
+      function fixedCardRate(card, opc) {
+        if (!Number.isFinite(Number(card.fixed_fast_eur_kwh)) || Number(opc.power_kw) < 50) return null;
+        const operator = String(operatorMap.get(selectedStation?.operator_id) || selectedStation?.name || "").toLowerCase();
+        const nationalPromo = card.fixed_fast_national_until && new Date().toISOString().slice(0, 10) <= card.fixed_fast_national_until;
+        return operator.includes("atlante") || nationalPromo ? Number(card.fixed_fast_eur_kwh) : null;
+      }
+
+      function cardSourceLink(card) {
+        const links = [card.source_url, card.alternative_source_url, card.promo_source_url].filter(Boolean);
+        return links.map((url, index) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${index ? "Condições" : "Fonte"}</a>`).join(" · ");
+      }
+
+      function publishedCardRates(period) {
+        return cemeCards.map((card) => {
+          const rate = cardEnergyRate(card, period).toFixed(4).replace(".", ",");
+          const alternative = card.alternative_energy_price_eur_kwh == null ? "" : `–${Number(card.alternative_energy_price_eur_kwh).toFixed(4).replace(".", ",")}`;
+          return `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${rate}${alternative}<small>€/kWh energia${card.fixed_fast_eur_kwh ? " · ver condições" : ""}</small></div></div>`;
+        }).join("");
+      }
+
       function calculateCardPrice(card, opc, scenario, period) {
         const energy = Number(scenario.energyKwh);
         const isAc = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
@@ -1668,8 +1693,10 @@
           5,
           Math.ceil(((energy / optionPower) * 60) / 0.75),
         );
-        if (card.pricing_mode === "final_fixed") {
-          const total = Number(card.energy_price_eur_kwh) * energy;
+        const fixedRate = fixedCardRate(card, opc);
+        if (card.pricing_mode === "final_fixed" || fixedRate !== null) {
+          const rate = fixedRate ?? Number(card.energy_price_eur_kwh);
+          const total = rate * energy;
           const operator = String(
             operatorMap.get(selectedStation?.operator_id) ||
               selectedStation?.name ||
@@ -1689,8 +1716,9 @@
             opcCost: 0,
             iec: 0,
             minutes,
-            effectiveKwh: Number(card.energy_price_eur_kwh),
+            effectiveKwh: rate,
             finalFixed: true,
+            fixedCondition: card.fixed_fast_national_until && !ownNetwork ? `Campanha até ${card.fixed_fast_national_until.split("-").reverse().join("/")}` : "Rede Atlante",
             cashback: total * cashbackRate,
             cashbackRate,
           };
@@ -1703,7 +1731,7 @@
           ? 0
           : networkTariff(opc.voltage_level, period) * energy;
         const ceme =
-          Number(card.energy_price_eur_kwh) * energy +
+          cardEnergyRate(card, period) * energy +
           Number(card.session_fee_eur || 0);
         const iec = Number(card.iec_eur_kwh || 0.001) * energy;
         const subtotal = ceme + tar + opcCost + iec;
@@ -1797,7 +1825,8 @@
           headline.textContent = "Preço oficial indisponível";
           container.innerHTML =
             directPrice +
-            '<div class="price-empty">Ainda não há uma tarifa de operador recente e inequívoca para este posto. Não é apresentada qualquer estimativa.</div>';
+            '<div class="price-empty">Tarifa OPC recente indisponível neste posto. Valores publicados da energia dos cartões abaixo; não são totais de carregamento.</div>' +
+            publishedCardRates(document.getElementById("price-period").value);
           return;
         }
         const scenario = pricingScenario();
@@ -1805,7 +1834,7 @@
         const tariffs = compatibleOfficialTariffs();
         if (!tariffs.length) {
           headline.textContent = "Tomada incompatível";
-          container.innerHTML = directPrice + '<div class="price-empty">Não há uma tarifa para tomadas compatíveis com o veículo selecionado neste posto.</div>';
+          container.innerHTML = directPrice + '<div class="price-empty">Não há uma tarifa para tomadas compatíveis com o veículo selecionado neste posto. Os valores abaixo são só a energia publicada.</div>' + publishedCardRates(period);
           return;
         }
         const opcOptions = tariffs.map((opc) => {
@@ -1815,6 +1844,7 @@
         const cheapestOpc = opcOptions[0];
         const opcOnly = `<div class="price-empty"><span class="official-price">TARIFA DO OPERADOR · MOBI.E</span><br><b>Componente OPC desde ${cheapestOpc.opcCost.toFixed(2).replace(".", ",")} €</b> para ~${scenario.energyKwh.toFixed(1).replace(".", ",")} kWh e ~${cheapestOpc.minutes} min (${escapeHtml(cheapestOpc.opc.connector_type)} ${escapeHtml(cheapestOpc.opc.power_kw)} kW). É apenas a parcela do operador; o valor final depende do cartão CEME, impostos e condições aplicáveis.</div>`;
         const comparisons = cemeCards
+          .filter((card) => card.estimate_enabled !== false)
           .map((card) => {
             const eligibleTariffs =
               card.pricing_mode === "final_fixed"
@@ -1835,14 +1865,16 @@
           return;
         }
         headline.textContent = `≈ ${comparisons[0].total.toFixed(2).replace(".", ",")} €`;
+        const incomplete = cemeCards.filter((card) => card.estimate_enabled === false);
         container.innerHTML =
           directPrice + opcOnly +
           comparisons
             .map(
               (item, index) =>
-                `<div class="price-card"><span class="price-rank">${index + 1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index === 0 ? '<span class="official-price">MENOR ESTIMATIVA</span>' : ""}<span class="price-breakdown">${item.finalFixed ? `Preço final promocional · taxas incluídas${item.cashbackRate ? ` · ${Math.round(item.cashbackRate * 100)}% em Green Gems (~${item.cashback.toFixed(2).replace(".", ",")} €) para uso futuro` : ""}` : `CEME ${item.ceme.toFixed(2).replace(".", ",")} € · OPC ${item.opcCost.toFixed(2).replace(".", ",")} €${item.tar ? ` · TAR ${item.tar.toFixed(2).replace(".", ",")} €` : ""} · taxas + IVA`}</span></div><div class="price-total">${item.total.toFixed(2).replace(".", ",")} €<small>${item.effectiveKwh.toFixed(3).replace(".", ",")} €/kWh final</small></div></div>`,
+                `<div class="price-card"><span class="price-rank">${index + 1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index === 0 ? '<span class="official-price">MENOR ESTIMATIVA</span>' : ""}<span class="price-breakdown">${item.finalFixed ? `Preço final · taxas incluídas · ${escapeHtml(item.fixedCondition || "ver condições")}` : `CEME + EGME ${item.ceme.toFixed(2).replace(".", ",")} € · OPC ${item.opcCost.toFixed(2).replace(".", ",")} €${item.tar ? ` · TAR ${item.tar.toFixed(2).replace(".", ",")} €` : ""} · IEC + IVA`} · ${escapeHtml(item.card.conditions)} · ${cardSourceLink(item.card)}</span></div><div class="price-total">≈ ${item.total.toFixed(2).replace(".", ",")} €<small>${item.effectiveKwh.toFixed(3).replace(".", ",")} €/kWh estimado</small></div></div>`,
             )
             .join("") +
+          incomplete.map((card) => `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${cardEnergyRate(card, period).toFixed(4).replace(".", ",")}–${Number(card.alternative_energy_price_eur_kwh).toFixed(4).replace(".", ",")}<small>€/kWh energia · total por confirmar</small></div></div>`).join("") +
           `<div class="price-empty">Cenário: ${scenario.energyKwh.toFixed(1).replace(".", ",")} kWh · ~${comparisons[0].minutes} min · tomada ${escapeHtml(comparisons[0].opc.connector_type || "compatível")} ${escapeHtml(comparisons[0].opc.power_kw)} kW. Fonte OPC: MOBI.E. Campanhas só aparecem durante a respetiva validade.</div>`;
       }
 
@@ -1875,9 +1907,8 @@
         } catch (error) {
           console.error(error);
           if (request === pricingRequest) {
-            document.getElementById("price").textContent = "Preço indisponível";
-            container.innerHTML =
-              '<div class="price-empty">Não foi possível consultar a tarifa oficial neste momento.</div>';
+            selectedOpcTariffs = [];
+            renderPriceComparison();
           }
         }
       }
@@ -2125,15 +2156,16 @@
           });
 
           const place = await locationPromise;
-          void getRows(
-            "ceme_cards",
-            "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
-          ).then((rows) => {
+          void fetch("./assets/ceme-cards.json", { cache: "no-cache" }).then((response) => {
+            if (!response.ok) throw new Error(`Catálogo CEME: HTTP ${response.status}`);
+            return response.json();
+          }).then((rows) => {
             const today = new Date().toISOString().slice(0, 10);
             cemeCards = rows.filter(
               (card) => (!card.valid_from || card.valid_from <= today) &&
                         (!card.valid_to || card.valid_to >= today),
             );
+            if (selectedStation) renderPriceComparison();
           }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));
 
           const stations = await loadFallbackStations(place);
