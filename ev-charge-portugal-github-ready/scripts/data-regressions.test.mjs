@@ -71,6 +71,27 @@ test('both APIs and the map distinguish live, previous and expired readings', as
   }
 });
 
+test('station markers retain the last known colour for twenty minutes without claiming LIVE', () => {
+  const now = Date.now();
+  class Clock extends Date { static now() { return now; } }
+  const connectorMap = new Map();
+  const context = vm.createContext({Date: Clock, t: s => s, currentLanguage: 'pt', connectorCategory: s => s, connectorMap});
+  vm.runInContext(extract('function stationAvailability(', 'function escapeHtml('), context);
+  const station = {id: 's', status: 'unknown'};
+  for (const [minutes, available, expected] of [
+    [4, 1, 'available'], [6, 1, 'available'], [19, 0, 'unavailable'],
+    [21, 1, 'unknown'],
+  ]) {
+    connectorMap.set('s', [{quantity: 1, available_count: minutes <= 5 ? available : null,
+      last_known_available_count: minutes <= 20 ? available : null,
+      availability_source: minutes <= 5 ? 'mobie_nap' : 'mobie_nap_stale',
+      availability_updated_at: new Date(now - minutes * 60000).toISOString()}]);
+    assert.equal(context.effectiveStationStatus(station), expected);
+    assert.equal(context.stationAvailability(connectorMap.get('s')).kind,
+      minutes <= 5 ? 'live' : minutes <= 20 ? 'stale' : 'none');
+  }
+});
+
 test('station refresh requests only the selected station, coalesces and preserves data on failure', async () => {
   const rows = [{id:'c', station_id:'one'}], calls = [];
   let fail = false;

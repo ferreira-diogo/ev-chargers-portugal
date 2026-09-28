@@ -547,7 +547,9 @@
 
       function effectiveStationStatus(station) {
         const info = stationAvailability(connectorMap.get(station.id) || []);
-        if (info.kind === "live")
+        // Keep the last reported colour while the reading is labelled ANTERIOR.
+        // LIVE still ends at five minutes; after twenty minutes the marker fades.
+        if (info.kind === "live" || info.kind === "stale")
           return info.available > 0
             ? "available"
             : info.complete
