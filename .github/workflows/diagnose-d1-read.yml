@@ -1,0 +1,24 @@
+name: Diagnose D1 read failure
+
+on:
+  push:
+    branches: [fix/d1-api-verification-retry]
+    paths: [.github/workflows/diagnose-d1-read.yml]
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_DATABASE_NAME: ${{ secrets.D1_DATABASE_NAME }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Wrangler
+        run: npm install --global wrangler@4
+      - name: Read-only D1 probe
+        run: |
+          set -euo pipefail
+          test -n "$D1_DATABASE_NAME"
+          wrangler d1 execute "$D1_DATABASE_NAME" --remote --command="SELECT 1 AS ok"
+          wrangler d1 execute "$D1_DATABASE_NAME" --remote --command="SELECT id FROM station_cache_v2 LIMIT 1"
