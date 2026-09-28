@@ -185,6 +185,61 @@ test('national NAP snapshot keeps the map and live KV colours working when D1 qu
   assert.equal(assetReads,3);
 });
 
+test('the first station page does not wait for a mobile location permission decision', async () => {
+  const context = vm.createContext({
+    D1_FALLBACK_URL: 'https://example.com/api/stations',
+    D1_API_WORKER_URL: 'https://fallback.example.com/api/stations',
+    connectorMap: new Map(), URLSearchParams, console,
+    fetchWithTimeout: async () => Response.json({stations:[{id:'nap-site'}],connectors:[]}),
+  });
+  vm.runInContext(extract('async function loadFallbackStations(', 'async function loadRemainingNationalStations('), context);
+  const unresolvedLocation = new Promise(() => {});
+  const rows = await Promise.race([
+    context.loadFallbackStations(unresolvedLocation),
+    new Promise((_, reject) => setTimeout(() => reject(Error('waited for geolocation')), 100)),
+  ]);
+  assert.equal(rows[0].id, 'nap-site');
+  assert.match(web, /const stations = await loadFallbackStations\(locationPromise\)/);
+  assert.doesNotMatch(web, /const place = await locationPromise;/);
+});
+
+test('automatic mobile location keeps the national map in view', async () => {
+  const nodes = new Map();
+  const document = {getElementById(id) {
+    if (!nodes.has(id)) nodes.set(id, {value:'',textContent:'',disabled:false,classList:{add() {}}});
+    return nodes.get(id);
+  }};
+  let zooms = 0, popups = 0;
+  const context = vm.createContext({
+    document, console, searchLayer:{clearLayers() {}},
+    browserPosition: async () => ({lat:39,lon:-8,accuracy:25}),
+    L: {circle: () => ({addTo() {}}), marker: () => ({addTo() {return this;},bindPopup() {return this;},openPopup() {popups++;}})},
+    map: {setView() {zooms++;}}, renderStations() {},
+  });
+  vm.runInContext(extract('async function useMyLocation(', 'async function routeToSelectedStation('), context);
+  await context.useMyLocation({silent:true,focusMap:false});
+  assert.equal(zooms,0);
+  assert.equal(popups,0);
+  assert.equal(nodes.get('sort-filter').value,'distance-asc');
+  await context.useMyLocation();
+  assert.equal(zooms,1);
+  assert.equal(popups,1);
+});
+
+test('restricted mobile storage does not abort the public map script', () => {
+  const context = vm.createContext({
+    localStorage: {getItem() {throw Error('storage blocked');}},
+    console: {warn() {}}, Set, WeakMap,
+  });
+  vm.runInContext(web.slice(web.indexOf('let favoriteStationIds ='),web.indexOf('let lastPlannedRoute =')),context);
+  vm.runInContext(web.slice(web.indexOf('let currentLanguage ='),web.indexOf('const i18nOriginalText =')),context);
+  assert.equal(vm.runInContext('favoriteStationIds.size',context),0);
+  assert.equal(vm.runInContext('currentLanguage',context),'pt');
+  const auth = vm.createContext({window:{},SUPABASE_URL:'https://example.com',SUPABASE_KEY:'public'});
+  vm.runInContext(web.slice(web.indexOf('const authClient ='),web.indexOf('const map =')),auth);
+  assert.equal(vm.runInContext('authClient == null',auth),true);
+});
+
 test('station markers retain the last known colour for twenty minutes without claiming LIVE', () => {
   const now = Date.now();
   class Clock extends Date { static now() { return now; } }

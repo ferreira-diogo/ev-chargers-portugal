@@ -6,7 +6,7 @@
         apikey: SUPABASE_KEY,
         Authorization: "Bearer " + SUPABASE_KEY,
       };
-      const authClient = window.supabase.createClient(
+      const authClient = window.supabase?.createClient?.(
         SUPABASE_URL,
         SUPABASE_KEY,
         {
@@ -98,9 +98,12 @@
       let selectedOpcTariffs = [];
       let selectedAdHocPriceComponents = [];
       let pricingRequest = 0;
-      let favoriteStationIds = new Set(
-        JSON.parse(localStorage.getItem("ev-charge-favorites") || "[]"),
-      );
+      let favoriteStationIds = new Set();
+      try {
+        favoriteStationIds = new Set(
+          JSON.parse(localStorage.getItem("ev-charge-favorites") || "[]"),
+        );
+      } catch (error) { console.warn("Favoritos locais indisponíveis", error); }
       let lastPlannedRoute = null;
       let vehicleImageRequest = 0;
       let currentSession = null;
@@ -242,8 +245,10 @@
         "sem leitura atual": "without a current reading",
         ANTERIOR: "PREVIOUS",
       };
-      let currentLanguage =
-        localStorage.getItem("ev-charge-language") === "en" ? "en" : "pt";
+      let currentLanguage = "pt";
+      try {
+        if (localStorage.getItem("ev-charge-language") === "en") currentLanguage = "en";
+      } catch {}
       const i18nOriginalText = new WeakMap(),
         i18nOriginalAttrs = new WeakMap();
       let translatingPage = false;
@@ -670,7 +675,8 @@
                 `<option value="${escapeHtml(brand)}">${escapeHtml(brand)}</option>`,
             )
             .join("");
-        const saved = localStorage.getItem("ev-charge-vehicle");
+        let saved = null;
+        try { saved = localStorage.getItem("ev-charge-vehicle"); } catch {}
         const savedVehicle = vehicleModels.find((vehicle) => vehicle.id === saved);
         const defaultVehicle =
           savedVehicle ||
@@ -773,7 +779,7 @@
           vehicleModels[0] ||
           null;
         if (!currentVehicle) return;
-        localStorage.setItem("ev-charge-vehicle", currentVehicle.id);
+        try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
         document.getElementById("vehicle-specs").textContent =
           `🔋 ${currentVehicle.battery_capacity_kwh} kWh · ${currentVehicle.consumption_wh_km} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
         renderVehicleImage(currentVehicle);
@@ -1975,7 +1981,7 @@
         throw lastError || new Error("No Overpass endpoint available");
       }
 
-      async function loadFallbackStations(place) {
+      async function loadFallbackStations(locationPromise) {
         // Both APIs use the same national seed so background pages have stable offsets.
         const params = new URLSearchParams({ limit: "300" });
         for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
@@ -2001,7 +2007,17 @@
             console.warn("Station API unavailable:", endpoint, error);
           }
         }
-        return loadOverpassStations(place);
+        // The static catalogue also works when the Worker API is temporarily slow.
+        try {
+          const response = await fetchWithTimeout("./assets/stations-snapshot.json", {}, 30000);
+          if (!response.ok) throw new Error(`NAP snapshot HTTP ${response.status}`);
+          const payload = await response.json();
+          if (!Array.isArray(payload.stations) || payload.stations.length < 8000)
+            throw new Error("NAP snapshot incomplete");
+          restoreConnectorRows(payload.connectors);
+          return payload.stations;
+        } catch (error) { console.warn("Catálogo estático indisponível", error); }
+        return loadOverpassStations(await locationPromise);
       }
 
       async function loadRemainingNationalStations(generation) {
@@ -2167,12 +2183,12 @@
           const locationPromise = useMyLocation({
             setRouteOrigin: true,
             silent: true,
+            focusMap: false,
           }).catch((error) => {
             console.warn("Localização indisponível; usando fallback nacional", error);
             return null;
           });
 
-          const place = await locationPromise;
           void fetch("./assets/ceme-cards.json", { cache: "no-cache" }).then((response) => {
             if (!response.ok) throw new Error(`Catálogo CEME: HTTP ${response.status}`);
             return response.json();
@@ -2185,7 +2201,7 @@
             if (selectedStation) renderPriceComparison();
           }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));
 
-          const stations = await loadFallbackStations(place);
+          const stations = await loadFallbackStations(locationPromise);
           if (!stations.length) throw new Error("D1/OSM sem postos disponíveis");
 
           reliabilityMap = new Map();
@@ -2219,9 +2235,14 @@
           if (vehicles.length) cacheVehicleRows(vehicles);
         } catch (error) {
           console.error(error);
-          badge.textContent = "erro";
-          cards.innerHTML =
-            '<article class="card"><div class="op">Os postos estão temporariamente indisponíveis</div><div class="st">A tentar novamente automaticamente quando a base de dados responder.</div></article>';
+          if (allStations.length) {
+            nationalLoadState = "partial";
+            renderStations(false);
+          } else {
+            badge.textContent = "erro";
+            cards.innerHTML =
+              '<article class="card"><div class="op">Os postos estão temporariamente indisponíveis</div><div class="st">A tentar novamente automaticamente quando o serviço responder.</div></article>';
+          }
           if (!stationLoadRetryScheduled) {
             stationLoadRetryScheduled = true;
             setTimeout(() => {
@@ -2645,13 +2666,15 @@
             fillColor: "#60a5fa",
             fillOpacity: 0.16,
           }).addTo(searchLayer);
-          L.marker([place.lat, place.lon])
+          const locationMarker = L.marker([place.lat, place.lon])
             .addTo(searchLayer)
-            .bindPopup("<b>A sua localização aproximada</b>")
-            .openPopup();
+            .bindPopup("<b>A sua localização aproximada</b>");
           document.getElementById("sort-filter").value = "distance-asc";
           renderStations(false);
-          map.setView([place.lat, place.lon], 12, { animate: false });
+          if (options.focusMap !== false) {
+            map.setView([place.lat, place.lon], 12, { animate: false });
+            locationMarker.openPopup();
+          }
           return place;
         } catch (error) {
           console.error(error);
@@ -3207,7 +3230,8 @@
       }
       function setupAnalyticsConsent() {
         const banner = document.getElementById("analytics-consent");
-        const choice = localStorage.getItem("analytics-consent");
+        let choice = null;
+        try { choice = localStorage.getItem("analytics-consent"); } catch {}
         if (choice === "granted") enableAnalytics();
         if (choice) return;
         banner.hidden = false;
@@ -3226,6 +3250,11 @@
           });
       }
       async function initAuth() {
+        if (!authClient) {
+          console.warn("Autenticação indisponível; mapa público continua disponível");
+          updateAuthUI();
+          return;
+        }
         const { data } = await authClient.auth.getSession();
         currentSession = data.session;
         updateAuthUI();
