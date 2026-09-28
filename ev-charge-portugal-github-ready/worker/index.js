@@ -90,7 +90,7 @@ async function stations(request, env) {
   const limit=Math.min(Math.max(Number(url.searchParams.get("limit")||1500),1),1500);
   const offset=Math.min(Math.max(Number(url.searchParams.get("offset")||0),0),30000);
   try {
-    const cacheKey = hasBounds ? null : new Request(`${url.origin}/__chargevoy_station_page_v1?limit=${limit}&offset=${offset}`);
+    const cacheKey = hasBounds ? null : new Request(`${url.origin}/__chargevoy_station_page_v2?limit=${limit}&offset=${offset}`);
     const page = await cachedStationPage(cacheKey, async () => {
       let stmt;
       if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY max_power_kw DESC, rowid ASC LIMIT ? OFFSET ?`).bind(minLat,maxLat,minLon,maxLon,limit,offset);
