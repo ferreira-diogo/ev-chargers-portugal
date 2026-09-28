@@ -93,8 +93,8 @@ async function stations(request, env) {
     const cacheKey = hasBounds ? null : new Request(`${url.origin}/__chargevoy_station_page_v1?limit=${limit}&offset=${offset}`);
     const page = await cachedStationPage(cacheKey, async () => {
       let stmt;
-      if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY max_power_kw DESC, id ASC LIMIT ? OFFSET ?`).bind(minLat,maxLat,minLon,maxLon,limit,offset);
-      else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY max_power_kw DESC, id ASC LIMIT ? OFFSET ?`).bind(limit,offset);
+      if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY max_power_kw DESC, rowid ASC LIMIT ? OFFSET ?`).bind(minLat,maxLat,minLon,maxLon,limit,offset);
+      else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY max_power_kw DESC, rowid ASC LIMIT ? OFFSET ?`).bind(limit,offset);
       const result=await stmt.all(), stationRows=result.results||[], connectorRows=[];
       const stationIds=stationRows.map(s=>s.id).filter(Boolean);
       for(let i=0;i<stationIds.length;i+=80){const batch=stationIds.slice(i,i+80);const placeholders=batch.map(()=>"?").join(", ");const r=await db.prepare(`SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id IN (${placeholders})`).bind(...batch).all();connectorRows.push(...(r.results||[]));}

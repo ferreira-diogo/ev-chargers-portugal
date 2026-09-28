@@ -25,7 +25,7 @@ const checks = [
   ["dedicated API receives a small national seed", /new URLSearchParams\(\{ limit: "300" \}\)/.test(web)],
   ["route requests each section with a dedicated API fallback", corridor.includes("coordinates.slice(start, end + 1)") && corridor.includes("[D1_FALLBACK_URL, D1_API_WORKER_URL]")],
   ["service worker does not replay stale API availability", /if\(url\.pathname\.startsWith\('\/api\/'\)\)\s*\{\s*[^}]*fetch\(event\.request\)/.test(serviceWorker)],
-  ["both APIs paginate national stations in a stable order", worker.includes("id ASC LIMIT ? OFFSET ?") && apiWorker.includes("id ASC LIMIT ? OFFSET ?")],
+  ["both APIs paginate national stations in a stable order", worker.includes("rowid ASC LIMIT ? OFFSET ?") && apiWorker.includes("rowid ASC LIMIT ? OFFSET ?")],
   ["map progressively loads all station pages", web.includes("loadRemainingNationalStations(generation)") && web.includes('offset: String(offset)') && web.includes('offset = nationalNextOffset; offset < 30000; offset += 500')],
 ];
 
