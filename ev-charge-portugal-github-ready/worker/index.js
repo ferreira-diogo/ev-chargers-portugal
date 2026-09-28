@@ -38,12 +38,13 @@ function legacyNapKey(connector, statuses) {
   return null;
 }
 
-async function mergeAvailability(rows, env, snapshot = null) {
+async function mergeAvailability(rows, env, snapshot = null, knownMappings = null) {
   if (!rows.length) return rows;
   snapshot ||= await readAvailabilitySnapshot(env);
   if (!snapshot?.statuses) return rows;
   const fresh = snapshot.age_minutes != null && snapshot.age_minutes <= 5;
-  const mappings = await readNapMappings(env.CHARGEVOY_DB, rows);
+  const recent = snapshot.age_minutes != null && snapshot.age_minutes <= 20;
+  const mappings = knownMappings ?? await readNapMappings(env.CHARGEVOY_DB, rows);
   for (const connector of rows) {
     const mapping = mappings.get(connector.id);
     const mappedKey = mapping ? mapping.site_id + "|" + mapping.point_id : null;
@@ -55,6 +56,8 @@ async function mergeAvailability(rows, env, snapshot = null) {
     // The web UI consumes this stable public source name. Mapping provenance stays internal
     // to the Worker/API implementation so live readings are not discarded by the browser.
     connector.availability_source = fresh ? "mobie_nap" : "mobie_nap_stale";
+    connector.last_known_status = recent ? status : null;
+    connector.last_known_available_count = !recent ? null : status === "available" ? 1 : ["charging", "outOfOrder", "blocked", "inoperative", "reserved"].includes(status) ? 0 : null;
     connector.available_count = !fresh ? null : status === "available" ? 1 : ["charging", "outOfOrder", "blocked", "inoperative", "reserved"].includes(status) ? 0 : null;
   }
   return rows;
@@ -63,40 +66,83 @@ async function mergeAvailability(rows, env, snapshot = null) {
 const fields = ["id","external_id","source","name","address","city","latitude","longitude","max_power_kw","status","operator_id","amenities"].join(", ");
 function json(body, status = 200, cacheControl = "no-store") { return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": cacheControl, "access-control-allow-origin": "*", "access-control-allow-methods": "GET,OPTIONS", "access-control-allow-headers": "Content-Type" } }); }
 function numberParam(url, name) { const raw=url.searchParams.get(name); if(raw==null||raw.trim()==="") return null; const n=Number(raw); return Number.isFinite(n)?n:null; }
+async function cachedStationPage(key, loader) {
+  const cache = key && globalThis.caches?.default;
+  if (cache) {
+    try { const hit = await cache.match(key); if (hit) return hit.json(); }
+    catch (error) { console.warn("Station cache read:", error); }
+  }
+  const page = await loader();
+  if (cache) {
+    try {
+      await cache.put(key, new Response(JSON.stringify(page), {
+        headers: { "content-type": "application/json", "cache-control": "public, max-age=21600" },
+      }));
+    } catch (error) { console.warn("Station cache write:", error); }
+  }
+  return page;
+}
+async function staticNapCatalogue(request, env) {
+  const asset = new URL("/assets/stations-snapshot.json", request.url);
+  const response = await env.ASSETS.fetch(new Request(asset));
+  if (!response.ok) throw new Error(`NAP snapshot asset HTTP ${response.status}`);
+  const catalogue = await response.json();
+  if (!Array.isArray(catalogue.stations) || !Array.isArray(catalogue.connectors) || catalogue.stations.length < 8000)
+    throw new Error("NAP snapshot asset is incomplete");
+  return catalogue;
+}
+async function staticStations(request, env, url, limit, offset, hasBounds, minLat, maxLat, minLon, maxLon) {
+  const catalogue = await staticNapCatalogue(request, env);
+  const selected = (hasBounds ? catalogue.stations.filter(s =>
+    s.latitude >= minLat && s.latitude <= maxLat && s.longitude >= minLon && s.longitude <= maxLon
+  ) : catalogue.stations).slice(offset, offset + limit);
+  const ids = new Set(selected.map(s => s.id));
+  const connectors = catalogue.connectors.filter(c => ids.has(c.station_id));
+  const snapshot = await readAvailabilitySnapshot(env);
+  await mergeAvailability(connectors, env, snapshot, new Map());
+  const fresh = snapshot?.age_minutes != null && snapshot.age_minutes <= 5;
+  return json({ source: "nap-snapshot+kv", stale: !fresh,
+    availability_publication_time: snapshot?.publication_time || null,
+    availability_age_minutes: snapshot?.age_minutes ?? null, availability_max_age_minutes: 5,
+    stations: selected, connectors });
+}
 async function stations(request, env) {
-  const db=env.CHARGEVOY_DB; if(!db) return json({stations:[],error:"D1 binding unavailable"},503);
+  const db=env.CHARGEVOY_DB;
   const url=new URL(request.url);
   const minLat=numberParam(url,"min_lat"), maxLat=numberParam(url,"max_lat"), minLon=numberParam(url,"min_lon"), maxLon=numberParam(url,"max_lon");
   const hasBounds=[minLat,maxLat,minLon,maxLon].every(v=>v!==null)&&minLat<=maxLat&&minLon<=maxLon;
   const limit=Math.min(Math.max(Number(url.searchParams.get("limit")||1500),1),1500);
+  const offset=Math.min(Math.max(Number(url.searchParams.get("offset")||0),0),30000);
   try {
-    let stmt;
-    if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw,0) DESC LIMIT ?`).bind(minLat,maxLat,minLon,maxLon,limit);
-    else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY COALESCE(max_power_kw,0) DESC LIMIT ?`).bind(limit);
-    const result=await stmt.all(); const stationRows=result.results||[]; let connectorRows=[];
-    const stationIds=stationRows.map(s=>s.id).filter(Boolean);
-    for(let offset=0;offset<stationIds.length;offset+=80){const batch=stationIds.slice(offset,offset+80);const placeholders=batch.map(()=>"?").join(", ");const r=await db.prepare(`SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id IN (${placeholders})`).bind(...batch).all();connectorRows.push(...(r.results||[]));}
-    const snapshot=await readAvailabilitySnapshot(env); await mergeAvailability(connectorRows,env,snapshot);
+    if (!db) throw new Error("D1 binding unavailable");
+    const cacheKey = hasBounds ? null : new Request(`${url.origin}/__chargevoy_station_page_v2?limit=${limit}&offset=${offset}`);
+    const page = await cachedStationPage(cacheKey, async () => {
+      let stmt;
+      if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY max_power_kw DESC, rowid ASC LIMIT ? OFFSET ?`).bind(minLat,maxLat,minLon,maxLon,limit,offset);
+      else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY max_power_kw DESC, rowid ASC LIMIT ? OFFSET ?`).bind(limit,offset);
+      const result=await stmt.all(), stationRows=result.results||[], connectorRows=[];
+      const stationIds=stationRows.map(s=>s.id).filter(Boolean);
+      for(let i=0;i<stationIds.length;i+=80){const batch=stationIds.slice(i,i+80);const placeholders=batch.map(()=>"?").join(", ");const r=await db.prepare(`SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id IN (${placeholders})`).bind(...batch).all();connectorRows.push(...(r.results||[]));}
+      const mappings = await readNapMappings(db, connectorRows);
+      return { stations: stationRows, connectors: connectorRows, mappings: [...mappings] };
+    });
+    const stationRows=page.stations, connectorRows=page.connectors;
+    const snapshot=await readAvailabilitySnapshot(env); await mergeAvailability(connectorRows,env,snapshot,new Map(page.mappings));
     const fresh = snapshot?.age_minutes != null && snapshot.age_minutes <= 5;
     return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,stations:stationRows,connectors:connectorRows});
-  } catch(error){console.error("D1 stations:",error);return json({stations:[],connectors:[],error:"D1 query failed"},503);}
-}
-async function staticAssetWithPlanner(request, env) {
-  const response = await env.ASSETS.fetch(request);
-  if (!response.ok) return response;
-  const url = new URL(request.url);
-  const type = response.headers.get("content-type") || "";
-  if (!(url.pathname === "/" || url.pathname.endsWith("/index.html")) || !type.includes("text/html")) return response;
-  return new HTMLRewriter().on("body", { element(element) { element.append('<script src="./assets/route-corridor.js"></script>', { html: true }); } }).transform(response);
+  } catch(error){
+    console.error("D1 stations; using NAP snapshot:",error);
+    try { return await staticStations(request,env,url,limit,offset,hasBounds,minLat,maxLat,minLon,maxLon); }
+    catch(fallbackError) { console.error("NAP snapshot:",fallbackError); return json({stations:[],connectors:[],error:"D1 and NAP snapshot unavailable"},503); }
+  }
 }
 export default {async fetch(request,env){
   const url=new URL(request.url);
   if(request.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type"}});
   if(url.pathname==="/api/stations"||url.pathname.startsWith("/api/stations/"))return stations(request,env);
   if(url.pathname==="/api/connectors"){
-    if(!env.CHARGEVOY_DB)return json({connectors:[],error:"D1 binding unavailable"},503);
     const stationId=url.searchParams.get("station_id");if(!stationId||stationId.length>180)return json({connectors:[],error:"station_id inválido"},400);
-    try{const result=await env.CHARGEVOY_DB.prepare("SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id").bind(stationId).all();const snapshot=await readAvailabilitySnapshot(env);const connectors=await mergeAvailability(result.results||[],env,snapshot);const fresh=snapshot?.age_minutes!=null&&snapshot.age_minutes<=5;return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,connectors});}catch(error){console.error("D1 connectors:",error);return json({connectors:[],error:"D1 connector query failed"},503);}
+    try{if(!env.CHARGEVOY_DB)throw new Error("D1 binding unavailable");const result=await env.CHARGEVOY_DB.prepare("SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id").bind(stationId).all();const snapshot=await readAvailabilitySnapshot(env);const connectors=await mergeAvailability(result.results||[],env,snapshot);const fresh=snapshot?.age_minutes!=null&&snapshot.age_minutes<=5;return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,connectors});}catch(error){console.error("D1 connectors; using NAP snapshot:",error);try{const catalogue=await staticNapCatalogue(request,env);const connectors=catalogue.connectors.filter(c=>c.station_id===stationId);const snapshot=await readAvailabilitySnapshot(env);await mergeAvailability(connectors,env,snapshot,new Map());const fresh=snapshot?.age_minutes!=null&&snapshot.age_minutes<=5;return json({source:"nap-snapshot+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,connectors});}catch(fallbackError){console.error("NAP snapshot:",fallbackError);return json({connectors:[],error:"D1 and NAP snapshot unavailable"},503);}}
   }
-  return staticAssetWithPlanner(request,env);
+  return env.ASSETS.fetch(request);
 }};

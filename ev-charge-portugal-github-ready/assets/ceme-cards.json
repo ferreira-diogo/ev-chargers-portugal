@@ -1,0 +1,44 @@
+[
+  {
+    "id": "prio-electric-kwh", "name": "PRIO Electric", "energy_price_eur_kwh": 0.1399,
+    "energy_price_vazio_eur_kwh": 0.1499, "session_fee_eur": 0.1088,
+    "includes_tar": false, "vat_rate": 0.23, "iec_eur_kwh": 0.001,
+    "conditions": "Tarifa por kWh; vazio 0,1499 € e fora de vazio 0,1399 €. EGME estimada por sessão.",
+    "source_url": "https://www.prio.pt/pt/cartao-prio-electric/adesao-ao-cartao-prio-electric_471.html"
+  },
+  {
+    "id": "via-verde-electric", "name": "Via Verde Electric", "energy_price_eur_kwh": 0.148,
+    "session_fee_eur": 0.1088, "includes_tar": false, "vat_rate": 0.23,
+    "iec_eur_kwh": 0.001, "conditions": "Energia cobrada pela Via Verde; acrescem TAR, OPC, EGME, IEC e IVA.",
+    "source_url": "https://www.viaverde.pt/via-verde/servicos/via-verde-electric"
+  },
+  {
+    "id": "galp-electric", "name": "Galp Electric", "energy_price_eur_kwh": 0.2632,
+    "energy_price_vazio_eur_kwh": 0.1954, "session_fee_eur": 0.1088,
+    "includes_tar": true, "vat_rate": 0.23, "iec_eur_kwh": 0.001,
+    "conditions": "Tarifa bi-horária: vazio 0,1954 € e fora de vazio 0,2632 €. Inclui TAR; sem descontos contratuais.",
+    "source_url": "https://www.galp.com/pt/casa/system/files/2026-01/AF_Tabelas_Precos_e_descontos_GalpElectric_01_26.pdf"
+  },
+  {
+    "id": "repsol-electric", "name": "Repsol", "energy_price_eur_kwh": 0.2868,
+    "session_fee_eur": 0.1088, "includes_tar": true, "vat_rate": 0.23,
+    "iec_eur_kwh": 0.001, "conditions": "Energia e redes; ativação 0,1088 € por sessão. Sem saldo promocional My Repsol.",
+    "source_url": "https://www.repsol.pt/content/dam/repsol-portugal/mobilidade-el%C3%A9trica/22-05-2026/TarifarioME.pdf"
+  },
+  {
+    "id": "myatlante", "name": "myAtlante", "energy_price_eur_kwh": 0.10,
+    "session_fee_eur": 0.1088, "includes_tar": false, "vat_rate": 0.23,
+    "iec_eur_kwh": 0.001, "fixed_fast_eur_kwh": 0.49,
+    "fixed_fast_national_until": "2026-09-30",
+    "conditions": "0,49 €/kWh final nos rápidos Atlante; até 30/09 também nos rápidos elegíveis de outras redes pela app/RFID. Fora disso, energia 0,10 €/kWh mais componentes. Green Gems não descontadas.",
+    "source_url": "https://atlante.energy/pt-pt/tarifas-de-energia/",
+    "promo_source_url": "https://atlante.energy/pt-pt/noticias/campanha-de-verao-2026-atlante/"
+  },
+  {
+    "id": "edp-charge", "name": "EDP Charge", "energy_price_eur_kwh": 0.2629,
+    "alternative_energy_price_eur_kwh": 0.2678, "estimate_enabled": false,
+    "conditions": "Páginas oficiais apresentam 0,2629 € e 0,2678 €/kWh; confirmar preço contratual. Desconto de 20% apenas para clientes elegíveis, não aplicado aqui.",
+    "source_url": "https://www.edp.pt/particulares/servicos/mobilidade-eletrica/carregar-fora-de-casa/",
+    "alternative_source_url": "https://www.edp.pt/particulares/servicos/mobilidade-eletrica/"
+  }
+]

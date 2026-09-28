@@ -10,6 +10,10 @@ on:
   schedule:
     - cron: "*/5 * * * *"
 
+concurrency:
+  group: nap-availability-kv-refresh
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest

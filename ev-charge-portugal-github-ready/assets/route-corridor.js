@@ -12,23 +12,44 @@
   }
 
   async function loadRouteCorridorStations(coordinates) {
-    const bounds = routeBounds(coordinates);
-    const params = new URLSearchParams({
-      min_lat: String(bounds.minLat), max_lat: String(bounds.maxLat),
-      min_lon: String(bounds.minLon), max_lon: String(bounds.maxLon), limit: "1500",
-    });
-    const response = await fetchWithTimeout(`${D1_FALLBACK_URL}?${params}`, { cache: "no-store" }, 15000);
-    if (!response.ok) throw new Error(`API de postos HTTP ${response.status}`);
-    const payload = await response.json();
-    const stations = Array.isArray(payload?.stations) ? payload.stations : [];
-    const connectors = Array.isArray(payload?.connectors) ? payload.connectors : [];
-    if (!stations.length) throw new Error("A API do corredor não devolveu postos.");
+    // Smaller route sections avoid the 1,500 station cap swallowing a long
+    // corridor's later stops. Each request keeps the existing 20 km margin.
+    const sections = Math.min(8, Math.max(1, Math.ceil(coordinates.length / 500)));
+    const stationsById = new Map(), connectorsById = new Map();
+    for (let section = 0; section < sections; section++) {
+      const start = Math.floor(section * (coordinates.length - 1) / sections);
+      const end = Math.floor((section + 1) * (coordinates.length - 1) / sections);
+      const bounds = routeBounds(coordinates.slice(start, end + 1));
+      const params = new URLSearchParams({
+        min_lat: String(bounds.minLat), max_lat: String(bounds.maxLat),
+        min_lon: String(bounds.minLon), max_lon: String(bounds.maxLon), limit: "1500",
+      });
+      let payload;
+      for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+        try {
+          const response = await fetchWithTimeout(`${endpoint}?${params}`, { cache: "no-store" }, 15000);
+          if (!response.ok) throw new Error(`API de postos HTTP ${response.status}`);
+          const candidate = await response.json();
+          if (!Array.isArray(candidate?.stations)) throw new Error("Resposta de postos inválida");
+          payload = candidate;
+          break;
+        } catch (error) { console.warn("API de rota indisponível:", endpoint, error); }
+      }
+      if (!payload) throw new Error("Não foi possível consultar todos os troços da rota.");
+      for (const station of payload.stations) stationsById.set(station.id, station);
+      for (const connector of payload.connectors || []) connectorsById.set(connector.id, connector);
+    }
+    if (!stationsById.size) throw new Error("A API do corredor não devolveu postos.");
+    const connectors = [...connectorsById.values()];
     for (const connector of connectors) {
       if (!connector?.station_id) continue;
       const list = connectorMap.get(connector.station_id) || [];
-      if (!list.some((item) => item.id === connector.id)) list.push(connector);
+      const index = list.findIndex((item) => item.id === connector.id);
+      if (index < 0) list.push(connector); else list[index] = connector;
       connectorMap.set(connector.station_id, list);
     }
+    const stations = [...stationsById.values()];
+    hydrateStationOperators(stations);
     return stations;
   }
 

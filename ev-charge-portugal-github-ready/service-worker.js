@@ -1,5 +1,5 @@
-const CACHE_NAME='ev-charge-shell-v13';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css','./assets/chargevoy.js','./assets/route-corridor.js'];
+const CACHE_NAME='ev-charge-shell-v20';
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=16','./assets/chargevoy.js?v=20','./assets/ceme-cards.json','./assets/route-corridor.js?v=16'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -18,16 +18,9 @@ self.addEventListener('fetch',event=>{
   const url=new URL(event.request.url);
   if(url.origin!==self.location.origin)return;
   if(url.pathname.startsWith('/api/')){
-    event.respondWith((async()=>{
-      try{
-        const response=await fetch(event.request);
-        if(response.ok)await caches.open(CACHE_NAME).then(cache=>cache.put(event.request,response.clone()));
-        if(response.ok)return response;
-        return await caches.match(event.request)||response;
-      }catch{
-        return await caches.match(event.request)||Response.error();
-      }
-    })());
+    // Availability can change every few minutes. Never replay a cached API
+    // response as though it were the current status.
+    event.respondWith(fetch(event.request));
     return;
   }
   event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{
