@@ -29,7 +29,7 @@ const checks = [
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA shell caches corridor planner", worker.includes("./assets/route-corridor.js")],
-  ["PWA cache version is current", worker.includes("ev-charge-shell-v18")],
+  ["PWA cache version is current", worker.includes("ev-charge-shell-v19")],
   ["PWA shell includes card catalog", worker.includes("./assets/ceme-cards.json")],
   ["Six sourced card providers available", JSON.parse(cardCatalog).length === 6 && JSON.parse(cardCatalog).every(card => card.name && card.source_url && Number.isFinite(card.energy_price_eur_kwh))],
   ["Route timeout helper is present", js.includes("fetchWithTimeout")],

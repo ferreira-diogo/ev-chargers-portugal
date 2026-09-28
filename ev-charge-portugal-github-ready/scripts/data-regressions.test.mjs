@@ -45,6 +45,37 @@ test('vehicle connector arrays and D1 JSON strings match CCS stations', () => {
   assert.equal(context.stationCompatibleWithVehicle({id:'s'}), false);
 });
 
+test('Tesla Supercharger filter recognizes boolean amenities and JSON text', () => {
+  const context = vm.createContext({});
+  vm.runInContext(extract('function isOfficialTeslaStation(', 'function isTeslaVehicle('), context);
+  assert.equal(context.isOfficialTeslaStation({amenities:{tesla_official_supercharger:true}}), true);
+  assert.equal(context.isOfficialTeslaStation({amenities:'{"tesla_official_supercharger":true}'}), true);
+  assert.equal(context.isOfficialTeslaStation({amenities:'{}'}), false);
+});
+
+test('power filter uses connector power when station aggregate is missing or lower', () => {
+  const context = vm.createContext({connectorMap:new Map([['s',[{power_kw:150},{power_kw:350}]]]), selectedPower:'150-250'});
+  vm.runInContext(extract('function matchesPower(', 'function markerCellKey('), context);
+  assert.equal(context.matchesPower(context.stationMaxPowerKw({id:'s',max_power_kw:null})), false);
+  assert.equal(context.matchesPower(context.stationMaxPowerKw({id:'s',max_power_kw:50})), false);
+  assert.equal(context.stationMaxPowerKw({id:'other',max_power_kw:175}), 175);
+});
+
+test('vehicle catalogue merges D1 rows with local fallback and keeps D1 values', () => {
+  const elements = new Map();
+  function makeElement(id) { if (!elements.has(id)) elements.set(id, {innerHTML:'', value:'', options:[], add(option){this.options.push(option);}}); return elements.get(id); }
+  const context = vm.createContext({LOCAL_VEHICLE_FALLBACK:[
+    {id:'local-1',source:'local-fallback',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023},
+    {id:'local-2',source:'local-fallback',make:'BMW',model:'i4',variant:'eDrive40',model_year_start:2023},
+  ], document:{getElementById:makeElement}, localStorage:{getItem(){return null;}}, escapeHtml:s=>String(s), normalizeVehicle:v=>v, applyVehicle(){}});
+  vm.runInContext(extract('function populateVehicles(', 'function vehicleIllustration('), context);
+  context.renderVehicleOptions = () => {};
+  context.populateVehicles([{id:'d1-1',source:'gaia-evdb',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023}]);
+  assert.equal(context.vehicleModels.length, 2);
+  assert.equal(context.vehicleModels.find(v=>v.make==='Tesla').id, 'd1-1');
+  assert.equal(context.vehicleModels.find(v=>v.make==='BMW').id, 'local-2');
+});
+
 test('D1 export writes every record exactly once across batch boundaries', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'chargevoy-test-'));
   try {
