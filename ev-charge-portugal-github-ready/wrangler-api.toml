@@ -4,7 +4,7 @@ compatibility_date = "2026-09-25"
 keep_vars = true
 
 [triggers]
-crons = ["*/2 * * * *"]
+crons = ["*/5 * * * *"]
 
 [secrets]
 required = ["GITHUB_ACTIONS_TOKEN"]

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScript, refreshWorkflow, cardCatalog] = await Promise.all([
+const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScript, refreshWorkflow, cardCatalog, apiWorkerConfig] = await Promise.all([
   readFile(resolve(root, "index.html"), "utf8"),
   readFile(resolve(root, "assets/chargevoy.js"), "utf8"),
   readFile(resolve(root, "assets/route-corridor.js"), "utf8"),
@@ -13,6 +13,7 @@ const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScri
   readFile(resolve(root, "scripts/build-nap-d1-mapping.mjs"), "utf8"),
   readFile(resolve(root, "../.github/workflows/refresh-nap-availability.yml"), "utf8"),
   readFile(resolve(root, "assets/ceme-cards.json"), "utf8"),
+  readFile(resolve(root, "wrangler-api.toml"), "utf8"),
 ]);
 
 const canParse = (source) => { try { new Function(source); return true; } catch (error) { console.error(error.message); return false; } };
@@ -47,6 +48,7 @@ const checks = [
   ["Legacy mapping is fallback only", staticWorker.includes("legacyNapKey") && staticWorker.includes("mapping ?")],
   ["NAP mapping generator has expected safety bound", mappingScript.includes("rows.length < 15000") && mappingScript.includes("rows.length > 100000")],
   ["Availability workflow runs every five minutes", refreshWorkflow.includes('cron: "*/5 * * * *"')],
+  ["API Worker availability dispatch runs every five minutes", apiWorkerConfig.includes('crons = ["*/5 * * * *"]')],
   ["Package exposes npm test", npmTest.split(/\s*&&\s*/).includes("node scripts/verify-web.mjs") && npmTest.includes("node scripts/verify-live-map-contract.mjs")],
 ];
 
