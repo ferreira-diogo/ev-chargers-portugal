@@ -124,6 +124,40 @@ test('both APIs and the map distinguish live, previous and expired readings', as
   }
 });
 
+test('station page cache avoids repeated D1 reads while KV availability remains current', async () => {
+  const previousCache = globalThis.caches;
+  try {
+    for (const worker of [siteWorker, apiWorker]) {
+      const pages = new Map();
+      globalThis.caches = {default: {
+        async match(key) { return pages.get(key.url)?.clone(); },
+        async put(key, response) { pages.set(key.url, response.clone()); },
+      }};
+      let reads = 0, state = 'available';
+      const env = {
+        CHARGEVOY_DB: {prepare(sql) { return {bind() {return this;}, async all() {
+          reads++;
+          if (sql.includes('FROM station_cache_v2')) return {results:[{id:'nap-site',name:'Test',latitude:39,longitude:-8,max_power_kw:150}]};
+          if (sql.includes('FROM connectors')) return {results:[{id:'nap-connector',station_id:'nap-site',type:'CCS',quantity:1,power_kw:150}]};
+          if (sql.includes('FROM nap_connector_mapping')) return {results:[{connector_id:'nap-connector',site_id:'site',point_id:'point'}]};
+          throw Error('Unexpected D1 query');
+        }};}},
+        AVAILABILITY_KV: {async get() {return {publication_time:new Date().toISOString(),statuses:{'site|point':state}};}},
+      };
+      const request = new Request('https://example.com/api/stations?limit=1');
+      const first = await (await worker.fetch(request,env)).json();
+      const firstReads = reads;
+      state = 'blocked';
+      const second = await (await worker.fetch(request,env)).json();
+      assert.equal(first.stations.length, 1);
+      assert.equal(first.connectors[0].available_count, 1);
+      assert.equal(second.connectors[0].available_count, 0);
+      assert.equal(reads, firstReads);
+      assert(firstReads >= 2);
+    }
+  } finally { globalThis.caches = previousCache; }
+});
+
 test('station markers retain the last known colour for twenty minutes without claiming LIVE', () => {
   const now = Date.now();
   class Clock extends Date { static now() { return now; } }

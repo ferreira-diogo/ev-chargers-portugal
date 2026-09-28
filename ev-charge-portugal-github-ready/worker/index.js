@@ -38,13 +38,13 @@ function legacyNapKey(connector, statuses) {
   return null;
 }
 
-async function mergeAvailability(rows, env, snapshot = null) {
+async function mergeAvailability(rows, env, snapshot = null, knownMappings = null) {
   if (!rows.length) return rows;
   snapshot ||= await readAvailabilitySnapshot(env);
   if (!snapshot?.statuses) return rows;
   const fresh = snapshot.age_minutes != null && snapshot.age_minutes <= 5;
   const recent = snapshot.age_minutes != null && snapshot.age_minutes <= 20;
-  const mappings = await readNapMappings(env.CHARGEVOY_DB, rows);
+  const mappings = knownMappings ?? await readNapMappings(env.CHARGEVOY_DB, rows);
   for (const connector of rows) {
     const mapping = mappings.get(connector.id);
     const mappedKey = mapping ? mapping.site_id + "|" + mapping.point_id : null;
@@ -66,6 +66,22 @@ async function mergeAvailability(rows, env, snapshot = null) {
 const fields = ["id","external_id","source","name","address","city","latitude","longitude","max_power_kw","status","operator_id","amenities"].join(", ");
 function json(body, status = 200, cacheControl = "no-store") { return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": cacheControl, "access-control-allow-origin": "*", "access-control-allow-methods": "GET,OPTIONS", "access-control-allow-headers": "Content-Type" } }); }
 function numberParam(url, name) { const raw=url.searchParams.get(name); if(raw==null||raw.trim()==="") return null; const n=Number(raw); return Number.isFinite(n)?n:null; }
+async function cachedStationPage(key, loader) {
+  const cache = key && globalThis.caches?.default;
+  if (cache) {
+    try { const hit = await cache.match(key); if (hit) return hit.json(); }
+    catch (error) { console.warn("Station cache read:", error); }
+  }
+  const page = await loader();
+  if (cache) {
+    try {
+      await cache.put(key, new Response(JSON.stringify(page), {
+        headers: { "content-type": "application/json", "cache-control": "public, max-age=21600" },
+      }));
+    } catch (error) { console.warn("Station cache write:", error); }
+  }
+  return page;
+}
 async function stations(request, env) {
   const db=env.CHARGEVOY_DB; if(!db) return json({stations:[],error:"D1 binding unavailable"},503);
   const url=new URL(request.url);
@@ -74,13 +90,19 @@ async function stations(request, env) {
   const limit=Math.min(Math.max(Number(url.searchParams.get("limit")||1500),1),1500);
   const offset=Math.min(Math.max(Number(url.searchParams.get("offset")||0),0),30000);
   try {
-    let stmt;
-    if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY COALESCE(max_power_kw,0) DESC, id ASC LIMIT ? OFFSET ?`).bind(minLat,maxLat,minLon,maxLon,limit,offset);
-    else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY COALESCE(max_power_kw,0) DESC, id ASC LIMIT ? OFFSET ?`).bind(limit,offset);
-    const result=await stmt.all(); const stationRows=result.results||[]; let connectorRows=[];
-    const stationIds=stationRows.map(s=>s.id).filter(Boolean);
-    for(let offset=0;offset<stationIds.length;offset+=80){const batch=stationIds.slice(offset,offset+80);const placeholders=batch.map(()=>"?").join(", ");const r=await db.prepare(`SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id IN (${placeholders})`).bind(...batch).all();connectorRows.push(...(r.results||[]));}
-    const snapshot=await readAvailabilitySnapshot(env); await mergeAvailability(connectorRows,env,snapshot);
+    const cacheKey = hasBounds ? null : new Request(`${url.origin}/__chargevoy_station_page_v1?limit=${limit}&offset=${offset}`);
+    const page = await cachedStationPage(cacheKey, async () => {
+      let stmt;
+      if(hasBounds) stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 WHERE latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? ORDER BY max_power_kw DESC, id ASC LIMIT ? OFFSET ?`).bind(minLat,maxLat,minLon,maxLon,limit,offset);
+      else stmt=db.prepare(`SELECT ${fields} FROM station_cache_v2 ORDER BY max_power_kw DESC, id ASC LIMIT ? OFFSET ?`).bind(limit,offset);
+      const result=await stmt.all(), stationRows=result.results||[], connectorRows=[];
+      const stationIds=stationRows.map(s=>s.id).filter(Boolean);
+      for(let i=0;i<stationIds.length;i+=80){const batch=stationIds.slice(i,i+80);const placeholders=batch.map(()=>"?").join(", ");const r=await db.prepare(`SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id IN (${placeholders})`).bind(...batch).all();connectorRows.push(...(r.results||[]));}
+      const mappings = await readNapMappings(db, connectorRows);
+      return { stations: stationRows, connectors: connectorRows, mappings: [...mappings] };
+    });
+    const stationRows=page.stations, connectorRows=page.connectors;
+    const snapshot=await readAvailabilitySnapshot(env); await mergeAvailability(connectorRows,env,snapshot,new Map(page.mappings));
     const fresh = snapshot?.age_minutes != null && snapshot.age_minutes <= 5;
     return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,stations:stationRows,connectors:connectorRows});
   } catch(error){console.error("D1 stations:",error);return json({stations:[],connectors:[],error:"D1 query failed"},503);}
