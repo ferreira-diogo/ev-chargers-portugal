@@ -158,6 +158,33 @@ test('station page cache avoids repeated D1 reads while KV availability remains 
   } finally { globalThis.caches = previousCache; }
 });
 
+test('national NAP snapshot keeps the map and live KV colours working when D1 quota is exhausted', async () => {
+  const catalogue = {
+    stations: Array.from({length: 8001}, (_, i) => ({
+      id: `nap-site-${i}`, name: `Posto ${i}`, latitude: 39, longitude: -8,
+      max_power_kw: 150, source: 'nap-mobie',
+    })),
+    connectors: [{id:'nap-site-0-point-1',station_id:'nap-site-0',type:'CCS',power_kw:150,quantity:1}],
+  };
+  let d1Reads = 0, assetReads = 0;
+  const env = {
+    CHARGEVOY_DB: {prepare() { d1Reads++; throw Error("D1 code 7500"); }},
+    ASSETS: {async fetch() {assetReads++; return Response.json(catalogue);}},
+    AVAILABILITY_KV: {async get() {return {publication_time:new Date().toISOString(),statuses:{'site-0|point': 'available'}};}},
+  };
+  const first = await (await siteWorker.fetch(new Request('https://example.com/api/stations?limit=300'),env)).json();
+  const second = await (await siteWorker.fetch(new Request('https://example.com/api/stations?limit=500&offset=300'),env)).json();
+  assert.equal(first.source,'nap-snapshot+kv');
+  assert.equal(first.stations.length,300);
+  assert.equal(first.connectors[0].available_count,1);
+  assert.equal(second.stations.length,500);
+  assert.equal(second.stations[0].id,'nap-site-300');
+  const selected = await (await siteWorker.fetch(new Request('https://example.com/api/connectors?station_id=nap-site-0'),env)).json();
+  assert.equal(selected.connectors[0].available_count,1);
+  assert.equal(d1Reads,3);
+  assert.equal(assetReads,3);
+});
+
 test('station markers retain the last known colour for twenty minutes without claiming LIVE', () => {
   const now = Date.now();
   class Clock extends Date { static now() { return now; } }

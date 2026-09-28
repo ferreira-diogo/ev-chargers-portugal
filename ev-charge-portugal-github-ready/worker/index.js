@@ -82,14 +82,39 @@ async function cachedStationPage(key, loader) {
   }
   return page;
 }
+async function staticNapCatalogue(request, env) {
+  const asset = new URL("/assets/stations-snapshot.json", request.url);
+  const response = await env.ASSETS.fetch(new Request(asset));
+  if (!response.ok) throw new Error(`NAP snapshot asset HTTP ${response.status}`);
+  const catalogue = await response.json();
+  if (!Array.isArray(catalogue.stations) || !Array.isArray(catalogue.connectors) || catalogue.stations.length < 8000)
+    throw new Error("NAP snapshot asset is incomplete");
+  return catalogue;
+}
+async function staticStations(request, env, url, limit, offset, hasBounds, minLat, maxLat, minLon, maxLon) {
+  const catalogue = await staticNapCatalogue(request, env);
+  const selected = (hasBounds ? catalogue.stations.filter(s =>
+    s.latitude >= minLat && s.latitude <= maxLat && s.longitude >= minLon && s.longitude <= maxLon
+  ) : catalogue.stations).slice(offset, offset + limit);
+  const ids = new Set(selected.map(s => s.id));
+  const connectors = catalogue.connectors.filter(c => ids.has(c.station_id));
+  const snapshot = await readAvailabilitySnapshot(env);
+  await mergeAvailability(connectors, env, snapshot, new Map());
+  const fresh = snapshot?.age_minutes != null && snapshot.age_minutes <= 5;
+  return json({ source: "nap-snapshot+kv", stale: !fresh,
+    availability_publication_time: snapshot?.publication_time || null,
+    availability_age_minutes: snapshot?.age_minutes ?? null, availability_max_age_minutes: 5,
+    stations: selected, connectors });
+}
 async function stations(request, env) {
-  const db=env.CHARGEVOY_DB; if(!db) return json({stations:[],error:"D1 binding unavailable"},503);
+  const db=env.CHARGEVOY_DB;
   const url=new URL(request.url);
   const minLat=numberParam(url,"min_lat"), maxLat=numberParam(url,"max_lat"), minLon=numberParam(url,"min_lon"), maxLon=numberParam(url,"max_lon");
   const hasBounds=[minLat,maxLat,minLon,maxLon].every(v=>v!==null)&&minLat<=maxLat&&minLon<=maxLon;
   const limit=Math.min(Math.max(Number(url.searchParams.get("limit")||1500),1),1500);
   const offset=Math.min(Math.max(Number(url.searchParams.get("offset")||0),0),30000);
   try {
+    if (!db) throw new Error("D1 binding unavailable");
     const cacheKey = hasBounds ? null : new Request(`${url.origin}/__chargevoy_station_page_v2?limit=${limit}&offset=${offset}`);
     const page = await cachedStationPage(cacheKey, async () => {
       let stmt;
@@ -105,16 +130,19 @@ async function stations(request, env) {
     const snapshot=await readAvailabilitySnapshot(env); await mergeAvailability(connectorRows,env,snapshot,new Map(page.mappings));
     const fresh = snapshot?.age_minutes != null && snapshot.age_minutes <= 5;
     return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,stations:stationRows,connectors:connectorRows});
-  } catch(error){console.error("D1 stations:",error);return json({stations:[],connectors:[],error:"D1 query failed"},503);}
+  } catch(error){
+    console.error("D1 stations; using NAP snapshot:",error);
+    try { return await staticStations(request,env,url,limit,offset,hasBounds,minLat,maxLat,minLon,maxLon); }
+    catch(fallbackError) { console.error("NAP snapshot:",fallbackError); return json({stations:[],connectors:[],error:"D1 and NAP snapshot unavailable"},503); }
+  }
 }
 export default {async fetch(request,env){
   const url=new URL(request.url);
   if(request.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type"}});
   if(url.pathname==="/api/stations"||url.pathname.startsWith("/api/stations/"))return stations(request,env);
   if(url.pathname==="/api/connectors"){
-    if(!env.CHARGEVOY_DB)return json({connectors:[],error:"D1 binding unavailable"},503);
     const stationId=url.searchParams.get("station_id");if(!stationId||stationId.length>180)return json({connectors:[],error:"station_id inválido"},400);
-    try{const result=await env.CHARGEVOY_DB.prepare("SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id").bind(stationId).all();const snapshot=await readAvailabilitySnapshot(env);const connectors=await mergeAvailability(result.results||[],env,snapshot);const fresh=snapshot?.age_minutes!=null&&snapshot.age_minutes<=5;return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,connectors});}catch(error){console.error("D1 connectors:",error);return json({connectors:[],error:"D1 connector query failed"},503);}
+    try{if(!env.CHARGEVOY_DB)throw new Error("D1 binding unavailable");const result=await env.CHARGEVOY_DB.prepare("SELECT id, station_id, type, power_kw, quantity, available_count, status, availability_updated_at, availability_source FROM connectors WHERE station_id = ? ORDER BY id").bind(stationId).all();const snapshot=await readAvailabilitySnapshot(env);const connectors=await mergeAvailability(result.results||[],env,snapshot);const fresh=snapshot?.age_minutes!=null&&snapshot.age_minutes<=5;return json({source:"cloudflare-d1+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,connectors});}catch(error){console.error("D1 connectors; using NAP snapshot:",error);try{const catalogue=await staticNapCatalogue(request,env);const connectors=catalogue.connectors.filter(c=>c.station_id===stationId);const snapshot=await readAvailabilitySnapshot(env);await mergeAvailability(connectors,env,snapshot,new Map());const fresh=snapshot?.age_minutes!=null&&snapshot.age_minutes<=5;return json({source:"nap-snapshot+kv",stale:!fresh,availability_publication_time:snapshot?.publication_time||null,availability_age_minutes:snapshot?.age_minutes??null,availability_max_age_minutes:5,connectors});}catch(fallbackError){console.error("NAP snapshot:",fallbackError);return json({connectors:[],error:"D1 and NAP snapshot unavailable"},503);}}
   }
   return env.ASSETS.fetch(request);
 }};

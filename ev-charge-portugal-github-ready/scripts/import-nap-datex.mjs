@@ -65,6 +65,27 @@ if (args.has("--d1")) {
   process.exit(0);
 }
 
+if (args.has("--web-snapshot")) {
+  const output = process.env.NAP_WEB_SNAPSHOT || "assets/stations-snapshot.json";
+  const stations = parsed.stations.map((row) => ({
+    id: `nap-${row.external_id}`, external_id: row.external_id, source: "nap-mobie",
+    name: row.name, address: row.address || "", city: row.city || "",
+    latitude: row.latitude, longitude: row.longitude, max_power_kw: row.max_power_kw,
+    status: "unknown", operator_id: d1OperatorId(row.operator_name),
+    operator_name: row.operator_name,
+    amenities: { operator_name: row.operator_name, source_updated_at: row.source_updated_at },
+  })).sort((a, b) => (b.max_power_kw || 0) - (a.max_power_kw || 0) || a.id.localeCompare(b.id));
+  const connectors = parsed.connectors.map((row) => ({
+    id: `nap-${row.external_id}`, station_id: `nap-${row.station_external_id}`,
+    type: row.type, power_kw: row.power_kw, quantity: row.quantity,
+    status: "unknown", available_count: null,
+  }));
+  await mkdir(join(output, ".."), { recursive: true });
+  await writeFile(output, JSON.stringify({ publication_time: parsed.publicationTime, stations, connectors }));
+  console.log(JSON.stringify({ ...summary, mode: "web-snapshot", output }, null, 2));
+  process.exit(0);
+}
+
 if (!stage) {
   console.log(JSON.stringify(summary, null, 2));
   process.exit(0);

@@ -11,6 +11,7 @@ on:
       - "ev-charge-portugal-github-ready/service-worker.js"
       - "ev-charge-portugal-github-ready/icon.svg"
       - "ev-charge-portugal-github-ready/scripts/build-web.mjs"
+      - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
       - "ev-charge-portugal-github-ready/wrangler.toml"
       - "ev-charge-portugal-github-ready/worker/**"
       - ".github/workflows/deploy-chargevoy-web.yml"
@@ -37,7 +38,11 @@ jobs:
           test -n "$D1_DATABASE_NAME" || test -n "$D1_DATABASE_ID" || { echo "::error::Missing D1 database configuration"; exit 1; }
       - name: Build web bundle
         working-directory: ev-charge-portugal-github-ready
-        run: npm test && npm run build:web
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+          node scripts/import-nap-datex.mjs --web-snapshot
+          npm run build:web
       - name: Install Wrangler
         run: npm install --global wrangler@4
       - name: Resolve D1 and availability KV
@@ -76,7 +81,7 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             code="$(curl --silent --show-error --max-time 20 -o /tmp/site-stations.json -w '%{http_code}' 'https://broken-mud-373e.zombid.workers.dev/api/stations?limit=10' || true)"
             if [ "$code" = 200 ] && node -e 'const x=require("/tmp/site-stations.json");if(!Array.isArray(x.stations)||!x.stations.length)process.exit(1)'; then
-              echo "Site Worker station API available with D1 binding; custom domain UI verified separately"
+              echo "Site Worker station API available (D1 or NAP snapshot + KV)"
               exit 0
             fi
             echo "Attempt $attempt: HTTP $code; waiting for deployment propagation"
