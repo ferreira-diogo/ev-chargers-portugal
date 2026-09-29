@@ -69,7 +69,10 @@
         ["Hyundai", "Ioniq 5", "77 kWh", 2023, 77, 180, 507, 11, 235, "suv"],
         ["Kia", "EV6", "77.4 kWh", 2023, 77, 180, 528, 11, 240, "suv"],
         ["Mercedes-Benz", "EQA", "250+", 2023, 70, 180, 424, 11, 100, "suv"],
-        ["Mercedes-Benz", "GLC", "300e", 2024, 31, 220, 130, 11, 0, "suv"],
+        ["Mercedes-Benz", "GLC", "400 4MATIC Elétrico", 2026, 94, 160, 666, 11, 330, "suv"],
+        ["Renault", "4 E-Tech", "52 kWh", 2025, 52, 151, 409, 11, 100, "hatchback"],
+        ["Renault", "4 E-Tech", "40 kWh", 2025, 40, 160, 308, 11, 80, "hatchback"],
+        ["BMW", "iX3", "50 xDrive", 2026, null, null, 805, 11, 400, "suv"],
         ["BMW", "i4", "eDrive40", 2023, 81, 165, 590, 11, 205, "sedan"],
         ["Volvo", "EX30", "Single Motor Extended Range", 2024, 69, 160, 476, 11, 153, "suv"],
       ].map(([make, model, variant, year, battery, consumption, range, ac, dc, body], index) => ({
@@ -121,6 +124,7 @@
         "Consulta a última leitura publicada para este posto.": "Checks the latest published reading for this station.",
         "A carregar o mapa de Portugal…": "Loading the map of Portugal…",
         "Não foi possível atualizar. Última leitura mantida.": "Could not refresh. Last reading retained.",
+        "ÚLTIMA LEITURA": "LAST READING",
 
         "Encontra · Compara · Calcula · Decide":
           "Find · Compare · Plan · Decide",
@@ -402,10 +406,12 @@
         const rows = [];
         let offset = 0;
         while (true) {
-          const page = await getRows(
-            table,
-            `${query}&limit=${pageSize}&offset=${offset}`,
-          );
+           // A failed later page must not turn a complete vehicle catalogue into
+           // a cached partial one.
+           const page = await (D1_PUBLIC_TABLES.has(table) ? getD1Rows : getRows)(
+             table,
+             `${query}&limit=${pageSize}&offset=${offset}`,
+           );
           rows.push(...page);
           if (page.length < pageSize) break;
           offset += pageSize;
@@ -429,9 +435,13 @@
                 7000,
               );
               if (!response.ok) throw new Error(`Posto HTTP ${response.status}`);
-              const payload = await response.json();
-              if (!Array.isArray(payload.connectors)) throw new Error("Resposta inválida do posto");
-              rows = payload.connectors;
+               const payload = await response.json();
+               if (!Array.isArray(payload.connectors)) throw new Error("Resposta inválida do posto");
+               if (payload.connectors.some((row) => row.station_id !== stationId))
+                 throw new Error("Resposta de outro posto");
+               if (!payload.connectors.length && (connectorMap.get(stationId) || []).length)
+                 throw new Error("Resposta sem conectores; última leitura mantida");
+               rows = payload.connectors;
               break;
             } catch (error) { console.warn("Consulta do posto indisponível", error); }
           }
@@ -478,18 +488,13 @@
         const fresh = valid.filter(
           (c) => c.availability_source === "mobie_nap" && now - Date.parse(c.availability_updated_at) <= 5 * 60000,
         );
-        const recent = valid.filter(
-          (c) => now - Date.parse(c.availability_updated_at) <= 20 * 60000,
-        );
-        const readings = fresh.length ? fresh : recent;
-        if (!readings.length)
-          return {
-            kind: valid.length ? "expired" : "none",
-            total,
-            label: valid.length
-              ? t("Disponibilidade desatualizada")
-              : t("Disponibilidade não comunicada"),
-            detail: t("Sem leitura atual"),
+         const readings = fresh.length ? fresh : valid;
+         if (!readings.length)
+           return {
+             kind: "none",
+             total,
+             label: t("Disponibilidade não comunicada"),
+             detail: t("Sem leitura atual"),
           };
         const oldest = Math.min(
           ...readings.map((c) => Date.parse(c.availability_updated_at)),
@@ -545,15 +550,14 @@
         );
         if (info.kind === "live")
           return `<span class="live-pill" title="${title}"><i></i>LIVE</span> ${escapeHtml(info.label)}<br><small>${escapeHtml(info.detail)}</small>`;
-        if (info.kind === "stale")
-          return `<span class="stale-pill" title="${title}">${t("ANTERIOR")}</span> ${escapeHtml(info.label)}`;
+         if (info.kind === "stale")
+           return `<span class="stale-pill" title="${title}">${t("ÚLTIMA LEITURA")}</span> ${escapeHtml(info.label)}`;
         return escapeHtml(info.label);
       }
 
       function effectiveStationStatus(station) {
         const info = stationAvailability(connectorMap.get(station.id) || []);
-        // Keep the last reported colour while the reading is labelled ANTERIOR.
-        // LIVE still ends at five minutes; after twenty minutes the marker fades.
+         // Preserve the last reported colour, but never label it LIVE after five minutes.
         if (info.kind === "live" || info.kind === "stale")
           return info.available > 0
             ? "available"
@@ -652,7 +656,10 @@
 
       function populateVehicles(vehicles) {
         const merged = new Map();
-        for (const vehicle of [...LOCAL_VEHICLE_FALLBACK, ...(Array.isArray(vehicles) ? vehicles : [])]) {
+         for (const vehicle of [...LOCAL_VEHICLE_FALLBACK, ...(Array.isArray(vehicles) ? vehicles : [])].filter(
+           (item) => (item.max_dc_power_kw == null || Number(item.max_dc_power_kw) > 0) &&
+             !(item.make === "Mercedes-Benz" && item.model === "GLC" && /^(300e|350e)$/i.test(String(item.variant || ""))),
+         )) {
           const normalized = normalizeVehicle(vehicle);
           const key = [normalized.make, normalized.model, normalized.variant, normalized.model_year_start || ""].join("|").toLocaleLowerCase("pt");
           const existing = merged.get(key);
@@ -780,13 +787,9 @@
           null;
         if (!currentVehicle) return;
         try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
-        document.getElementById("vehicle-specs").textContent =
-          `🔋 ${currentVehicle.battery_capacity_kwh} kWh · ${currentVehicle.consumption_wh_km} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
-        renderVehicleImage(currentVehicle);
-        const compatible = new Set(currentVehicle.connector_types || []);
-        document.querySelectorAll(".connector-filter").forEach((input) => {
-          input.checked = compatible.has(input.value);
-        });
+         document.getElementById("vehicle-specs").textContent =
+           `🔋 ${currentVehicle.battery_capacity_kwh ?? "—"} kWh · ${currentVehicle.consumption_wh_km ?? "—"} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
+         renderVehicleImage(currentVehicle);
         sim();
         renderStations(false);
       }
@@ -1006,7 +1009,7 @@
             const power = connector.power_kw
               ? `${connector.power_kw} kW`
               : "Potência não comunicada";
-            return `<div class="connector-row"><div><b>Tomada ${index + 1} · ${escapeHtml(type)}</b><small>${escapeHtml(power)}${quantity > 1 ? ` · ${quantity} tomadas` : ""}</small></div><span class="connector-state ${previous ? "stale" : state}">${previous ? "Anterior: " : ""}${escapeHtml(label)}</span></div>`;
+             return `<div class="connector-row"><div><b>Tomada ${index + 1} · ${escapeHtml(type)}</b><small>${escapeHtml(power)}${quantity > 1 ? ` · ${quantity} tomadas` : ""}</small></div><span class="connector-state ${state}${previous ? " previous" : ""}">${previous ? "Última leitura: " : ""}${escapeHtml(label)}</span></div>`;
           })
           .join("");
       }
@@ -1036,8 +1039,11 @@
 
       function selectStation(station, operatorName) {
         selectedStation = station;
-        document.getElementById("refresh-station").disabled = false;
-        document.getElementById("station-refresh-message").textContent = t("Consulta a última leitura publicada para este posto.");
+        const napStation = String(station.source || "").startsWith("nap");
+        document.getElementById("refresh-station").disabled = !napStation;
+        document.getElementById("station-refresh-message").textContent = napStation
+          ? currentLanguage === "en" ? "Requests a new source reading and checks this station." : "Pede uma nova leitura à fonte e confirma se este posto foi atualizado."
+          : currentLanguage === "en" ? "This source does not provide live updates for this station." : "Esta fonte não disponibiliza atualização em tempo real por posto.";
         document
           .getElementById("route-planner")
           ?.classList.remove("route-visible");
@@ -1197,7 +1203,7 @@
         if (!button) return;
         const active =
           selectedStation && favoriteStationIds.has(selectedStation.id);
-        button.disabled = !selectedStation;
+           button.disabled = !selectedStation || !String(selectedStation.source || "").startsWith("nap");
         button.classList.toggle("fav-on", Boolean(active));
         button.textContent = active
           ? "★ Remover dos favoritos"
@@ -2149,9 +2155,10 @@
         // full catalogue in parallel with geolocation and station loading.
         const cachedVehicles = readVehicleCache();
         populateVehicles(cachedVehicles || LOCAL_VEHICLE_FALLBACK);
-        const vehiclePromise = getRows(
-          "vehicle_models",
-          "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
+         const vehiclePromise = getAllRows(
+           "vehicle_models",
+           "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.1&order=make.asc,model.asc,variant.asc",
+           500,
         ).then((rows) => {
           if (rows.length) {
             cacheVehicleRows(rows);
@@ -2261,7 +2268,7 @@
 
       function matchesPower(power) {
         const value = Number(power) || 0;
-        if (selectedPower === "0-50") return value <= 50;
+         if (selectedPower === "0-50") return value > 0 && value <= 50;
         if (selectedPower === "50-150") return value > 50 && value <= 150;
         if (selectedPower === "150-250") return value > 150 && value <= 250;
         if (selectedPower === "250+") return value > 250;
@@ -2297,6 +2304,14 @@
           );
         return station.id;
       }
+      function matchesConnectorFilters(station, stationConnectors, selected) {
+        const teslaOnly = selected.includes("Tesla");
+        const requestedTypes = selected.filter((filter) => filter !== "Tesla");
+        return (!teslaOnly || isOfficialTeslaStation(station)) &&
+          (!requestedTypes.length || requestedTypes.some((filter) =>
+            stationConnectors.some((connector) => connectorCategory(connector.type) === filter)
+          ));
+      }
       function renderStations(zoomToResults = true) {
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
@@ -2316,15 +2331,7 @@
             .filter(Boolean)
             .join(" ")
             .toLocaleLowerCase("pt");
-          const connectorMatch =
-            !connectors.length ||
-            connectors.some((filter) =>
-              filter === "Tesla"
-                ? isOfficialTeslaStation(s)
-                : stationConnectors.some(
-                    (c) => connectorCategory(c.type) === filter,
-                  ),
-            );
+         const connectorMatch = matchesConnectorFilters(s, stationConnectors, connectors);
           const statusMatch =
             !statuses.length || statuses.includes(effectiveStationStatus(s));
           return (
@@ -3281,12 +3288,16 @@
       setupAnalyticsConsent();
       loadRealStations();
       let availabilityRefreshBusy = false;
+      function stationPublicationTime(connectors) {
+        return Math.max(0, ...connectors.map((c) => Date.parse(c.availability_updated_at) || 0));
+      }
       async function refreshAvailability(manual = false) {
         if (
           document.hidden ||
           availabilityRefreshBusy ||
           !allStations.length ||
-          !selectedStation
+          !selectedStation ||
+          !String(selectedStation.source || "").startsWith("nap")
         )
           return;
         availabilityRefreshBusy = true;
@@ -3294,24 +3305,49 @@
         const button = document.getElementById("refresh-station");
         const message = document.getElementById("station-refresh-message");
         button.disabled = true;
-        button.textContent = t("A consultar…");
-        try {
-          const connectors = await loadStationConnectors(station.id, true);
-          if (selectedStation?.id === station.id) {
-            updateStationConnectorPanel(station, connectors);
-            const time = new Date().toLocaleTimeString(currentLanguage === "en" ? "en-GB" : "pt-PT", {hour: "2-digit", minute: "2-digit"});
-            message.textContent = currentLanguage === "en" ? `Checked at ${time}. Source time is shown above.` : `Consultado às ${time}. A hora da fonte está indicada acima.`;
-          }
+         button.textContent = t("A consultar…");
+         try {
+           const previous = stationPublicationTime(connectorMap.get(station.id) || []);
+           let requested = null;
+           if (manual) {
+             const response = await fetchWithTimeout(
+               `${D1_API_WORKER_URL.replace(/\/api\/stations$/, "")}/api/refresh-station`,
+               { method: "POST", headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({ station_id: station.id }), cache: "no-store" }, 10000,
+             );
+             requested = await response.json();
+             if (!response.ok) throw new Error(requested.error || "Atualização indisponível");
+             message.textContent = requested.queued || requested.reason === "already_requested"
+               ? currentLanguage === "en" ? "New MOBI.E reading requested. Checking this station…" : "Nova leitura solicitada à MOBI.E. A verificar este posto…"
+               : currentLanguage === "en" ? "The source has a recent reading. Checking this station…" : "A fonte já tem uma leitura recente. A consultar este posto…";
+           }
+           let connectors = await loadStationConnectors(station.id, true);
+           const baseline = Math.max(previous, Date.parse(requested?.publication_time) || 0);
+           if (manual && (requested.queued || requested.reason === "already_requested")) {
+             for (let attempt = 0; attempt < 6 && stationPublicationTime(connectors) <= baseline; attempt++) {
+               if (document.hidden || selectedStation?.id !== station.id) break;
+               await new Promise((resolve) => setTimeout(resolve, 20000));
+               connectors = await loadStationConnectors(station.id, true);
+             }
+           }
+           if (selectedStation?.id === station.id) {
+             updateStationConnectorPanel(station, connectors);
+             const time = new Date().toLocaleTimeString(currentLanguage === "en" ? "en-GB" : "pt-PT", {hour: "2-digit", minute: "2-digit"});
+             const newer = stationPublicationTime(connectors) > baseline;
+             message.textContent = manual && !newer
+               ? currentLanguage === "en" ? "The source has not published a newer reading for this station. Last reading retained." : "A fonte ainda não publicou uma leitura mais recente para este posto. Última leitura mantida."
+               : currentLanguage === "en" ? `Checked at ${time}. Source time is shown above.` : `Consultado às ${time}. A hora da fonte está indicada acima.`;
+           }
           renderStations(false);
         } catch (error) {
-          console.warn("Não foi possível atualizar a disponibilidade");
-          if (selectedStation?.id === station.id) {
-            message.textContent = t("Não foi possível atualizar. Última leitura mantida.");
+           console.warn("Não foi possível atualizar a disponibilidade", error);
+           if (selectedStation?.id === station.id) {
+             message.textContent = `${t("Não foi possível atualizar. Última leitura mantida.")} ${error.message || ""}`.trim();
             if (manual) notifyUser(message.textContent, {kind: "error"});
           }
         } finally {
           availabilityRefreshBusy = false;
-          button.disabled = !selectedStation;
+          button.disabled = !selectedStation || !String(selectedStation.source || "").startsWith("nap");
           button.textContent = t("↻ Atualizar este posto");
         }
       }
