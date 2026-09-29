@@ -99,6 +99,19 @@ test('vehicle catalogue merges D1 rows with local fallback and keeps D1 values',
   assert.equal(context.vehicleModels.find(v=>v.make==='BMW').id, 'local-2');
 });
 
+test('D1 vehicle catalogue pagination is ordered and uses the requested offset', async () => {
+  let query = '', args = [];
+  const env = {CHARGEVOY_DB:{prepare(sql){query=sql;return {
+    bind(...values){args=values;return this;},
+    async all(){return {results:[{id:'vehicle-501',make:'Renault'}]};},
+  };}}};
+  const response = await apiWorker.fetch(new Request('https://test/api/catalog?table=vehicle_models&active_eq=1&limit=500&offset=500'),env);
+  assert.equal(response.status,200);
+  assert.match(query,/ORDER BY "id" LIMIT 500 OFFSET 500/);
+  assert.deepEqual(args,['1']);
+  assert.equal((await response.json()).rows[0].id,'vehicle-501');
+});
+
 test('D1 export writes every record exactly once across batch boundaries', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'chargevoy-test-'));
   try {

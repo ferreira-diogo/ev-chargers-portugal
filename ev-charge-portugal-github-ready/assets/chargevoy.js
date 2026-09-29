@@ -2153,9 +2153,10 @@
         // full catalogue in parallel with geolocation and station loading.
         const cachedVehicles = readVehicleCache();
         populateVehicles(cachedVehicles || LOCAL_VEHICLE_FALLBACK);
-        const vehiclePromise = getRows(
-          "vehicle_models",
-          "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
+         const vehiclePromise = getAllRows(
+           "vehicle_models",
+           "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.1&order=make.asc,model.asc,variant.asc",
+           500,
         ).then((rows) => {
           if (rows.length) {
             cacheVehicleRows(rows);
