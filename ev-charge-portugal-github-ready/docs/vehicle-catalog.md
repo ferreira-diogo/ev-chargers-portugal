@@ -2,7 +2,7 @@
 
 O site carrega `assets/vehicle-catalog.json` como catálogo estático de modelos BEV, independentemente da D1. As versões com especificações locais e, quando disponível, as versões da D1 continuam a ser apresentadas. Modelos estáticos que já têm uma versão local detalhada não são duplicados no seletor.
 
-Revisto em 2026-09-29. Esta lista identifica **modelos**, não uma versão ou bateria concreta. As entradas estáticas têm potência e capacidade desconhecidas. Quando selecionadas, o simulador e as rotas identificam que utilizam um perfil genérico (60 kWh, 170 Wh/km, 50 kW DC). Não acrescente especificações numéricas sem uma fonte para a versão exata.
+Revisto em 2026-09-29. Esta lista identifica **modelos**, não uma versão ou bateria concreta. As entradas estáticas têm potência e capacidade desconhecidas. Quando uma viatura tem dados incompletos, o simulador e as rotas identificam que utilizam valores genéricos nos campos em falta (60 kWh, 170 Wh/km ou 50 kW DC). Não acrescente especificações numéricas sem uma fonte para a versão exata.
 
 ## Fontes e atribuição
 
