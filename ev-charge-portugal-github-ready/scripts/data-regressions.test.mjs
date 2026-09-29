@@ -87,7 +87,7 @@ test('Tesla-only and connector type filters must both match', () => {
   assert.equal(context.matchesConnectorFilters(ordinary, [{type:'IEC_62196_T2'}], ['Type 2']), true);
 });
 
-test('mobile filter menu closes on search and on its backdrop', async () => {
+test('search collapses the desktop sidebar and map click closes the mobile menu', async () => {
   const elements = new Map();
   const element = (id) => {
     if (!elements.has(id)) {
@@ -96,17 +96,23 @@ test('mobile filter menu closes on search and on its backdrop', async () => {
     }
     return elements.get(id);
   };
-  const context = vm.createContext({document:{getElementById:element}, searchPosition:null, searchLayer:{clearLayers(){}}, renderStations(){}});
+  const context = vm.createContext({document:{getElementById:element, querySelector:element, body:{classList:{contains(){return false;}}}}, window:{innerWidth:1024}, requestAnimationFrame:callback=>callback(), map:{invalidateSize(){}}, searchPosition:null, searchLayer:{clearLayers(){}}, renderStations(){}});
   vm.runInContext(extract('function closeFilterMenu(', 'async function browserPosition('), context);
   context.openFilterMenu();
-  assert.equal(element('filter-backdrop').classList.contains('is-visible'), true);
+  assert.equal(element('.layout').classList.contains('sidebar-collapsed'), false);
   context.closeFilterMenu();
-  assert.equal(element('filter-menu').classList.contains('mobile-open'), false);
+  assert.equal(element('.layout').classList.contains('sidebar-collapsed'), true);
   context.openFilterMenu();
   await context.searchPortugal();
+  assert.equal(element('.layout').classList.contains('sidebar-collapsed'), true);
+  context.window.innerWidth = 390;
+  context.openFilterMenu();
+  assert.equal(element('filter-menu').classList.contains('mobile-open'), true);
+  context.closeFilterMenu();
   assert.equal(element('filter-menu').classList.contains('mobile-open'), false);
-  assert.equal(element('mobile-filters')['aria-expanded'], 'false');
-  assert(web.includes('getElementById("filter-backdrop").addEventListener("click", closeFilterMenu)'));
+  assert(web.includes('map.on("click", closeFilterMenu)'));
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert(!html.includes('id="mobile-filters"'));
 });
 
 test('local vehicle catalogue contains battery EVs and the electric GLC', () => {
