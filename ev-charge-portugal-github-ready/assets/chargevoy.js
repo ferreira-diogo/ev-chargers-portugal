@@ -91,6 +91,7 @@
         consumption_basis: "catalogue-estimate",
       }));
 
+      let staticVehicleModels = [];
       let vehicleModels = [];
       let currentVehicle = null;
       let selectedStationPower = null;
@@ -656,7 +657,7 @@
 
       function populateVehicles(vehicles) {
         const merged = new Map();
-         for (const vehicle of [...LOCAL_VEHICLE_FALLBACK, ...(Array.isArray(vehicles) ? vehicles : [])].filter(
+         for (const vehicle of [...LOCAL_VEHICLE_FALLBACK, ...staticVehicleModels, ...(Array.isArray(vehicles) ? vehicles : [])].filter(
            (item) => (item.max_dc_power_kw == null || Number(item.max_dc_power_kw) > 0) &&
              !(item.make === "Mercedes-Benz" && item.model === "GLC" && /^(300e|350e)$/i.test(String(item.variant || ""))),
          )) {
@@ -693,7 +694,8 @@
               vehicle.make === "Tesla" &&
               vehicle.model === "Model 3",
           ) ||
-          vehicles[0];
+          vehicleModels.find((vehicle) => vehicle.make === "Tesla" && vehicle.model === "Model 3" && vehicle.variant === "RWD") ||
+          vehicleModels[0];
         if (defaultVehicle) brandSelect.value = defaultVehicle.make;
         renderVehicleOptions(brandSelect.value, defaultVehicle?.id);
       }
@@ -788,7 +790,9 @@
         if (!currentVehicle) return;
         try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
          document.getElementById("vehicle-specs").textContent =
-           `🔋 ${currentVehicle.battery_capacity_kwh ?? "—"} kWh · ${currentVehicle.consumption_wh_km ?? "—"} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
+           currentVehicle.data_quality === "model-only"
+             ? "Versão e dados técnicos por confirmar · rota com valores genéricos (60 kWh, 170 Wh/km, DC 50 kW)"
+             : `🔋 ${currentVehicle.battery_capacity_kwh ?? "—"} kWh · ${currentVehicle.consumption_wh_km ?? "—"} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
          renderVehicleImage(currentVehicle);
         sim();
         renderStations(false);
@@ -2151,7 +2155,7 @@
         return `select=${stationFields}&limit=500`;
       }
 
-      const VEHICLE_CACHE_KEY = "chargevoy-vehicle-catalog-v1";
+      const VEHICLE_CACHE_KEY = "chargevoy-vehicle-catalog-v2";
       const STATION_CACHE_KEY = "chargevoy-nearby-stations-v1";
 
       function readVehicleCache() {
@@ -2204,7 +2208,24 @@
         // Put a usable vehicle selection on screen immediately, then refresh the
         // full catalogue in parallel with geolocation and station loading.
         const cachedVehicles = readVehicleCache();
-        populateVehicles(cachedVehicles || LOCAL_VEHICLE_FALLBACK);
+        let remoteVehicleRows = cachedVehicles || [];
+        populateVehicles(remoteVehicleRows);
+        const localModelKeys = new Set(LOCAL_VEHICLE_FALLBACK.map((item) => `${item.make}|${item.model}`.toLocaleLowerCase("pt")));
+        fetch("./assets/vehicle-catalog.json?v=1", { cache: "no-cache" })
+          .then((response) => {
+            if (!response.ok) throw new Error(`Catálogo estático HTTP ${response.status}`);
+            return response.json();
+          })
+          .then((catalogue) => {
+            if (!Array.isArray(catalogue.models) || catalogue.models.length < 100)
+              throw new Error("Catálogo estático incompleto");
+            staticVehicleModels = catalogue.models
+              .filter((item) => !localModelKeys.has(`${item.make}|${item.model}`.toLocaleLowerCase("pt")))
+              .map((item) => ({ ...item, source: "static-model", data_quality: "model-only",
+                battery_capacity_kwh: null, consumption_wh_km: null, max_dc_power_kw: null }));
+            populateVehicles(remoteVehicleRows);
+          })
+          .catch((error) => console.warn("Catálogo estático de veículos indisponível", error));
          const vehiclePromise = getAllRows(
            "vehicle_models",
            "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.1&order=make.asc,model.asc,variant.asc",
@@ -2212,7 +2233,8 @@
         ).then((rows) => {
           if (rows.length) {
             cacheVehicleRows(rows);
-            populateVehicles(rows);
+            remoteVehicleRows = rows;
+            populateVehicles(remoteVehicleRows);
           }
           return rows;
         }).catch((error) => {
@@ -3259,7 +3281,7 @@
                 : suggested.length
                   ? `<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`
                   : "<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>";
-          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
+          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${currentVehicle?.data_quality === "model-only" ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa um perfil genérico de 60 kWh, 170 Wh/km e 50 kW DC; confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
           result.classList.add("show");
           saveRouteToUserHistory();
         } catch (error) {
