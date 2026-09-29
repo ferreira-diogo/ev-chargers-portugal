@@ -23,6 +23,23 @@ jobs:
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
       - name: Install Wrangler
         run: npm install --global wrangler@4
+      - name: Inspect failed preview build errors
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          for build in 3d786126-4eb9-4748-9078-c247ae3063a4 13b90df0-ce14-4260-8916-52d4dcf301b7; do
+            code="$(curl --silent --show-error -o /tmp/build-logs.json -w '%{http_code}' -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/builds/builds/$build/logs")"
+            echo "build=$build logs_http=$code"
+            BUILD_UUID="$build" node - <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync('/tmp/build-logs.json','utf8'));
+          if(!x.success){console.log('Cloudflare API error codes: '+(x.errors||[]).map(e=>e.code).join(','));process.exit(0)}
+          const lines=(x.result?.lines||[]).map(v=>Array.isArray(v)?String(v.at(-1)):String(v));
+          const selected=lines.filter(s=>/error|failed|cannot find|not found|no such file|npm err|✘/i.test(s)).slice(-20);
+          for(const line of selected) console.log(line.replace(/Bearer\s+\S+/gi,'Bearer [redacted]').replace(/[A-Za-z0-9_-]{36,}/g,'[redacted]').slice(0,280));
+          if(!selected.length) console.log('No error lines found; total lines='+lines.length);
+          NODE
+          done
       - name: Inspect account resources safely
         run: |
           set -euo pipefail
