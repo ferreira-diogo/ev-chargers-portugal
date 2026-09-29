@@ -331,7 +331,7 @@ test('the first station page does not wait for a mobile location permission deci
   assert.doesNotMatch(web, /const place = await locationPromise;/);
 });
 
-test('automatic mobile location keeps the national map in view', async () => {
+test('automatic location focuses the map without covering it with a popup', async () => {
   const nodes = new Map();
   const document = {getElementById(id) {
     if (!nodes.has(id)) nodes.set(id, {value:'',textContent:'',disabled:false,classList:{add() {}}});
@@ -345,13 +345,28 @@ test('automatic mobile location keeps the national map in view', async () => {
     map: {setView() {zooms++;}}, renderStations() {},
   });
   vm.runInContext(extract('async function useMyLocation(', 'async function routeToSelectedStation('), context);
-  await context.useMyLocation({silent:true,focusMap:false});
-  assert.equal(zooms,0);
+  await context.useMyLocation({silent:true,focusMap:true,openPopup:false});
+  assert.equal(zooms,1);
   assert.equal(popups,0);
   assert.equal(nodes.get('sort-filter').value,'distance-asc');
   await context.useMyLocation();
-  assert.equal(zooms,1);
+  assert.equal(zooms,2);
   assert.equal(popups,1);
+  assert.match(web, /const locationPromise = useMyLocation\(\{[\s\S]*?focusMap: true,[\s\S]*?openPopup: false/);
+});
+
+test('vehicle photos only match the correct model generation', () => {
+  const context = vm.createContext({});
+  vm.runInContext(`let vehiclePhotoCatalog = new Map([
+    ['tesla|model y', {min_year:2025,max_year:null,image:'./assets/vehicle-images/tesla-model-y.jpg'}],
+    ['hyundai|ioniq 5', {min_year:2021,max_year:2024,image:'./assets/vehicle-images/hyundai-ioniq-5.jpg'}],
+  ]);`, context);
+  vm.runInContext(extract('function vehiclePhotoFor(', 'function renderVehicleImage('), context);
+  assert.equal(context.vehiclePhotoFor({make:'Tesla',model:'Model Y',model_year_start:2024}),null);
+  assert.equal(context.vehiclePhotoFor({make:'Tesla',model:'Model Y',model_year_start:2025}).image,'./assets/vehicle-images/tesla-model-y.jpg');
+  assert.equal(context.vehiclePhotoFor({make:'Hyundai',model:'Ioniq 5',model_year_start:2026}),null);
+  assert.equal(context.vehiclePhotoFor({make:'Renault',model:'5 E-Tech'}),null);
+  assert.doesNotMatch(web, /en\.wikipedia\.org\/w\/api\.php/);
 });
 
 test('restricted mobile storage does not abort the public map script', () => {

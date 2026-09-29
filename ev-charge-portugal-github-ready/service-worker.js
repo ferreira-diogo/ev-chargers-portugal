@@ -1,5 +1,5 @@
-const CACHE_NAME='ev-charge-shell-v27';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=20','./assets/chargevoy.js?v=27','./assets/ceme-cards.json','./assets/vehicle-catalog.json?v=2','./assets/route-corridor.js?v=18'];
+const CACHE_NAME='ev-charge-shell-v28';
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=21','./assets/chargevoy.js?v=28','./assets/ceme-cards.json','./assets/vehicle-catalog.json?v=2','./assets/vehicle-images/credits.json?v=1','./assets/route-corridor.js?v=18'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));

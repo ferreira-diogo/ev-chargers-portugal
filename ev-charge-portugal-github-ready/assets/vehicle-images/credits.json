@@ -1,0 +1,122 @@
+[
+  {
+    "make": "Tesla",
+    "model": "Model 3",
+    "min_year": 2023,
+    "max_year": null,
+    "image": "./assets/vehicle-images/tesla-model-3.jpg",
+    "author": "Ethan Llamas",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2025_Tesla_Model_3_Long_Range_in_Obsidian_Black_Metallic,_front_right.jpg",
+    "commons_file": "File:2025 Tesla Model 3 Long Range in Obsidian Black Metallic, front right.jpg"
+  },
+  {
+    "make": "Tesla",
+    "model": "Model Y",
+    "min_year": 2025,
+    "max_year": null,
+    "image": "./assets/vehicle-images/tesla-model-y.jpg",
+    "author": "LuvsMG481",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2025_Tesla_Model_Y_RWD_front.jpg",
+    "commons_file": "File:2025 Tesla Model Y RWD front.jpg"
+  },
+  {
+    "make": "Renault",
+    "model": "5 E-Tech",
+    "min_year": 2024,
+    "max_year": null,
+    "image": "./assets/vehicle-images/renault-5-e-tech.jpg",
+    "author": "Calreyn88",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2024_Renault_5.jpg",
+    "commons_file": "File:2024 Renault 5.jpg"
+  },
+  {
+    "make": "Renault",
+    "model": "4 E-Tech",
+    "min_year": 2025,
+    "max_year": null,
+    "image": "./assets/vehicle-images/renault-4-e-tech.jpg",
+    "author": "© M 93",
+    "license": "CC BY-SA 3.0 de",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Renault_4_E-Tech_150_Comfort_Range_Techno_%E2%80%93_f_22062025.jpg",
+    "commons_file": "File:Renault 4 E-Tech 150 Comfort Range Techno – f 22062025.jpg"
+  },
+  {
+    "make": "Volkswagen",
+    "model": "ID.3",
+    "min_year": 2023,
+    "max_year": null,
+    "image": "./assets/vehicle-images/volkswagen-id-3.jpg",
+    "author": "© M 93",
+    "license": "CC BY-SA 3.0 de",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
+    "source_url": "https://commons.wikimedia.org/wiki/File:VW_ID.3_Pro_S_%E2%80%93_f_30032025.jpg",
+    "commons_file": "File:VW ID.3 Pro S – f 30032025.jpg"
+  },
+  {
+    "make": "Volkswagen",
+    "model": "ID.4",
+    "min_year": 2021,
+    "max_year": null,
+    "image": "./assets/vehicle-images/volkswagen-id-4.jpg",
+    "author": "MercurySable99",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2023_Volkswagen_ID.4_Pro_S,_front_left,_08-03-2024_(cropped).jpg",
+    "commons_file": "File:2023 Volkswagen ID.4 Pro S, front left, 08-03-2024 (cropped).jpg"
+  },
+  {
+    "make": "Hyundai",
+    "model": "Ioniq 5",
+    "min_year": 2021,
+    "max_year": 2024,
+    "image": "./assets/vehicle-images/hyundai-ioniq-5.jpg",
+    "author": "Elise240SX",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2024_Hyundai_IONIQ_5_Preferred_Long_Range_AWD_in_Cyber_Grey,_front_left,_2024-03-31.jpg",
+    "commons_file": "File:2024 Hyundai IONIQ 5 Preferred Long Range AWD in Cyber Grey, front left, 2024-03-31.jpg"
+  },
+  {
+    "make": "Kia",
+    "model": "EV6",
+    "min_year": 2025,
+    "max_year": null,
+    "image": "./assets/vehicle-images/kia-ev6.jpg",
+    "author": "Alexander-93",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2025_Kia_EV6_GT-Line_Auto_Zuerich_2024_DSC_6468.jpg",
+    "commons_file": "File:2025 Kia EV6 GT-Line Auto Zuerich 2024 DSC 6468.jpg"
+  },
+  {
+    "make": "Mercedes-Benz",
+    "model": "GLC",
+    "min_year": 2026,
+    "max_year": null,
+    "image": "./assets/vehicle-images/mercedes-glc-electric.jpg",
+    "author": "Alexander-93",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_GLC_with_EQ_Technology_IAA_2025_DSC_2090_(cropped).jpg",
+    "commons_file": "File:Mercedes-Benz GLC with EQ Technology IAA 2025 DSC 2090 (cropped).jpg"
+  },
+  {
+    "make": "Volvo",
+    "model": "EX30",
+    "min_year": 2023,
+    "max_year": null,
+    "image": "./assets/vehicle-images/volvo-ex30.jpg",
+    "author": "Kevauto",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2025_Volvo_EX30,_front_left_4.11.25.jpg",
+    "commons_file": "File:2025 Volvo EX30, front left 4.11.25.jpg"
+  }
+]
