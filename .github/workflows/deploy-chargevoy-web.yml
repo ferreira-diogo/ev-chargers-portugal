@@ -16,6 +16,10 @@ on:
       - "ev-charge-portugal-github-ready/worker/**"
       - ".github/workflows/deploy-chargevoy-web.yml"
 
+concurrency:
+  group: chargevoy-web-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -74,6 +78,7 @@ jobs:
           grep -q '^id = "' wrangler-deploy.toml
           ! grep -q 'PLACEHOLDER' wrangler-deploy.toml
       - name: Deploy static Worker with D1 + KV
+        id: deploy
         working-directory: ev-charge-portugal-github-ready
         run: wrangler deploy --config wrangler-deploy.toml
       - name: Verify deployed static site and national snapshot
@@ -92,3 +97,7 @@ jobs:
           done
           echo "::error::Static site validation failed; roll back the Worker deployment to the previous version"
           exit 1
+      - name: Restore previous web Worker on failed verification
+        if: ${{ failure() && steps.deploy.outcome == 'success' }}
+        working-directory: ev-charge-portugal-github-ready
+        run: wrangler rollback --config wrangler-deploy.toml --message "Automated rollback after failed static site verification"

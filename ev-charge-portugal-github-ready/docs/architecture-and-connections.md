@@ -37,5 +37,5 @@ flowchart TD
 ## Operação e rollback
 
 - Publicar o site e o Worker a partir de um commit validado; testar mapa nacional, filtros, rota e disponibilidade após a publicação.
-- Para reverter, repor os ficheiros web e o Worker API do commit anterior e confirmar o snapshot estático e a leitura do KV. Não há migração de esquema ou escrita na D1 neste conjunto de alterações.
+- Os workflows de deploy tentam repor automaticamente a versão anterior do respetivo Worker se a verificação após a publicação falhar. Confirmar depois o snapshot estático e a leitura do KV. Não há migração de esquema neste conjunto de alterações.
 - Métricas a acompanhar: idade da publicação MOBI.E, sucesso da GitHub Action, pedidos e leituras KV, pedidos Worker, linhas lidas e escritas D1.

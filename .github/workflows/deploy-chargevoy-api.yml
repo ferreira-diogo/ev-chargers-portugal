@@ -10,6 +10,10 @@ on:
       - "ev-charge-portugal-github-ready/scripts/refresh-nap-availability-kv.mjs"
       - ".github/workflows/deploy-chargevoy-api.yml"
 
+concurrency:
+  group: chargevoy-api-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -48,6 +52,7 @@ jobs:
           DB_ID="$DB_ID" KV_ID="$KV_ID" node -e 'const fs=require("fs");const f="wrangler-api-deploy.toml";let t=fs.readFileSync(f,"utf8");t=t.replace("# database_id = \"ID_DA_BASE_D1\"",`database_id = "${process.env.DB_ID}"`).replace("# id = \"ID_DO_KV_AVAILABILITY\"",`id = "${process.env.KV_ID}"`);if(!t.includes(`database_id = "${process.env.DB_ID}"`)||!t.includes(`id = "${process.env.KV_ID}"`))process.exit(3);fs.writeFileSync(f,t)'
           ! grep -q 'PLACEHOLDER\|ID_DA_BASE_D1\|ID_DO_KV_AVAILABILITY' wrangler-api-deploy.toml
       - name: Deploy API Worker only
+        id: deploy
         working-directory: ev-charge-portugal-github-ready
         run: wrangler deploy --config wrangler-api-deploy.toml
       - name: Verify deployed Worker bindings
@@ -74,3 +79,7 @@ jobs:
           done
           echo "::error::API Worker is not serving its KV availability path"
           exit 1
+      - name: Restore previous API Worker on failed verification
+        if: ${{ failure() && steps.deploy.outcome == 'success' }}
+        working-directory: ev-charge-portugal-github-ready
+        run: wrangler rollback --config wrangler-api-deploy.toml --message "Automated rollback after failed KV API verification"
