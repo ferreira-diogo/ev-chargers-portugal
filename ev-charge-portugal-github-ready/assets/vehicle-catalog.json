@@ -1,127 +1,559 @@
 {
   "reviewed_at": "2026-09-29",
-  "description": "Modelos 100% elétricos; nomes da gama, sem especificações de uma versão específica. Dados técnicos desconhecidos ficam nulos.",
-  "attribution": "Seleção editorial ChargeVoy, com referência ao projeto Gaia EVDB (CC BY-SA 4.0) e gamas dos fabricantes.",
+  "source_commit": "173aaf5ae7720631f5dd9b50084afdac0ef41b24",
+  "description": "Versões BEV com especificações atribuídas; restantes modelos permitem ajustar os dados do carro.",
+  "attribution": "Gaia EVDB (CC BY-SA 4.0) e seleção editorial ChargeVoy.",
   "models": [
     {
-      "id": "catalog-caa5a6c4632b",
+      "id": "gaia-abarth-500e-scorpionissima-2025",
       "make": "Abarth",
       "model": "500e",
-      "variant": "Versão por confirmar",
+      "variant": "Abarth 500e Scorpionissima 42 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 37.3,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 85,
+      "wltp_range_km": 265,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.abarth.at/content/dam/abarth/at/pricelist/def-naming/june-26/Preisliste-Abarth-500e-2026-04-15.pdf",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-9700f90d519d",
-      "make": "Audi",
-      "model": "Q4 e-tron",
-      "variant": "Versão por confirmar",
+      "id": "gaia-abarth-500e-turismo-2025",
+      "make": "Abarth",
+      "model": "500e",
+      "variant": "Abarth 500e Turismo 42 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 37.3,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 85,
+      "wltp_range_km": 265,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.abarth.at/content/dam/abarth/at/pricelist/def-naming/june-26/Preisliste-Abarth-500e-2026-04-15.pdf",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-d0421e08b536",
-      "make": "Audi",
-      "model": "Q4 Sportback e-tron",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-bfe38f280990",
-      "make": "Audi",
-      "model": "Q6 e-tron",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-541fb8f87c4e",
-      "make": "Audi",
-      "model": "A6 Sportback e-tron",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-3aff7cf6c56e",
+      "id": "gaia-audi-a6-avant-e-tron-performance-2025",
       "make": "Audi",
       "model": "A6 Avant e-tron",
-      "variant": "Versão por confirmar",
+      "variant": "performance",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 165,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 269,
+      "wltp_range_km": 720,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/neuwagen/a6-e-tron/a6-avant-e-tron/",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-5685aefc83b0",
+      "id": "gaia-audi-a6-avant-e-tron-quattro-2025",
+      "make": "Audi",
+      "model": "A6 Avant e-tron",
+      "variant": "quattro",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 169,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 269,
+      "wltp_range_km": 685,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/neuwagen/a6-e-tron/a6-avant-e-tron/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-s6-avant-e-tron-2025",
+      "make": "Audi",
+      "model": "A6 Avant e-tron",
+      "variant": "S6",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 179,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 269,
+      "wltp_range_km": 647,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/neuwagen/a6-e-tron/s6-avant-e-tron/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-a6-sportback-e-tron-performance-2025",
+      "make": "Audi",
+      "model": "A6 Sportback e-tron",
+      "variant": "performance",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 158,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 269,
+      "wltp_range_km": 756,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/neuwagen/a6-e-tron/a6-sportback-e-tron/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-a6-sportback-e-tron-quattro-2025",
+      "make": "Audi",
+      "model": "A6 Sportback e-tron",
+      "variant": "quattro",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 166,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 269,
+      "wltp_range_km": 716,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/neuwagen/a6-e-tron/a6-sportback-e-tron/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-s6-sportback-e-tron-2025",
+      "make": "Audi",
+      "model": "A6 Sportback e-tron",
+      "variant": "S6 Sportback e-tron",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 171,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 269,
+      "wltp_range_km": 675,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/neuwagen/a6-e-tron/s6-sportback-e-tron/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-e-tron-gt-quattro-2024",
       "make": "Audi",
       "model": "e-tron GT",
-      "variant": "Versão por confirmar",
+      "variant": "quattro",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 84.0,
+      "consumption_wh_km": 220,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 488,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.com/en/models/e-tron-gt.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-df8068967a45",
-      "make": "BMW",
-      "model": "iX1",
-      "variant": "Versão por confirmar",
+      "id": "gaia-audi-q4-e-tron-40-2024",
+      "make": "Audi",
+      "model": "Q4 e-tron",
+      "variant": "40",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 547,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/brand/de/neuwagen/q-modelle/audi-q4-e-tron/technische-daten.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-e270e2e4394b",
-      "make": "BMW",
-      "model": "iX2",
-      "variant": "Versão por confirmar",
+      "id": "gaia-audi-q4-e-tron-45-quattro-2024",
+      "make": "Audi",
+      "model": "Q4 e-tron",
+      "variant": "45 quattro",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 208,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 522,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/brand/de/neuwagen/q-modelle/audi-q4-e-tron/technische-daten.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-e35edd01292e",
-      "make": "BMW",
-      "model": "iX3",
-      "variant": "Versão por confirmar",
+      "id": "gaia-audi-q4-sportback-e-tron-40-2024",
+      "make": "Audi",
+      "model": "Q4 Sportback e-tron",
+      "variant": "40",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 188,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 567,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/brand/de/neuwagen/q-modelle/audi-q4-sportback-e-tron/technische-daten.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-ba3b8f5e14ce",
+      "id": "gaia-audi-q6-e-tron-base-2025",
+      "make": "Audi",
+      "model": "Q6 e-tron",
+      "variant": "Base",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 75.8,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 225,
+      "wltp_range_km": 529,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/audi/audi-q6-e-tron/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-q6-e-tron-performance-2025",
+      "make": "Audi",
+      "model": "Q6 e-tron",
+      "variant": "Performance",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 188,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 641,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/audi/audi-q6-e-tron/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-q6-e-tron-quattro-2024",
+      "make": "Audi",
+      "model": "Q6 e-tron",
+      "variant": "quattro",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 198,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 625,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/brand/de/neuwagen/q-modelle/audi-q6-e-tron/technische-daten.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-q6-e-tron-rwd-2024",
+      "make": "Audi",
+      "model": "Q6 e-tron",
+      "variant": "RWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 192,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 641,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/brand/de/neuwagen/q-modelle/audi-q6-e-tron/technische-daten.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-sq6-e-tron-2024",
+      "make": "Audi",
+      "model": "Q6 e-tron",
+      "variant": "SQ6",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 207,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 598,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/brand/de/neuwagen/q-modelle/audi-sq6-e-tron.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-sq6-e-tron-2025",
+      "make": "Audi",
+      "model": "Q6 e-tron",
+      "variant": "SQ6",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 215,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 598,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/audi/audi-q6-e-tron/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-audi-q6-sportback-e-tron-rwd-2024",
+      "make": "Audi",
+      "model": "Q6 Sportback e-tron",
+      "variant": "RWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 94.9,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 641,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.audi.de/de/brand/de/neuwagen/q-modelle/audi-q6-sportback-e-tron.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i4-edrive35-2024",
       "make": "BMW",
       "model": "i4",
-      "variant": "Versão por confirmar",
+      "variant": "eDrive35",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 66.0,
+      "consumption_wh_km": 169,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 180,
+      "wltp_range_km": 483,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/all-models/i-series/i4/2024/bmw-4-series-gran-coupe-inspire.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-94e96a407311",
+      "id": "gaia-bmw-i4-edrive35-2025",
       "make": "BMW",
-      "model": "i5",
-      "variant": "Versão por confirmar",
+      "model": "i4",
+      "variant": "eDrive35",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 66.0,
+      "consumption_wh_km": 165,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 180,
+      "wltp_range_km": 490,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/neufahrzeuge/bmw-i/i4/technische-daten.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i4-edrive40-2024",
+      "make": "BMW",
+      "model": "i4",
+      "variant": "eDrive40",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 80.7,
+      "consumption_wh_km": 168,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 205,
+      "wltp_range_km": 590,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/all-models/i-series/i4/2024/bmw-4-series-gran-coupe-inspire.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i4-edrive40-2025",
+      "make": "BMW",
+      "model": "i4",
+      "variant": "eDrive40",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 80.7,
+      "consumption_wh_km": 168,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 205,
+      "wltp_range_km": 590,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/all-models/i-series/i4/2025/bmw-4-series-gran-coupe-inspire.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i5-edrive40-2024",
+      "make": "BMW",
+      "model": "i5",
+      "variant": "eDrive40",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 81.2,
+      "consumption_wh_km": 164,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 205,
+      "wltp_range_km": 582,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/all-models/5-series/sedan/2023/bmw-5-series-sedan-overview.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i5-edrive40-2025",
+      "make": "BMW",
+      "model": "i5",
+      "variant": "eDrive40",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 81.2,
+      "consumption_wh_km": 163,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 205,
+      "wltp_range_km": 585,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/all-models/5-series/sedan/2023/bmw-5-series-sedan-overview.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i5-edrive40-2026",
+      "make": "BMW",
+      "model": "i5",
+      "variant": "eDrive40",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 81.2,
+      "consumption_wh_km": 162,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 205,
+      "wltp_range_km": 590,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/all-models/5-series/sedan/2025/bmw-5-series-sedan-overview.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i5-m60-xdrive-2024",
+      "make": "BMW",
+      "model": "i5",
+      "variant": "M60 xDrive",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 81.2,
+      "consumption_wh_km": 193,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 205,
+      "wltp_range_km": 516,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/all-models/m-series/i5-m60-xdrive/2023/highlights.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i5-m60-xdrive-2025",
+      "make": "BMW",
+      "model": "i5",
+      "variant": "M60 xDrive",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 81.2,
+      "consumption_wh_km": 191,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 205,
+      "wltp_range_km": 519,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/all-models/m-series/i5-m60-xdrive/2023/highlights.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i5-touring-m60-xdrive-2025",
+      "make": "BMW",
+      "model": "i5",
+      "variant": "Touring M60 xDrive",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 81.2,
+      "consumption_wh_km": 198,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 205,
+      "wltp_range_km": 506,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw-m.com/en/all-models/overview-m-and-m-performance/bmw-i5-m60-xdrive-touring/2024/bmw-i5-m60-xdrive-touring.html",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-f265298d54a2",
@@ -134,44 +566,251 @@
       ]
     },
     {
-      "id": "catalog-202b9247b38c",
+      "id": "gaia-bmw-i7-edrive50-2024",
       "make": "BMW",
       "model": "i7",
-      "variant": "Versão por confirmar",
+      "variant": "eDrive50",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 101.7,
+      "consumption_wh_km": 210,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 195,
+      "wltp_range_km": 625,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/models/i7.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-b390714aff11",
+      "id": "gaia-bmw-i7-edrive50-2026",
+      "make": "BMW",
+      "model": "i7",
+      "variant": "eDrive50",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 101.7,
+      "consumption_wh_km": 206,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 195,
+      "wltp_range_km": 635,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/models/i7.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i7-m70-xdrive-2024",
+      "make": "BMW",
+      "model": "i7",
+      "variant": "M70 xDrive",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 101.7,
+      "consumption_wh_km": 225,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 195,
+      "wltp_range_km": 560,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/models/i7.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-i7-m70-xdrive-2026",
+      "make": "BMW",
+      "model": "i7",
+      "variant": "M70 xDrive",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 101.7,
+      "consumption_wh_km": 221,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 195,
+      "wltp_range_km": 570,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.com/en/models/i7.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-ix-xdrive40-2024",
       "make": "BMW",
       "model": "iX",
-      "variant": "Versão por confirmar",
+      "variant": "xDrive40",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 71.0,
+      "consumption_wh_km": 225,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 425,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/neufahrzeuge/bmw-i/ix-bmw-ix-uebersicht.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-da8a1e061637",
-      "make": "BYD",
-      "model": "Dolphin Surf",
-      "variant": "Versão por confirmar",
+      "id": "gaia-bmw-ix-xdrive50-2026",
+      "make": "BMW",
+      "model": "iX",
+      "variant": "xDrive50",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 109.0,
+      "consumption_wh_km": 218,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 210,
+      "wltp_range_km": 655,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/neufahrzeuge/bmw-i/bmw-ix/technische-daten.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-a83a0dde239c",
-      "make": "BYD",
-      "model": "Dolphin",
-      "variant": "Versão por confirmar",
+      "id": "gaia-bmw-ix1-edrive20-2025",
+      "make": "BMW",
+      "model": "iX1",
+      "variant": "eDrive20",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 64.7,
+      "consumption_wh_km": 178,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 475,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/neufahrzeuge/x/ix1/technische-daten.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-ix1-xdrive30-2024",
+      "make": "BMW",
+      "model": "iX1",
+      "variant": "xDrive30",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 64.7,
+      "consumption_wh_km": 194,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 439,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/neufahrzeuge/x/ix1/technische-daten.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-ix1-xdrive30-2025",
+      "make": "BMW",
+      "model": "iX1",
+      "variant": "xDrive30",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 64.7,
+      "consumption_wh_km": 194,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 439,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/neufahrzeuge/x/ix1/technische-daten.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-ix2-edrive20-2025",
+      "make": "BMW",
+      "model": "iX2",
+      "variant": "eDrive20",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 64.8,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 478,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/modelle/x-modelle/ix2/ueberblick.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-ix2-xdrive30-2025",
+      "make": "BMW",
+      "model": "iX2",
+      "variant": "xDrive30",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 64.8,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 449,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/modelle/x-modelle/ix2/ueberblick.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-ix3-50-xdrive-2026",
+      "make": "BMW",
+      "model": "iX3",
+      "variant": "50 xDrive",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 108.7,
+      "consumption_wh_km": 178,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 400,
+      "wltp_range_km": 742,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/neufahrzeuge/x/ix3.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-bmw-ix3-2024",
+      "make": "BMW",
+      "model": "iX3",
+      "variant": "Base",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 80.0,
+      "consumption_wh_km": 212,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 461,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.bmw.de/de/neufahrzeuge/x/ix3/technische-daten.html",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-76e0585d0e8c",
@@ -184,9 +823,123 @@
       ]
     },
     {
-      "id": "catalog-d1dd17d6c177",
+      "id": "gaia-byd-atto-3-extended-range-2024",
       "make": "BYD",
       "model": "Atto 3",
+      "variant": "Extended Range",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 60.0,
+      "consumption_wh_km": 162,
+      "max_ac_power_kw": 7,
+      "max_dc_power_kw": 88,
+      "wltp_range_km": 420,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/atto3/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-atto-3-extended-range-2025",
+      "make": "BYD",
+      "model": "Atto 3",
+      "variant": "Extended Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 60.0,
+      "consumption_wh_km": 160,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 88,
+      "wltp_range_km": 420,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/atto3/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-dolphin-active-2024",
+      "make": "BYD",
+      "model": "Dolphin",
+      "variant": "Active",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 44.9,
+      "consumption_wh_km": 155,
+      "max_ac_power_kw": 7,
+      "max_dc_power_kw": 60,
+      "wltp_range_km": 340,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/dolphin",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-dolphin-comfort-2024",
+      "make": "BYD",
+      "model": "Dolphin",
+      "variant": "Comfort",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 60.4,
+      "consumption_wh_km": 165,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 88,
+      "wltp_range_km": 427,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/dolphin",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-dolphin-design-2024",
+      "make": "BYD",
+      "model": "Dolphin",
+      "variant": "Design",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 60.4,
+      "consumption_wh_km": 165,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 88,
+      "wltp_range_km": 427,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/dolphin",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-dolphin-design-2025",
+      "make": "BYD",
+      "model": "Dolphin",
+      "variant": "Design",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 60.4,
+      "consumption_wh_km": 161,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 95,
+      "wltp_range_km": 435,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/dolphin",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "catalog-da8a1e061637",
+      "make": "BYD",
+      "model": "Dolphin Surf",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -194,14 +947,147 @@
       ]
     },
     {
-      "id": "catalog-61e32b164321",
+      "id": "catalog-67f9edb5a4b1",
       "make": "BYD",
-      "model": "Seal",
+      "model": "Han",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
         "Type 2"
       ]
+    },
+    {
+      "id": "gaia-byd-seal-design-2024",
+      "make": "BYD",
+      "model": "Seal",
+      "variant": "Design",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 82.5,
+      "consumption_wh_km": 168,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 570,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/seal/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-seal-design-rwd-2025",
+      "make": "BYD",
+      "model": "Seal",
+      "variant": "Design RWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 82.5,
+      "consumption_wh_km": 167,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 580,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/car/seal.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-seal-design-rwd-2026",
+      "make": "BYD",
+      "model": "Seal",
+      "variant": "Design RWD",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 82.5,
+      "consumption_wh_km": 163,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 590,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/car/seal.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-seal-excellence-2024",
+      "make": "BYD",
+      "model": "Seal",
+      "variant": "Excellence",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 82.5,
+      "consumption_wh_km": 183,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 520,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/seal/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-seal-excellence-2025",
+      "make": "BYD",
+      "model": "Seal",
+      "variant": "Excellence",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 82.5,
+      "consumption_wh_km": 180,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 530,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/seal/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-seal-u-comfort-2025",
+      "make": "BYD",
+      "model": "Seal U",
+      "variant": "Comfort",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 71.8,
+      "consumption_wh_km": 171,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 500,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/car/seal-u.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-byd-seal-u-design-2025",
+      "make": "BYD",
+      "model": "Seal U",
+      "variant": "Design",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 87.0,
+      "consumption_wh_km": 167,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 620,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.byd.com/eu/car/seal-u.html",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-a35ff60b882d",
@@ -224,16 +1110,6 @@
       ]
     },
     {
-      "id": "catalog-67f9edb5a4b1",
-      "make": "BYD",
-      "model": "Han",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
       "id": "catalog-3cbc50036211",
       "make": "BYD",
       "model": "Tang",
@@ -244,14 +1120,90 @@
       ]
     },
     {
-      "id": "catalog-a5484a799c76",
+      "id": "gaia-cadillac-lyriq-luxury-awd-2025",
+      "make": "Cadillac",
+      "model": "Lyriq",
+      "variant": "Lyriq Luxury AWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 95.0,
+      "consumption_wh_km": 245,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 190,
+      "wltp_range_km": 530,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cadillaceurope.com/de-de/lyriq",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-cadillac-lyriq-sport-awd-2025",
+      "make": "Cadillac",
+      "model": "Lyriq",
+      "variant": "Lyriq Sport AWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 95.0,
+      "consumption_wh_km": 245,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 190,
+      "wltp_range_km": 530,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cadillaceurope.com/de-de/lyriq",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-cadillac-lyriq-v-awd-2026",
+      "make": "Cadillac",
+      "model": "Lyriq",
+      "variant": "Lyriq-V AWD",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 95.0,
+      "consumption_wh_km": 260,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 190,
+      "wltp_range_km": 460,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cadillaceurope.com/de-de/lyriq",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "catalog-4d6824dadf2c",
       "make": "Citroën",
-      "model": "ë-C3",
+      "model": "ë-Berlingo",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
         "Type 2"
       ]
+    },
+    {
+      "id": "gaia-citroen-e-c3-you-2025",
+      "make": "Citroën",
+      "model": "ë-C3",
+      "variant": "You 44kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 44.0,
+      "consumption_wh_km": 165,
+      "max_ac_power_kw": 7.4,
+      "max_dc_power_kw": 100,
+      "wltp_range_km": 326,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.citroen.de/modelle/e-c3.html",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-d3c6bf854951",
@@ -284,44 +1236,194 @@
       ]
     },
     {
-      "id": "catalog-4d6824dadf2c",
-      "make": "Citroën",
-      "model": "ë-Berlingo",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-da82960c3659",
+      "id": "gaia-cupra-born-58-kwh-2024",
       "make": "Cupra",
       "model": "Born",
-      "variant": "Versão por confirmar",
+      "variant": "58kWh",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 58.0,
+      "consumption_wh_km": 178,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 120,
+      "wltp_range_km": 424,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cupraofficial.com/models/born",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-61d4447da846",
+      "id": "gaia-cupra-born-59-kwh-2025",
+      "make": "Cupra",
+      "model": "Born",
+      "variant": "59kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 59.0,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 434,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cupraofficial.com/models/born",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-cupra-born-79-kwh-2025",
+      "make": "Cupra",
+      "model": "Born",
+      "variant": "79kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 79.0,
+      "consumption_wh_km": 172,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 185,
+      "wltp_range_km": 580,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cupraofficial.com/models/born",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-cupra-born-e-boost-2024",
+      "make": "Cupra",
+      "model": "Born",
+      "variant": "e-Boost 77kWh",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 182,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 548,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cupraofficial.com/models/born/e-boost",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-cupra-born-vz-2024",
+      "make": "Cupra",
+      "model": "Born",
+      "variant": "VZ 77kWh",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 193,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 511,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cupraofficial.com/models/born/vz",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-cupra-born-vz-2025",
+      "make": "Cupra",
+      "model": "Born",
+      "variant": "VZ 79kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 79.0,
+      "consumption_wh_km": 190,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 185,
+      "wltp_range_km": 520,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cupraofficial.com/models/born/vz",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-cupra-tavascan-endurance-2025",
       "make": "Cupra",
       "model": "Tavascan",
-      "variant": "Versão por confirmar",
+      "variant": "Endurance",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 180,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 550,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cupraofficial.com/models/tavascan",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-005a6bda9809",
-      "make": "Dacia",
-      "model": "Spring",
-      "variant": "Versão por confirmar",
+      "id": "gaia-cupra-tavascan-vz-2025",
+      "make": "Cupra",
+      "model": "Tavascan",
+      "variant": "VZ",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 190,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 520,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.cupraofficial.com/models/tavascan",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-dacia-spring-expression-2025",
+      "make": "Dacia",
+      "model": "Spring",
+      "variant": "Expression",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 26.8,
+      "consumption_wh_km": 155,
+      "max_ac_power_kw": 7,
+      "max_dc_power_kw": 30,
+      "wltp_range_km": 225,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.dacia.de/modelle/spring.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-dacia-spring-extreme-2025",
+      "make": "Dacia",
+      "model": "Spring",
+      "variant": "Extreme",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 26.8,
+      "consumption_wh_km": 155,
+      "max_ac_power_kw": 7,
+      "max_dc_power_kw": 30,
+      "wltp_range_km": 225,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.dacia.de/modelle/spring.html",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-8cb3d3163976",
@@ -354,9 +1456,9 @@
       ]
     },
     {
-      "id": "catalog-d98dc7a487d8",
+      "id": "catalog-ae0fda168463",
       "make": "Ford",
-      "model": "Puma Gen-E",
+      "model": "Capri",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -374,16 +1476,6 @@
       ]
     },
     {
-      "id": "catalog-ae0fda168463",
-      "make": "Ford",
-      "model": "Capri",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
       "id": "catalog-6623964b0ef7",
       "make": "Ford",
       "model": "Mustang Mach-E",
@@ -394,74 +1486,470 @@
       ]
     },
     {
-      "id": "catalog-848e5166dd3a",
+      "id": "catalog-d98dc7a487d8",
+      "make": "Ford",
+      "model": "Puma Gen-E",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "gaia-genesis-electrified-g80-awd-2024",
+      "make": "Genesis",
+      "model": "Electrified G80",
+      "variant": "AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 87.2,
+      "consumption_wh_km": 210,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 520,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.genesis.com/de/de/models/electrified-g80/specifications.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-genesis-gv60-sport-plus-awd-2024",
+      "make": "Genesis",
+      "model": "GV60",
+      "variant": "Sport Plus AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.4,
+      "consumption_wh_km": 205,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 235,
+      "wltp_range_km": 466,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.genesis.com/de/de/models/gv60/specifications.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-honda-e-ny1-68kwh-2024",
       "make": "Honda",
       "model": "e:Ny1",
-      "variant": "Versão por confirmar",
+      "variant": "68.8 kWh FWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 68.8,
+      "consumption_wh_km": 202,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 78,
+      "wltp_range_km": 412,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.honda.co.uk/cars/new/e-ny1/specifications.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-2cf697ac72a2",
+      "id": "gaia-honda-e-ny1-68kwh-2025",
+      "make": "Honda",
+      "model": "e:Ny1",
+      "variant": "68.8 kWh FWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 68.8,
+      "consumption_wh_km": 200,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 78,
+      "wltp_range_km": 412,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.honda.de/cars/new/e-ny1/specifications.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-inster-long-range-49-2025",
       "make": "Hyundai",
-      "model": "Inster",
-      "variant": "Versão por confirmar",
+      "model": "INSTER",
+      "variant": "Long Range 49 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 49.0,
+      "consumption_wh_km": 160,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 120,
+      "wltp_range_km": 370,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/de/de/modelle/inster/antriebe.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-10679073ef01",
+      "id": "gaia-hyundai-inster-standard-42-2025",
       "make": "Hyundai",
-      "model": "Kona Electric",
-      "variant": "Versão por confirmar",
+      "model": "INSTER",
+      "variant": "Standard 42 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 42.0,
+      "consumption_wh_km": 155,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 120,
+      "wltp_range_km": 327,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/de/de/modelle/inster/antriebe.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-26c0c828d2bd",
+      "id": "gaia-hyundai-ioniq-5-long-range-awd-2024",
       "make": "Hyundai",
       "model": "Ioniq 5",
-      "variant": "Versão por confirmar",
+      "variant": "Long Range AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 72.6,
+      "consumption_wh_km": 173,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 238,
+      "wltp_range_km": 481,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/worldwide/en/eco/ioniq5/specifications",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-98dca198db4c",
+      "id": "gaia-hyundai-ioniq-5-long-range-awd-2026",
+      "make": "Hyundai",
+      "model": "Ioniq 5",
+      "variant": "Long Range AWD",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 177,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 240,
+      "wltp_range_km": 498,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/worldwide/en/eco/ioniq5/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-5-n-2025",
+      "make": "Hyundai",
+      "model": "Ioniq 5",
+      "variant": "N",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 84.0,
+      "consumption_wh_km": 227,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 240,
+      "wltp_range_km": 448,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/worldwide/en/eco/ioniq5-n",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-5-standard-range-rwd-2026",
+      "make": "Hyundai",
+      "model": "Ioniq 5",
+      "variant": "Standard Range RWD",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 58.0,
+      "consumption_wh_km": 170,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 220,
+      "wltp_range_km": 394,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundaiusa.com/us/en/vehicles/ioniq-5/compare-specs",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-6-84kwh-awd-2026",
       "make": "Hyundai",
       "model": "Ioniq 6",
-      "variant": "Versão por confirmar",
+      "variant": "84 kWh AWD",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 80.0,
+      "consumption_wh_km": 154,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 263,
+      "wltp_range_km": 650,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/worldwide/en/eco/ioniq6/specifications",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-9500a93744dd",
+      "id": "gaia-hyundai-ioniq-6-84kwh-rwd-2026",
       "make": "Hyundai",
-      "model": "Ioniq 9",
-      "variant": "Versão por confirmar",
+      "model": "Ioniq 6",
+      "variant": "84 kWh RWD",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 80.0,
+      "consumption_wh_km": 147,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 263,
+      "wltp_range_km": 680,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.news/eu/models/electrified/ioniq-6/press-kit/the-new-hyundai-ioniq-6.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-e1b08b804acd",
+      "id": "gaia-hyundai-ioniq-6-long-range-awd-2024",
+      "make": "Hyundai",
+      "model": "Ioniq 6",
+      "variant": "Long Range AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 74.0,
+      "consumption_wh_km": 180,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 233,
+      "wltp_range_km": 519,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/worldwide/en/eco/ioniq-6",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-6-long-range-awd-2025",
+      "make": "Hyundai",
+      "model": "Ioniq 6",
+      "variant": "Long Range AWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 74.0,
+      "consumption_wh_km": 180,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 233,
+      "wltp_range_km": 519,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.de/modelle/ioniq-6",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-6-long-range-rwd-2024",
+      "make": "Hyundai",
+      "model": "Ioniq 6",
+      "variant": "Long Range RWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 74.0,
+      "consumption_wh_km": 152,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 233,
+      "wltp_range_km": 614,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/worldwide/en/eco/ioniq-6",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-6-long-range-rwd-2025",
+      "make": "Hyundai",
+      "model": "Ioniq 6",
+      "variant": "Long Range RWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 74.0,
+      "consumption_wh_km": 152,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 233,
+      "wltp_range_km": 614,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.de/modelle/ioniq-6",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-6-standard-range-rwd-2025",
+      "make": "Hyundai",
+      "model": "Ioniq 6",
+      "variant": "Standard Range RWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 53.0,
+      "consumption_wh_km": 150,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 180,
+      "wltp_range_km": 446,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.de/modelle/ioniq-6",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-9-awd-performance-2025",
+      "make": "Hyundai",
+      "model": "IONIQ 9",
+      "variant": "AWD Performance",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 110.3,
+      "consumption_wh_km": 242,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 350,
+      "wltp_range_km": 540,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/eu/en/models/ioniq9.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-9-long-range-awd-2025",
+      "make": "Hyundai",
+      "model": "IONIQ 9",
+      "variant": "Long Range AWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 110.3,
+      "consumption_wh_km": 230,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 350,
+      "wltp_range_km": 570,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/eu/en/models/ioniq9.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-ioniq-9-long-range-rwd-2025",
+      "make": "Hyundai",
+      "model": "IONIQ 9",
+      "variant": "Long Range RWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 110.3,
+      "consumption_wh_km": 212,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 350,
+      "wltp_range_km": 620,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/eu/en/models/ioniq9.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-kona-electric-long-range-2025",
+      "make": "Hyundai",
+      "model": "Kona Electric",
+      "variant": "Long Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 65.4,
+      "consumption_wh_km": 165,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 102,
+      "wltp_range_km": 514,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/worldwide/en/eco/kona-electric",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-hyundai-kona-electric-standard-range-2025",
+      "make": "Hyundai",
+      "model": "Kona Electric",
+      "variant": "Standard Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 48.4,
+      "consumption_wh_km": 162,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 102,
+      "wltp_range_km": 377,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.hyundai.com/worldwide/en/eco/kona-electric",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-jaguar-i-pace-ev400-2024",
+      "make": "Jaguar",
+      "model": "I-PACE",
+      "variant": "EV400",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 84.7,
+      "consumption_wh_km": 235,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 100,
+      "wltp_range_km": 470,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.jaguar.com/jaguar-range/i-pace/index.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-jeep-avenger-electric-2025",
       "make": "Jeep",
       "model": "Avenger",
-      "variant": "Versão por confirmar",
+      "variant": "Electric",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 51.0,
+      "consumption_wh_km": 155,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 100,
+      "wltp_range_km": 404,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/jeep/avenger/",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-8e1deb98b245",
@@ -474,14 +1962,80 @@
       ]
     },
     {
-      "id": "catalog-18299b740d44",
+      "id": "gaia-kia-ev3-long-range-2024",
       "make": "Kia",
       "model": "EV3",
-      "variant": "Versão por confirmar",
+      "variant": "Long Range",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 81.4,
+      "consumption_wh_km": 170,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 128,
+      "wltp_range_km": 600,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/worldwide/vehicles/ev3/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-kia-ev3-long-range-2025",
+      "make": "Kia",
+      "model": "EV3",
+      "variant": "Long Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 81.4,
+      "consumption_wh_km": 168,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 128,
+      "wltp_range_km": 605,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/worldwide/vehicles/ev3/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-kia-ev3-standard-range-2024",
+      "make": "Kia",
+      "model": "EV3",
+      "variant": "Standard Range",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 58.3,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 102,
+      "wltp_range_km": 410,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/worldwide/vehicles/ev3/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-kia-ev3-standard-range-2025",
+      "make": "Kia",
+      "model": "EV3",
+      "variant": "Standard Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 58.3,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 102,
+      "wltp_range_km": 410,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/de/modelle/ev3/entdecken/",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-3e40f0f11636",
@@ -514,39 +2068,104 @@
       ]
     },
     {
-      "id": "catalog-3eabff0d9b49",
+      "id": "gaia-kia-ev6-gt-2024",
       "make": "Kia",
       "model": "EV6",
-      "variant": "Versão por confirmar",
+      "variant": "GT",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 74.0,
+      "consumption_wh_km": 230,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 240,
+      "wltp_range_km": 424,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/worldwide/vehicles/ev6-gt/",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-b4d6d0ff345c",
+      "id": "gaia-kia-ev6-long-range-awd-2024",
       "make": "Kia",
-      "model": "EV9",
-      "variant": "Versão por confirmar",
+      "model": "EV6",
+      "variant": "Long Range AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 74.0,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 240,
+      "wltp_range_km": 506,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/worldwide/vehicles/ev6/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-kia-ev6-long-range-rwd-2024",
+      "make": "Kia",
+      "model": "EV6",
+      "variant": "Long Range RWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 74.0,
+      "consumption_wh_km": 182,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 240,
+      "wltp_range_km": 528,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/worldwide/vehicles/ev6/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-kia-ev9-air-rwd-2025",
+      "make": "Kia",
+      "model": "EV9",
+      "variant": "Air RWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 99.8,
+      "consumption_wh_km": 225,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 233,
+      "wltp_range_km": 563,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/de/modelle/ev9/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-kia-ev9-gt-awd-2025",
+      "make": "Kia",
+      "model": "EV9",
+      "variant": "GT AWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 99.8,
+      "consumption_wh_km": 270,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 233,
+      "wltp_range_km": 490,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.kia.com/de/modelle/ev9/",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-0d37ccc15e8b",
       "make": "Kia",
       "model": "Niro EV",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-e88e4f5606a8",
-      "make": "Leapmotor",
-      "model": "T03",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -564,9 +2183,9 @@
       ]
     },
     {
-      "id": "catalog-5f0d2fd7e8db",
-      "make": "Lexus",
-      "model": "RZ",
+      "id": "catalog-e88e4f5606a8",
+      "make": "Leapmotor",
+      "model": "T03",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -574,9 +2193,304 @@
       ]
     },
     {
+      "id": "gaia-lexus-rz-350e-2025",
+      "make": "Lexus",
+      "model": "RZ",
+      "variant": "350e",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 72.0,
+      "consumption_wh_km": 170,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 559,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lexus.de/modelle/rz/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-lexus-rz-450e-2024",
+      "make": "Lexus",
+      "model": "RZ",
+      "variant": "450e",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 71.4,
+      "consumption_wh_km": 215,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 440,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lexus.eu/models/rz/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-lexus-rz-500e-2025",
+      "make": "Lexus",
+      "model": "RZ",
+      "variant": "500e",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 72.0,
+      "consumption_wh_km": 193,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 493,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lexus.de/modelle/rz/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-lexus-rz-550e-f-sport-2025",
+      "make": "Lexus",
+      "model": "RZ",
+      "variant": "550e F SPORT",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 72.0,
+      "consumption_wh_km": 205,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 462,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lexus.de/modelle/rz/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-lotus-eletre-base-2025",
+      "make": "Lotus",
+      "model": "Eletre",
+      "variant": "Base",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 109.0,
+      "consumption_wh_km": 182,
+      "max_ac_power_kw": 22.0,
+      "max_dc_power_kw": 350,
+      "wltp_range_km": 600,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lotuscars.com/en-DE/eletre",
+      "consumption_basis": "WLTP"
+    },
+    {
+      "id": "gaia-lotus-eletre-s-2025",
+      "make": "Lotus",
+      "model": "Eletre",
+      "variant": "S",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 109.0,
+      "consumption_wh_km": 223,
+      "max_ac_power_kw": 22.0,
+      "max_dc_power_kw": 350,
+      "wltp_range_km": 490,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lotuscars.com/en-DE/eletre",
+      "consumption_basis": "WLTP"
+    },
+    {
+      "id": "gaia-lotus-emeya-base-2025",
+      "make": "Lotus",
+      "model": "Emeya",
+      "variant": "Base",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 102.0,
+      "consumption_wh_km": 167,
+      "max_ac_power_kw": 22.0,
+      "max_dc_power_kw": 350,
+      "wltp_range_km": 610,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lotuscars.com/en-GB/emeya",
+      "consumption_basis": "WLTP"
+    },
+    {
+      "id": "gaia-lotus-emeya-r-2025",
+      "make": "Lotus",
+      "model": "Emeya",
+      "variant": "R",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 102.0,
+      "consumption_wh_km": 176,
+      "max_ac_power_kw": 22.0,
+      "max_dc_power_kw": 350,
+      "wltp_range_km": 580,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lotuscars.com/en-GB/emeya",
+      "consumption_basis": "WLTP"
+    },
+    {
+      "id": "gaia-lotus-emeya-s-2025",
+      "make": "Lotus",
+      "model": "Emeya",
+      "variant": "S",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 102.0,
+      "consumption_wh_km": 171,
+      "max_ac_power_kw": 22.0,
+      "max_dc_power_kw": 350,
+      "wltp_range_km": 595,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lotuscars.com/en-GB/emeya",
+      "consumption_basis": "WLTP"
+    },
+    {
+      "id": "gaia-lynk-co-02-core-2025",
+      "make": "Lynk & Co",
+      "model": "02",
+      "variant": "02 Core",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 62.0,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 435,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lynkco.com/de-de/cars/02",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-lynk-co-02-more-2025",
+      "make": "Lynk & Co",
+      "model": "02",
+      "variant": "02 More",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 62.0,
+      "consumption_wh_km": 190,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 445,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.lynkco.com/de-de/cars/02",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-maserati-granturismo-folgore-2025",
+      "make": "Maserati",
+      "model": "GranTurismo Folgore",
+      "variant": "Base",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 92.5,
+      "consumption_wh_km": 250,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 450,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.maserati.com/de/de/models/granturismo-folgore",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-maserati-grecale-folgore-2025",
+      "make": "Maserati",
+      "model": "Grecale Folgore",
+      "variant": "Base",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 105.0,
+      "consumption_wh_km": 250,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 501,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.maserati.com/de/de/models/grecale-folgore",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-maxus-euniq-6-bev-2025",
+      "make": "MAXUS",
+      "model": "Euniq 6",
+      "variant": "BEV",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 67.0,
+      "consumption_wh_km": 215,
+      "max_ac_power_kw": 7.2,
+      "max_dc_power_kw": 75.0,
+      "wltp_range_km": 354,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.carwow.de/maxus/euniq-6",
+      "consumption_basis": "WLTP"
+    },
+    {
       "id": "catalog-c2cfdad5fe57",
       "make": "Mazda",
       "model": "6e",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "gaia-mazda-mx-30-35kwh-2024",
+      "make": "Mazda",
+      "model": "MX-30",
+      "variant": "35.5 kWh FWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 35.5,
+      "consumption_wh_km": 215,
+      "max_ac_power_kw": 6.6,
+      "max_dc_power_kw": 50,
+      "wltp_range_km": 200,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mazda.de/neuwagen/mx-30/spezifikationen/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "catalog-d604406b9fce",
+      "make": "Mercedes-Benz",
+      "model": "CLA Electric",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -604,44 +2518,175 @@
       ]
     },
     {
-      "id": "catalog-d604406b9fce",
-      "make": "Mercedes-Benz",
-      "model": "CLA Electric",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-d6a779fdea36",
-      "make": "Mercedes-Benz",
-      "model": "GLC",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-7e2ab926b09a",
+      "id": "gaia-mercedes-benz-eqe-350-plus-2026",
       "make": "Mercedes-Benz",
       "model": "EQE",
-      "variant": "Versão por confirmar",
+      "variant": "350+",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 94.0,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 180,
+      "wltp_range_km": 665,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-benz.de/passengercars/mercedes-benz-cars/models/eqe/sedan/explore.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-e11521189a55",
+      "id": "gaia-mercedes-benz-eqe-350-plus-2024",
       "make": "Mercedes-Benz",
-      "model": "EQE SUV",
-      "variant": "Versão por confirmar",
+      "model": "EQE",
+      "variant": "Mercedes-Benz EQE 350+ (2024)",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 90.6,
+      "consumption_wh_km": 205,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 639,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-benz.com/en/vehicles/passenger-cars/eqe/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-mercedes-benz-eqe-350-plus-2025",
+      "make": "Mercedes-Benz",
+      "model": "EQE",
+      "variant": "Mercedes-Benz EQE 350+ (2025)",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 90.6,
+      "consumption_wh_km": 203,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 643,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-benz.com/en/vehicles/passenger-cars/eqe/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-mercedes-benz-eqe-43-amg-4matic-2024",
+      "make": "Mercedes-Benz",
+      "model": "EQE",
+      "variant": "Mercedes-Benz EQE 43 AMG 4MATIC (2024)",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 90.6,
+      "consumption_wh_km": 245,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 529,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-amg.com/en/vehicles/eqe-43-4matic.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-mercedes-benz-eqe-43-amg-4matic-2025",
+      "make": "Mercedes-Benz",
+      "model": "EQE",
+      "variant": "Mercedes-Benz EQE 43 AMG 4MATIC (2025)",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 90.6,
+      "consumption_wh_km": 243,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 533,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-amg.com/en/vehicles/eqe-43-4matic.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-mercedes-benz-eqe-suv-350-4matic-2024",
+      "make": "Mercedes-Benz",
+      "model": "EQE SUV",
+      "variant": "Mercedes-Benz EQE SUV 350 4MATIC (2024)",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 90.6,
+      "consumption_wh_km": 232,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 547,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-benz.com/en/vehicles/passenger-cars/eqe-suv/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-mercedes-benz-eqe-suv-350-plus-2024",
+      "make": "Mercedes-Benz",
+      "model": "EQE SUV",
+      "variant": "Mercedes-Benz EQE SUV 350+ (2024)",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 90.6,
+      "consumption_wh_km": 218,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 590,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-benz.com/en/vehicles/passenger-cars/eqe-suv/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-mercedes-benz-eqe-suv-350-plus-2025",
+      "make": "Mercedes-Benz",
+      "model": "EQE SUV",
+      "variant": "Mercedes-Benz EQE SUV 350+ (2025)",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 90.6,
+      "consumption_wh_km": 218,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 590,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-benz.de/passengercars/mercedes-benz-cars/models/eqe-suv/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-mercedes-benz-eqe-suv-500-4matic-2024",
+      "make": "Mercedes-Benz",
+      "model": "EQE SUV",
+      "variant": "Mercedes-Benz EQE SUV 500 4MATIC (2024)",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 90.6,
+      "consumption_wh_km": 261,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 479,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-benz.com/en/vehicles/passenger-cars/eqe-suv/",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-84114fe25ee7",
@@ -654,9 +2699,28 @@
       ]
     },
     {
-      "id": "catalog-244df1f72751",
+      "id": "gaia-mercedes-benz-eqs-suv-450-plus-2025",
       "make": "Mercedes-Benz",
       "model": "EQS SUV",
+      "variant": "450+",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 118.0,
+      "consumption_wh_km": 235,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 200,
+      "wltp_range_km": 660,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.mercedes-benz.de/passengercars/mercedes-benz-cars/models/eqs-suv/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "catalog-e4de82684dae",
+      "make": "Mercedes-Benz",
+      "model": "EQV",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -664,9 +2728,9 @@
       ]
     },
     {
-      "id": "catalog-e4de82684dae",
+      "id": "catalog-d6a779fdea36",
       "make": "Mercedes-Benz",
-      "model": "EQV",
+      "model": "GLC",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -694,9 +2758,9 @@
       ]
     },
     {
-      "id": "catalog-771d951cd1c2",
+      "id": "catalog-d080276009fa",
       "make": "Mini",
-      "model": "Cooper Electric",
+      "model": "Aceman",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -704,9 +2768,9 @@
       ]
     },
     {
-      "id": "catalog-d080276009fa",
+      "id": "catalog-771d951cd1c2",
       "make": "Mini",
-      "model": "Aceman",
+      "model": "Cooper Electric",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -724,14 +2788,327 @@
       ]
     },
     {
-      "id": "catalog-49155bbbd6a8",
-      "make": "Nissan",
-      "model": "Ariya",
-      "variant": "Versão por confirmar",
+      "id": "gaia-nio-el6-100kwh-2025",
+      "make": "NIO",
+      "model": "EL6",
+      "variant": "100 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 96,
+      "consumption_wh_km": 235,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 505,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/de_DE/el6",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nio-el6-75kwh-2025",
+      "make": "NIO",
+      "model": "EL6",
+      "variant": "75 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 72,
+      "consumption_wh_km": 230,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 410,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/de_DE/el6",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nio-el8-100kwh-2025",
+      "make": "NIO",
+      "model": "EL8",
+      "variant": "100 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 96,
+      "consumption_wh_km": 260,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 465,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/de_DE/el8",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nio-et5-100kwh-2025",
+      "make": "NIO",
+      "model": "ET5",
+      "variant": "100 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 96,
+      "consumption_wh_km": 202,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 590,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/de_DE/et5",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nio-et5-75kwh-2025",
+      "make": "NIO",
+      "model": "ET5",
+      "variant": "75 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 72,
+      "consumption_wh_km": 205,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 456,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/de_DE/et5",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nio-et5-touring-100kwh-2025",
+      "make": "NIO",
+      "model": "ET5 Touring",
+      "variant": "100 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 96,
+      "consumption_wh_km": 196,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 580,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/et5-touring",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nio-et5-touring-75kwh-2025",
+      "make": "NIO",
+      "model": "ET5 Touring",
+      "variant": "75 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 72,
+      "consumption_wh_km": 190,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 456,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/et5-touring",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nio-et7-100kwh-2025",
+      "make": "NIO",
+      "model": "ET7",
+      "variant": "100 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 96,
+      "consumption_wh_km": 220,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 580,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/de_DE/et7",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nio-et7-75kwh-2025",
+      "make": "NIO",
+      "model": "ET7",
+      "variant": "75 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 72,
+      "consumption_wh_km": 225,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 140,
+      "wltp_range_km": 445,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nio.com/de_DE/et7",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nissan-ariya-63-kwh-fwd-2024",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "63 kWh FWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 63.0,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 450,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nissan-cdn.net/content/dam/Nissan/nissan_europe/ariya/specifications/ariya-specifications.pdf",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nissan-ariya-63-kwh-fwd-2025",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "63 kWh FWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 63.0,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 450,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nissan.de/fahrzeuge/neue-fahrzeuge/ariya.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nissan-ariya-87-kwh-fwd-2024",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "87 kWh FWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 87.0,
+      "consumption_wh_km": 198,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 520,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nissan-cdn.net/content/dam/Nissan/nissan_europe/ariya/specifications/ariya-specifications.pdf",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nissan-ariya-87-kwh-fwd-2025",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "87 kWh FWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 87.0,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 533,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nissan.de/fahrzeuge/neue-fahrzeuge/ariya.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nissan-ariya-e-4orce-63kwh-2024",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "e-4ORCE 63 kWh",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 63.0,
+      "consumption_wh_km": 202,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 410,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nissan-cdn.net/content/dam/Nissan/nissan_europe/ariya/specifications/ariya-specifications.pdf",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nissan-ariya-e-4orce-63kwh-2025",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "e-4ORCE 63kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 63.0,
+      "consumption_wh_km": 212,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 360,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nissan.de/fahrzeuge/neuwagen/ariya.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nissan-ariya-e-4orce-87kwh-2024",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "e-4ORCE 87kWh",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 87.0,
+      "consumption_wh_km": 215,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 490,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nissan.de/fahrzeuge/neuwagen/ariya.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-nissan-ariya-e-4orce-87kwh-2025",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "e-4ORCE 87kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 87.0,
+      "consumption_wh_km": 213,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 493,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.nissan.de/fahrzeuge/neuwagen/ariya.html",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-a4eb7e1c093b",
@@ -754,9 +3131,57 @@
       ]
     },
     {
+      "id": "gaia-opel-astra-e-gs-58kwh-2026",
+      "make": "Opel",
+      "model": "Astra Electric",
+      "variant": "GS 58 kWh",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 55.4,
+      "consumption_wh_km": 161,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 100,
+      "wltp_range_km": 454,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.opel.de/modelle/astra/astra-electric.html",
+      "consumption_basis": "real-world"
+    },
+    {
       "id": "catalog-76c7fb99377c",
       "make": "Opel",
       "model": "Corsa Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "gaia-opel-frontera-electric-44-2025",
+      "make": "Opel",
+      "model": "Frontera Electric",
+      "variant": "Electric 44 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 44.0,
+      "consumption_wh_km": 180,
+      "max_ac_power_kw": 7.4,
+      "max_dc_power_kw": 100,
+      "wltp_range_km": 305,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.media.stellantis.com/em-en/opel/press/world-premiere-of-new-opel-frontera-all-electric-opel-suv-available-for-around-29-000-in-germany",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "catalog-256f3c9c137f",
+      "make": "Opel",
+      "model": "Grandland Electric",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -774,29 +3199,9 @@
       ]
     },
     {
-      "id": "catalog-c7605cb32030",
-      "make": "Opel",
-      "model": "Astra Electric",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-673a8838d2df",
-      "make": "Opel",
-      "model": "Frontera Electric",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-256f3c9c137f",
-      "make": "Opel",
-      "model": "Grandland Electric",
+      "id": "catalog-90f92e8d3261",
+      "make": "Peugeot",
+      "model": "E-2008",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -814,9 +3219,9 @@
       ]
     },
     {
-      "id": "catalog-90f92e8d3261",
+      "id": "catalog-9608347af180",
       "make": "Peugeot",
-      "model": "E-2008",
+      "model": "E-3008",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -824,29 +3229,28 @@
       ]
     },
     {
-      "id": "catalog-f943b4571137",
+      "id": "gaia-peugeot-e-308-allure-54-2025",
       "make": "Peugeot",
-      "model": "E-308",
-      "variant": "Versão por confirmar",
+      "model": "e-308",
+      "variant": "Allure 54 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 51.0,
+      "consumption_wh_km": 170,
+      "max_ac_power_kw": 11.0,
+      "max_dc_power_kw": 100,
+      "wltp_range_km": 420,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.peugeot.de/modelle/e-308.html",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-35197ec05d79",
       "make": "Peugeot",
       "model": "E-308 SW",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-9608347af180",
-      "make": "Peugeot",
-      "model": "E-3008",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -924,34 +3328,194 @@
       ]
     },
     {
-      "id": "catalog-1f743d8c33c8",
+      "id": "gaia-porsche-macan-electric-4s-2024",
       "make": "Porsche",
       "model": "Macan Electric",
-      "variant": "Versão por confirmar",
+      "variant": "4S",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 95.0,
+      "consumption_wh_km": 240,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 578,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/germany/models/macan/macan-models/",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-8c6ad068995b",
+      "id": "gaia-porsche-macan-electric-4-2025",
+      "make": "Porsche",
+      "model": "Macan Electric",
+      "variant": "Macan 4",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 95.0,
+      "consumption_wh_km": 230,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 610,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/germany/models/macan/macan-electric-models/macan-4-electric/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-porsche-macan-electric-rwd-2024",
+      "make": "Porsche",
+      "model": "Macan Electric",
+      "variant": "Macan Electric",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 95.0,
+      "consumption_wh_km": 225,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 613,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/germany/models/macan/macan-models/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-porsche-macan-electric-turbo-2025",
+      "make": "Porsche",
+      "model": "Macan Electric",
+      "variant": "Macan Turbo",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 95.0,
+      "consumption_wh_km": 245,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 589,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/germany/models/macan/macan-electric-models/macan-turbo-electric/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-porsche-macan-electric-rwd-2025",
+      "make": "Porsche",
+      "model": "Macan Electric",
+      "variant": "Porsche Macan Electric (Base RWD) (2025)",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 95.0,
+      "consumption_wh_km": 222,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 616,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/germany/models/macan/macan-models/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-porsche-taycan-4s-performance-battery-plus-2024",
       "make": "Porsche",
       "model": "Taycan",
-      "variant": "Versão por confirmar",
+      "variant": "4S Performance Battery Plus",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 93.4,
+      "consumption_wh_km": 245,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 568,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/germany/models/taycan/taycan-models/taycan-4s/",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-6071224c1587",
-      "make": "Renault",
-      "model": "Twingo E-Tech",
-      "variant": "Versão por confirmar",
+      "id": "gaia-porsche-taycan-gts-2025",
+      "make": "Porsche",
+      "model": "Taycan",
+      "variant": "GTS",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 93.4,
+      "consumption_wh_km": 212,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 320,
+      "wltp_range_km": 535,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/usa/models/taycan/taycan-models/taycan-gts/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-porsche-taycan-rwd-performance-battery-plus-2024",
+      "make": "Porsche",
+      "model": "Taycan",
+      "variant": "RWD Performance Battery Plus",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 93.4,
+      "consumption_wh_km": 215,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 678,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/germany/models/taycan/taycan-models/taycan/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-porsche-taycan-turbo-performance-battery-plus-2024",
+      "make": "Porsche",
+      "model": "Taycan",
+      "variant": "Turbo Performance Battery Plus",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 93.4,
+      "consumption_wh_km": 258,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 270,
+      "wltp_range_km": 543,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/germany/models/taycan/taycan-models/taycan-turbo/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-porsche-taycan-gts-sport-turismo-2025",
+      "make": "Porsche",
+      "model": "Taycan Sport Turismo",
+      "variant": "GTS Sport Turismo",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 93.4,
+      "consumption_wh_km": 222,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 320,
+      "wltp_range_km": 504,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.porsche.com/international/models/taycan/taycan-sport-turismo-models/taycan-gts-sport-turismo/",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-cd2ea716127f",
@@ -994,6 +3558,54 @@
       ]
     },
     {
+      "id": "gaia-scenic-e-tech-comfort-range-2025",
+      "make": "Renault",
+      "model": "Scenic E-Tech Electric",
+      "variant": "Scenic E-Tech Comfort Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 60.0,
+      "consumption_wh_km": 173,
+      "max_ac_power_kw": 22.0,
+      "max_dc_power_kw": 130,
+      "wltp_range_km": 430,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.renault.fr/vehicules-electriques/scenic-e-tech-electric.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-scenic-e-tech-long-range-2025",
+      "make": "Renault",
+      "model": "Scenic E-Tech Electric",
+      "variant": "Scenic E-Tech Long Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 87.0,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 22.0,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 625,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.renault.fr/vehicules-electriques/scenic-e-tech-electric.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "catalog-6071224c1587",
+      "make": "Renault",
+      "model": "Twingo E-Tech",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
       "id": "catalog-a2e5b0441fa3",
       "make": "Smart",
       "model": "#1",
@@ -1024,44 +3636,156 @@
       ]
     },
     {
-      "id": "catalog-0545bb53d37d",
+      "id": "gaia-subaru-solterra-awd-2024",
       "make": "Subaru",
       "model": "Solterra",
-      "variant": "Versão por confirmar",
+      "variant": "AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 71.4,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 6.6,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 465,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.subaru.com/solterra.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-66b2843807ec",
+      "id": "gaia-suzuki-e-vitara-49-fwd-2025",
       "make": "Suzuki",
       "model": "e Vitara",
-      "variant": "Versão por confirmar",
+      "variant": "49 kWh FWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 49.0,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 100,
+      "wltp_range_km": 346,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.carwow.de/suzuki/e-vitara",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-ac80709bf671",
+      "id": "gaia-suzuki-e-vitara-61-allgrip-awd-2025",
+      "make": "Suzuki",
+      "model": "e Vitara",
+      "variant": "61 kWh AllGrip-e AWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 61.0,
+      "consumption_wh_km": 190,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 412,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.carwow.de/suzuki/e-vitara",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-suzuki-e-vitara-61-fwd-2025",
+      "make": "Suzuki",
+      "model": "e Vitara",
+      "variant": "61 kWh FWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 61.0,
+      "consumption_wh_km": 180,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 428,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.carwow.de/suzuki/e-vitara",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-tesla-model-3-long-range-awd-2024",
       "make": "Tesla",
       "model": "Model 3",
-      "variant": "Versão por confirmar",
+      "variant": "Long Range AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 78.1,
+      "consumption_wh_km": 162,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 250,
+      "wltp_range_km": 629,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.tesla.com/model3/design",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-078cfbe91bdd",
+      "id": "gaia-tesla-model-3-premium-awd-2026",
       "make": "Tesla",
-      "model": "Model Y",
-      "variant": "Versão por confirmar",
+      "model": "Model 3",
+      "variant": "Premium AWD",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 79.0,
+      "consumption_wh_km": 142,
+      "max_ac_power_kw": 11.5,
+      "max_dc_power_kw": 250,
+      "wltp_range_km": 691,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.caranddriver.com/tesla/model-3",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-tesla-model-3-rwd-2024",
+      "make": "Tesla",
+      "model": "Model 3",
+      "variant": "RWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 60.0,
+      "consumption_wh_km": 150,
+      "max_ac_power_kw": 7.6,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 513,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.fastned.nl/en/support/charge-speed-reference-list",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-tesla-model-3-rwd-2025",
+      "make": "Tesla",
+      "model": "Model 3",
+      "variant": "RWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 60.0,
+      "consumption_wh_km": 145,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 554,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.fastned.nl/en/support/charge-speed-reference-list",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-d2cb35403d27",
@@ -1084,19 +3808,275 @@
       ]
     },
     {
-      "id": "catalog-c96bcc3ab8e8",
+      "id": "gaia-tesla-model-y-long-range-awd-2024",
+      "make": "Tesla",
+      "model": "Model Y",
+      "variant": "Long Range AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 75.0,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 250,
+      "wltp_range_km": 565,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.tesla.com/model-y/design",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-tesla-model-y-long-range-awd-2025",
+      "make": "Tesla",
+      "model": "Model Y",
+      "variant": "Long Range AWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 79.0,
+      "consumption_wh_km": 182,
+      "max_ac_power_kw": 11.5,
+      "max_dc_power_kw": 250,
+      "wltp_range_km": 565,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.tesla.com/model-y/design",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-tesla-model-y-performance-2024",
+      "make": "Tesla",
+      "model": "Model Y",
+      "variant": "Performance",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 75.0,
+      "consumption_wh_km": 198,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 250,
+      "wltp_range_km": 514,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.tesla.com/model-y/design",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-tesla-model-y-performance-2025",
+      "make": "Tesla",
+      "model": "Model Y",
+      "variant": "Performance",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 75.0,
+      "consumption_wh_km": 198,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 250,
+      "wltp_range_km": 514,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.tesla.com/model-y/design",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-tesla-model-y-rwd-2024",
+      "make": "Tesla",
+      "model": "Model Y",
+      "variant": "RWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 60.0,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 455,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.tesla.com/model-y/design",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-tesla-model-y-rwd-2025",
+      "make": "Tesla",
+      "model": "Model Y",
+      "variant": "RWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 62.0,
+      "consumption_wh_km": 170,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 210,
+      "wltp_range_km": 475,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.zapmap.com/ev-guides/model-charging/tesla-model-y",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-togg-t10f-long-range-rwd-2025",
+      "make": "TOGG",
+      "model": "T10F",
+      "variant": "Long Range RWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 85.0,
+      "consumption_wh_km": 171,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 180,
+      "wltp_range_km": 623,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://trumore-cdn.togg.cloud/eu_catalog/T10F_eu_catalog_en.pdf",
+      "consumption_basis": "WLTP"
+    },
+    {
+      "id": "gaia-toyota-bz4x-awd-2024",
       "make": "Toyota",
       "model": "bZ4X",
-      "variant": "Versão por confirmar",
+      "variant": "AWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 71.4,
+      "consumption_wh_km": 193,
+      "max_ac_power_kw": 6.6,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 470,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.toyota.com/bz4x/features/",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-2a70bceae916",
+      "id": "gaia-toyota-bz4x-awd-2025",
+      "make": "Toyota",
+      "model": "bZ4X",
+      "variant": "AWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 71.4,
+      "consumption_wh_km": 190,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 485,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.toyota.de/modelle/bz4x",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-toyota-bz4x-fwd-2024",
+      "make": "Toyota",
+      "model": "bZ4X",
+      "variant": "FWD",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 71.4,
+      "consumption_wh_km": 178,
+      "max_ac_power_kw": 6.6,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 516,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.toyota.com/bz4x/features/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-toyota-bz4x-fwd-2025",
+      "make": "Toyota",
+      "model": "bZ4X",
+      "variant": "FWD",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 71.4,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 531,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.toyota.de/modelle/bz4x",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-toyota-c-hr-plus-77kwh-2025",
       "make": "Toyota",
       "model": "C-HR+",
+      "variant": "77 kWh",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 74.6,
+      "consumption_wh_km": 190,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 430,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://evkx.net/models/toyota/c-hrplus/c-hrplus_77_kwh/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-vinfast-vf8-plus-2025",
+      "make": "VinFast",
+      "model": "VF8",
+      "variant": "Plus",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 82,
+      "consumption_wh_km": 235,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 447,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.caranddriver.com/vinfast/vf8",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-vinfast-vf9-plus-2025",
+      "make": "VinFast",
+      "model": "VF9",
+      "variant": "Plus",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 118,
+      "consumption_wh_km": 262,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 594,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.caranddriver.com/vinfast/vf9",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "catalog-f2211fbf0b2b",
+      "make": "Volkswagen",
+      "model": "ID. Buzz",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -1104,44 +4084,327 @@
       ]
     },
     {
-      "id": "catalog-3193940bca8c",
+      "id": "gaia-volkswagen-id3-gtx-2025",
       "make": "Volkswagen",
       "model": "ID.3",
-      "variant": "Versão por confirmar",
+      "variant": "GTX",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 185,
+      "wltp_range_km": 601,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.de/de/elektrofahrzeuge/id3/id3-gtx.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-adafcefcc891",
+      "id": "gaia-volkswagen-id3-pro-s-2024",
+      "make": "Volkswagen",
+      "model": "ID.3",
+      "variant": "Pro S",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 558,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-3.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id3-pro-s-2025",
+      "make": "Volkswagen",
+      "model": "ID.3",
+      "variant": "Pro S",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 173,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 565,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.de/de/modelle/id3.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id4-gtx-2025",
       "make": "Volkswagen",
       "model": "ID.4",
-      "variant": "Versão por confirmar",
+      "variant": "GTX",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 510,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.de/de/elektrofahrzeuge/id4/id4-gtx.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-143d155788ce",
+      "id": "gaia-volkswagen-id4-pro-2024",
+      "make": "Volkswagen",
+      "model": "ID.4",
+      "variant": "Pro",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 520,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-4.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id4-pro-2025",
+      "make": "Volkswagen",
+      "model": "ID.4",
+      "variant": "Pro",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 192,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 528,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-4.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id4-pro-4motion-2024",
+      "make": "Volkswagen",
+      "model": "ID.4",
+      "variant": "Pro 4Motion",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 203,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 497,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-4.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id4-pro-4motion-2025",
+      "make": "Volkswagen",
+      "model": "ID.4",
+      "variant": "Pro 4MOTION",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 203,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 498,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-4.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id5-gtx-2025",
       "make": "Volkswagen",
       "model": "ID.5",
-      "variant": "Versão por confirmar",
+      "variant": "GTX",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 198,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 480,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-5.html",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-cfc4568abae6",
+      "id": "gaia-volkswagen-id5-pro-2024",
       "make": "Volkswagen",
-      "model": "ID.7",
-      "variant": "Versão por confirmar",
+      "model": "ID.5",
+      "variant": "Pro",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 520,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-5.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id5-pro-2025",
+      "make": "Volkswagen",
+      "model": "ID.5",
+      "variant": "Pro",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 182,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 530,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.de/de/modelle/id5.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id5-pro-4motion-2024",
+      "make": "Volkswagen",
+      "model": "ID.5",
+      "variant": "Pro 4MOTION",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 198,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 490,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-5.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id7-gtx-2024",
+      "make": "Volkswagen",
+      "model": "ID.7",
+      "variant": "GTX",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 86.0,
+      "consumption_wh_km": 182,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 200,
+      "wltp_range_km": 595,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-7.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id7-pro-2024",
+      "make": "Volkswagen",
+      "model": "ID.7",
+      "variant": "Pro",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 162,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 621,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-7.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id7-pro-2026",
+      "make": "Volkswagen",
+      "model": "ID.7",
+      "variant": "Pro",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 161,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 628,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-7.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id7-pro-s-2024",
+      "make": "Volkswagen",
+      "model": "ID.7",
+      "variant": "Pro S",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 86.0,
+      "consumption_wh_km": 164,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 200,
+      "wltp_range_km": 700,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-7.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volkswagen-id7-pro-s-2026",
+      "make": "Volkswagen",
+      "model": "ID.7",
+      "variant": "Pro S",
+      "model_year_start": 2026,
+      "battery_capacity_kwh": 86.0,
+      "consumption_wh_km": 163,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 200,
+      "wltp_range_km": 709,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.com/en/models/id-7.html",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-db65c0a8e1de",
@@ -1154,9 +4417,66 @@
       ]
     },
     {
-      "id": "catalog-f2211fbf0b2b",
+      "id": "gaia-volkswagen-id-buzz-pro-long-2024",
       "make": "Volkswagen",
-      "model": "ID. Buzz",
+      "model": "ID.Buzz",
+      "variant": "Pro Long",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 220,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 170,
+      "wltp_range_km": 461,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volkswagen.de/de/modelle-und-konfigurator/id-buzz.html",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volvo-ec40-single-motor-2024",
+      "make": "Volvo",
+      "model": "EC40",
+      "variant": "Single Motor",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 69.0,
+      "consumption_wh_km": 171,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 530,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volvocars.com/uk/v/cars/ec40/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volvo-ec40-twin-motor-2024",
+      "make": "Volvo",
+      "model": "EC40",
+      "variant": "Twin Motor",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 78.0,
+      "consumption_wh_km": 203,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 487,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volvocars.com/uk/v/cars/ec40/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "catalog-09210d5eee3f",
+      "make": "Volvo",
+      "model": "ES90",
       "variant": "Versão por confirmar",
       "connector_types": [
         "CCS2",
@@ -1174,44 +4494,99 @@
       ]
     },
     {
-      "id": "catalog-00e93f7a1cb7",
+      "id": "gaia-volvo-ex40-single-motor-2024",
       "make": "Volvo",
       "model": "EX40",
-      "variant": "Versão por confirmar",
+      "variant": "Single Motor",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 69.0,
+      "consumption_wh_km": 182,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 475,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volvocars.com/uk/v/cars/ex40/specifications",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-50a80c52df24",
+      "id": "gaia-volvo-ex40-single-motor-extended-range-2025",
       "make": "Volvo",
-      "model": "EC40",
-      "variant": "Versão por confirmar",
+      "model": "EX40",
+      "variant": "Single Motor Extended Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 75.0,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 200,
+      "wltp_range_km": 515,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volvocars.com/de/cars/ex40-electric/",
+      "consumption_basis": "real-world"
     },
     {
-      "id": "catalog-c728bdc5d24d",
+      "id": "gaia-volvo-ex40-twin-motor-2024",
+      "make": "Volvo",
+      "model": "EX40",
+      "variant": "Twin Motor",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 78.0,
+      "consumption_wh_km": 215,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 150,
+      "wltp_range_km": 452,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volvocars.com/uk/v/cars/ex40/specifications",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volvo-ex40-twin-motor-2025",
+      "make": "Volvo",
+      "model": "EX40",
+      "variant": "Twin Motor",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 78.0,
+      "consumption_wh_km": 212,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 200,
+      "wltp_range_km": 460,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volvocars.com/de/cars/ex40-electric/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-volvo-ex90-twin-motor-performance-2024",
       "make": "Volvo",
       "model": "EX90",
-      "variant": "Versão por confirmar",
+      "variant": "Twin Motor Performance",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 111.0,
+      "consumption_wh_km": 245,
+      "max_ac_power_kw": 22,
+      "max_dc_power_kw": 250,
+      "wltp_range_km": 600,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
-    },
-    {
-      "id": "catalog-09210d5eee3f",
-      "make": "Volvo",
-      "model": "ES90",
-      "variant": "Versão por confirmar",
-      "connector_types": [
-        "CCS2",
-        "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.volvocars.com/intl/v/cars/ex90",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-ae1555f1ef31",
@@ -1244,14 +4619,23 @@
       ]
     },
     {
-      "id": "catalog-893a74892429",
+      "id": "gaia-xpeng-p7-plus-rwd-long-range-2025",
       "make": "XPENG",
       "model": "P7+",
-      "variant": "Versão por confirmar",
+      "variant": "RWD Long Range",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 72.0,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 280,
+      "wltp_range_km": 445,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.electrive.com/2026/01/12/xpeng-p7-id-7-rival-launches-in-europe-at-e46600/",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-3d15afd163f6",
@@ -1264,14 +4648,61 @@
       ]
     },
     {
-      "id": "catalog-20a4531b5f7d",
+      "id": "gaia-skoda-elroq-60-2025",
       "make": "Škoda",
       "model": "Elroq",
-      "variant": "Versão por confirmar",
+      "variant": "60",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 58.0,
+      "consumption_wh_km": 185,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 125,
+      "wltp_range_km": 420,
       "connector_types": [
         "CCS2",
         "Type 2"
-      ]
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.skoda-storyboard.com/en/press-kits/skoda-elroq-press-kit/batteries-and-powertrains-long-range-and-reduced-charging-times-for-an-even-better-customer-experience/",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-skoda-elroq-85-2025",
+      "make": "Škoda",
+      "model": "Elroq",
+      "variant": "85",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 175,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 560,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.carwow.de/skoda/elroq",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-skoda-elroq-85x-2025",
+      "make": "Škoda",
+      "model": "Elroq",
+      "variant": "85x",
+      "model_year_start": 2025,
+      "battery_capacity_kwh": 77.0,
+      "consumption_wh_km": 190,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 175,
+      "wltp_range_km": 515,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.carwow.de/skoda/elroq",
+      "consumption_basis": "real-world"
     },
     {
       "id": "catalog-8a6d3a21c40a",
@@ -1292,6 +4723,44 @@
         "CCS2",
         "Type 2"
       ]
+    },
+    {
+      "id": "gaia-skoda-enyaq-iv-60-2024",
+      "make": "Škoda",
+      "model": "Enyaq iV",
+      "variant": "60",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 62.0,
+      "consumption_wh_km": 195,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 120,
+      "wltp_range_km": 413,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.skoda-auto.com/models/enyaq-iv",
+      "consumption_basis": "real-world"
+    },
+    {
+      "id": "gaia-skoda-enyaq-iv-vrs-2024",
+      "make": "Škoda",
+      "model": "Enyaq iV",
+      "variant": "vRS",
+      "model_year_start": 2024,
+      "battery_capacity_kwh": 82.0,
+      "consumption_wh_km": 208,
+      "max_ac_power_kw": 11,
+      "max_dc_power_kw": 135,
+      "wltp_range_km": 513,
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ],
+      "data_quality": "sourced-variant",
+      "source_url": "https://www.skoda-auto.com/models/enyaq-iv/enyaq-iv-rs",
+      "consumption_basis": "real-world"
     }
   ]
 }
