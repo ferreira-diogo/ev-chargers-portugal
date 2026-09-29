@@ -1,18 +1,29 @@
-const base = process.env.CHARGEVOY_API_URL || 'https://chargevoy-api.zombid.workers.dev';
-const healthResponse = await fetch(base + '/api/health', { signal: AbortSignal.timeout(30000) });
-if (!healthResponse.ok) throw new Error(`health HTTP ${healthResponse.status}`);
-const health = await healthResponse.json();
-if (!health.ok || !health.d1 || !health.kv) throw new Error('D1/KV health check failed: ' + JSON.stringify(health));
-if (!health.availability_fresh) throw new Error('Availability snapshot is not fresh: ' + JSON.stringify(health));
-const stationsResponse = await fetch(base + '/api/stations?limit=500', { signal: AbortSignal.timeout(30000) });
-if (!stationsResponse.ok) throw new Error(`stations HTTP ${stationsResponse.status}`);
-const body = await stationsResponse.json();
-if (!Array.isArray(body.stations) || !body.stations.length) throw new Error('No stations returned');
-if (!Array.isArray(body.connectors) || !body.connectors.length) throw new Error('No connectors returned');
-const live = body.connectors.filter(c => c.availability_source === 'mobie_nap_d1_mapping' || c.availability_source === 'mobie_nap_legacy_mapping');
-const known = live.filter(c => c.status && c.status !== 'unknown');
-const mapped = body.connectors.filter(c => String(c.availability_source || '').startsWith('mobie_nap_'));
-const statuses = Object.fromEntries([...new Set(known.map(c => c.status))].sort().map(status => [status, known.filter(c => c.status === status).length]));
-if (!mapped.length) throw new Error('No NAP-mapped connectors returned by production API');
-if (!known.length) throw new Error('All mapped connectors are unknown; live merge is not working');
-console.log(JSON.stringify({ok:true, availability_age_minutes:body.availability_age_minutes, stations:body.stations.length, connectors:body.connectors.length, mapped:mapped.length, known_live:known.length, statuses}, null, 2));
+import { createHash } from "node:crypto";
+
+const site = process.env.CHARGEVOY_SITE_URL || "https://chargevoy.pt";
+const api = process.env.CHARGEVOY_API_URL || "https://chargevoy-api.zombid.workers.dev";
+async function get(url) {
+  const response = await fetch(url, { signal: AbortSignal.timeout(45000) });
+  if (!response.ok) throw new Error(`${url} HTTP ${response.status}`);
+  return response;
+}
+const home = await (await get(site + "/")).text();
+if (!home.includes("chargevoy.js")) throw new Error("The public homepage is missing the application");
+const manifest = await (await get(site + "/assets/stations-manifest.json")).json();
+const bytes = Buffer.from(await (await get(site + "/assets/stations-snapshot.json")).arrayBuffer());
+const checksum = createHash("sha256").update(bytes).digest("hex");
+if (manifest.sha256 !== checksum || manifest.bytes !== bytes.length)
+  throw new Error("The national snapshot does not match the published manifest");
+const catalogue = JSON.parse(bytes.toString("utf8"));
+if (catalogue.stations?.length < 8000 || catalogue.connectors?.length < 15000 ||
+    catalogue.stations.length !== manifest.stations || catalogue.connectors.length !== manifest.connectors)
+  throw new Error("The published national catalogue is incomplete");
+const live = await (await get(api + "/api/availability")).json();
+const published = Date.parse(live.publication_time || live.refreshed_at || "");
+const ageMinutes = (Date.now() - published) / 60000;
+if (!Number.isFinite(ageMinutes) || ageMinutes < -5 || ageMinutes > 20 ||
+    Object.keys(live.statuses || {}).length < 10000)
+  throw new Error("Availability source missing or older than twenty minutes");
+if (ageMinutes > 5) console.warn("MOBI.E is older than five minutes; the UI must label it as the last reading");
+console.log(JSON.stringify({ok:true, stations:manifest.stations, connectors:manifest.connectors,
+  snapshot_bytes:manifest.bytes, availability_age_minutes:ageMinutes, live_points:Object.keys(live.statuses).length}));

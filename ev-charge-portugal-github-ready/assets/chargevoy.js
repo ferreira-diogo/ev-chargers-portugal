@@ -6,7 +6,7 @@
         apikey: SUPABASE_KEY,
         Authorization: "Bearer " + SUPABASE_KEY,
       };
-      const authClient = window.supabase.createClient(
+      const authClient = window.supabase?.createClient?.(
         SUPABASE_URL,
         SUPABASE_KEY,
         {
@@ -45,6 +45,10 @@
       const routeLayer = L.layerGroup().addTo(map);
       let allStations = [];
       let stationLoadRetryScheduled = false;
+      let nationalLoadGeneration = 0;
+      let nationalLoadState = "loading";
+      let nationalNextOffset = 300;
+      let nationalLoadBusy = false;
       let connectorMap = new Map();
       let operatorMap = new Map();
       let reliabilityMap = new Map();
@@ -65,7 +69,10 @@
         ["Hyundai", "Ioniq 5", "77 kWh", 2023, 77, 180, 507, 11, 235, "suv"],
         ["Kia", "EV6", "77.4 kWh", 2023, 77, 180, 528, 11, 240, "suv"],
         ["Mercedes-Benz", "EQA", "250+", 2023, 70, 180, 424, 11, 100, "suv"],
-        ["Mercedes-Benz", "GLC", "300e", 2024, 31, 220, 130, 11, 0, "suv"],
+        ["Mercedes-Benz", "GLC", "400 4MATIC Elétrico", 2026, 94, 160, 666, 11, 330, "suv"],
+        ["Renault", "4 E-Tech", "52 kWh", 2025, 52, 151, 409, 11, 100, "hatchback"],
+        ["Renault", "4 E-Tech", "40 kWh", 2025, 40, 160, 308, 11, 80, "hatchback"],
+        ["BMW", "iX3", "50 xDrive", 2026, null, null, 805, 11, 400, "suv"],
         ["BMW", "i4", "eDrive40", 2023, 81, 165, 590, 11, 205, "sedan"],
         ["Volvo", "EX30", "Single Motor Extended Range", 2024, 69, 160, 476, 11, 153, "suv"],
       ].map(([make, model, variant, year, battery, consumption, range, ac, dc, body], index) => ({
@@ -94,9 +101,12 @@
       let selectedOpcTariffs = [];
       let selectedAdHocPriceComponents = [];
       let pricingRequest = 0;
-      let favoriteStationIds = new Set(
-        JSON.parse(localStorage.getItem("ev-charge-favorites") || "[]"),
-      );
+      let favoriteStationIds = new Set();
+      try {
+        favoriteStationIds = new Set(
+          JSON.parse(localStorage.getItem("ev-charge-favorites") || "[]"),
+        );
+      } catch (error) { console.warn("Favoritos locais indisponíveis", error); }
       let lastPlannedRoute = null;
       let vehicleImageRequest = 0;
       let currentSession = null;
@@ -104,6 +114,18 @@
       const geocodeCache = new Map();
       // Interface translations: all platforms (web, PWA and Capacitor) share this file.
       const I18N_EN = {
+        "Ver Portugal": "Show Portugal",
+        "Retomar carregamento": "Resume loading",
+        "A carregar o país…": "Loading Portugal…",
+        "Carregamento parcial": "Partially loaded",
+        "postos carregados": "stations loaded",
+        "postos — aproximar": "stations — zoom in",
+        "↻ Atualizar este posto": "↻ Refresh this station",
+        "Consulta a última leitura publicada para este posto.": "Checks the latest published reading for this station.",
+        "A carregar o mapa de Portugal…": "Loading the map of Portugal…",
+        "Não foi possível atualizar. Última leitura mantida.": "Could not refresh. Last reading retained.",
+        "ÚLTIMA LEITURA": "LAST READING",
+
         "Encontra · Compara · Calcula · Decide":
           "Find · Compare · Plan · Decide",
         "☰ Filtros": "☰ Filters",
@@ -227,8 +249,10 @@
         "sem leitura atual": "without a current reading",
         ANTERIOR: "PREVIOUS",
       };
-      let currentLanguage =
-        localStorage.getItem("ev-charge-language") === "en" ? "en" : "pt";
+      let currentLanguage = "pt";
+      try {
+        if (localStorage.getItem("ev-charge-language") === "en") currentLanguage = "en";
+      } catch {}
       const i18nOriginalText = new WeakMap(),
         i18nOriginalAttrs = new WeakMap();
       let translatingPage = false;
@@ -312,9 +336,8 @@
       // Dynamic map data can contain thousands of elements. Translation is intentionally
       // applied only on explicit language changes so it never blocks map interactions.
 
-      // Stations use the site Worker D1 path. Auxiliary catalogues remain
-      // on Supabase until the separate API Worker is attached to a public route.
-      const D1_PUBLIC_TABLES = new Set();
+      // Public catalogue reads use D1; private account data keeps its auth path.
+      const D1_PUBLIC_TABLES = new Set(["vehicle_models", "ceme_cards", "official_opc_tariffs", "station_ad_hoc_price_components", "station_reviews", "station_reliability", "operators", "connectors"]);
 
       function d1Query(table, query) {
         const source = new URLSearchParams(query || "");
@@ -340,15 +363,19 @@
       }
 
       async function getD1Rows(table, query) {
-        const response = await fetchWithTimeout(
-          `${D1_FALLBACK_URL.replace(/\/api\/stations$/, "")}/api/catalog?${d1Query(table, query)}`,
-          { headers: { Accept: "application/json" } },
-          15000,
-        );
-        if (!response.ok)
-          throw new Error(`D1 ${table}: HTTP ${response.status}`);
-        const payload = await response.json();
-        return Array.isArray(payload.rows) ? payload.rows : [];
+        for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+          try {
+            const response = await fetchWithTimeout(
+              `${endpoint.replace(/\/api\/stations$/, "")}/api/catalog?${d1Query(table, query)}`,
+              { headers: { Accept: "application/json" }, cache: "no-store" }, 15000,
+            );
+            if (!response.ok) throw new Error(`D1 ${table}: HTTP ${response.status}`);
+            const payload = await response.json();
+            if (!Array.isArray(payload.rows)) throw new Error("Invalid catalogue response");
+            return payload.rows;
+          } catch (error) { console.warn("Catalogue unavailable", endpoint, error); }
+        }
+        throw new Error(`Catalogue ${table} unavailable`);
       }
 
       async function getRows(table, query) {
@@ -379,10 +406,12 @@
         const rows = [];
         let offset = 0;
         while (true) {
-          const page = await getRows(
-            table,
-            `${query}&limit=${pageSize}&offset=${offset}`,
-          );
+           // A failed later page must not turn a complete vehicle catalogue into
+           // a cached partial one.
+           const page = await (D1_PUBLIC_TABLES.has(table) ? getD1Rows : getRows)(
+             table,
+             `${query}&limit=${pageSize}&offset=${offset}`,
+           );
           rows.push(...page);
           if (page.length < pageSize) break;
           offset += pageSize;
@@ -394,31 +423,29 @@
       async function loadStationConnectors(stationId, force = false) {
         if (!force && connectorMap.has(stationId))
           return connectorMap.get(stationId) || [];
-        if (!force && connectorRequests.has(stationId))
+        if (connectorRequests.has(stationId))
           return connectorRequests.get(stationId);
         const request = (async () => {
-          let rows = [];
-          try {
-            const response = await fetchWithTimeout(
-              `${D1_FALLBACK_URL.replace(/\/api\/stations$/, "")}/api/connectors?station_id=${encodeURIComponent(stationId)}`,
-              { headers: { Accept: "application/json" } },
-              7000,
-            );
-            if (response.ok) {
-              const payload = await response.json();
-              rows = Array.isArray(payload.connectors) ? payload.connectors : [];
-            }
-          } catch (error) {
-            console.warn("D1 connectors indisponíveis", error);
+          let rows = null;
+          for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+            try {
+              const response = await fetchWithTimeout(
+                `${endpoint.replace(/\/api\/stations$/, "")}/api/connectors?station_id=${encodeURIComponent(stationId)}`,
+                { headers: { Accept: "application/json" }, cache: "no-store" },
+                7000,
+              );
+              if (!response.ok) throw new Error(`Posto HTTP ${response.status}`);
+               const payload = await response.json();
+               if (!Array.isArray(payload.connectors)) throw new Error("Resposta inválida do posto");
+               if (payload.connectors.some((row) => row.station_id !== stationId))
+                 throw new Error("Resposta de outro posto");
+               if (!payload.connectors.length && (connectorMap.get(stationId) || []).length)
+                 throw new Error("Resposta sem conectores; última leitura mantida");
+               rows = payload.connectors;
+              break;
+            } catch (error) { console.warn("Consulta do posto indisponível", error); }
           }
-          if (!rows.length) {
-            rows = await getRows(
-              "connectors",
-              "select=station_id,type,power_kw,quantity,available_count,status,availability_updated_at,availability_source&station_id=eq." +
-                encodeURIComponent(stationId) +
-                "&order=id.asc",
-            );
-          }
+          if (rows === null) throw new Error("Não foi possível consultar este posto. A última leitura foi mantida.");
           connectorMap.set(stationId, rows);
           return rows;
         })().finally(() => connectorRequests.delete(stationId));
@@ -445,10 +472,12 @@
           0,
         );
         const now = Date.now();
-        const valid = connectors.filter((c) => {
+        const valid = connectors.map((c) => ({
+          ...c, available_count: c.available_count ?? c.last_known_available_count,
+        })).filter((c) => {
           const age = now - Date.parse(c.availability_updated_at);
           return (
-            c.availability_source === "mobie_nap" &&
+            ["mobie_nap", "mobie_nap_stale"].includes(c.availability_source) &&
             Number.isInteger(c.available_count) &&
             c.available_count >= 0 &&
             c.available_count <= Number(c.quantity) &&
@@ -457,20 +486,15 @@
           );
         });
         const fresh = valid.filter(
-          (c) => now - Date.parse(c.availability_updated_at) <= 20 * 60000,
+          (c) => c.availability_source === "mobie_nap" && now - Date.parse(c.availability_updated_at) <= 5 * 60000,
         );
-        const recent = valid.filter(
-          (c) => now - Date.parse(c.availability_updated_at) <= 45 * 60000,
-        );
-        const readings = fresh.length ? fresh : recent;
-        if (!readings.length)
-          return {
-            kind: valid.length ? "expired" : "none",
-            total,
-            label: valid.length
-              ? t("Disponibilidade desatualizada")
-              : t("Disponibilidade não comunicada"),
-            detail: t("Sem leitura atual"),
+         const readings = fresh.length ? fresh : valid;
+         if (!readings.length)
+           return {
+             kind: "none",
+             total,
+             label: t("Disponibilidade não comunicada"),
+             detail: t("Sem leitura atual"),
           };
         const oldest = Math.min(
           ...readings.map((c) => Date.parse(c.availability_updated_at)),
@@ -526,14 +550,15 @@
         );
         if (info.kind === "live")
           return `<span class="live-pill" title="${title}"><i></i>LIVE</span> ${escapeHtml(info.label)}<br><small>${escapeHtml(info.detail)}</small>`;
-        if (info.kind === "stale")
-          return `<span class="stale-pill" title="${title}">${t("ANTERIOR")}</span> ${escapeHtml(info.label)}`;
+         if (info.kind === "stale")
+           return `<span class="stale-pill" title="${title}">${t("ÚLTIMA LEITURA")}</span> ${escapeHtml(info.label)}`;
         return escapeHtml(info.label);
       }
 
       function effectiveStationStatus(station) {
         const info = stationAvailability(connectorMap.get(station.id) || []);
-        if (info.kind === "live")
+         // Preserve the last reported colour, but never label it LIVE after five minutes.
+        if (info.kind === "live" || info.kind === "stale")
           return info.available > 0
             ? "available"
             : info.complete
@@ -598,7 +623,12 @@
       }
 
       function isOfficialTeslaStation(station) {
-        return station?.amenities?.tesla_official_supercharger === true;
+        let amenities = station?.amenities || {};
+        if (typeof amenities === "string") {
+          try { amenities = JSON.parse(amenities); } catch { amenities = {}; }
+        }
+        return amenities.tesla_official_supercharger === true ||
+          amenities.tesla_official_supercharger === "true";
       }
       function isTeslaVehicle() {
         return String(currentVehicle?.make || "").toLowerCase() === "tesla";
@@ -616,11 +646,33 @@
         return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
       }
 
+      function normalizeVehicle(vehicle) {
+        let types = vehicle.connector_types || [];
+        if (typeof types === "string") {
+          try { types = JSON.parse(types); } catch { types = types.split(","); }
+        }
+        return { ...vehicle, connector_types: (Array.isArray(types) ? types : []).map(connectorCategory) };
+      }
+
       function populateVehicles(vehicles) {
-        vehicleModels = vehicles;
+        const merged = new Map();
+         for (const vehicle of [...LOCAL_VEHICLE_FALLBACK, ...(Array.isArray(vehicles) ? vehicles : [])].filter(
+           (item) => (item.max_dc_power_kw == null || Number(item.max_dc_power_kw) > 0) &&
+             !(item.make === "Mercedes-Benz" && item.model === "GLC" && /^(300e|350e)$/i.test(String(item.variant || ""))),
+         )) {
+          const normalized = normalizeVehicle(vehicle);
+          const key = [normalized.make, normalized.model, normalized.variant, normalized.model_year_start || ""].join("|").toLocaleLowerCase("pt");
+          const existing = merged.get(key);
+          if (!existing || normalized.source !== "local-fallback") merged.set(key, normalized);
+        }
+        vehicleModels = [...merged.values()].sort((a, b) =>
+          String(a.make || "").localeCompare(String(b.make || ""), "pt") ||
+          String(a.model || "").localeCompare(String(b.model || ""), "pt") ||
+          String(a.variant || "").localeCompare(String(b.variant || ""), "pt"),
+        );
         const brandSelect = document.getElementById("vehicle-brand");
         const brands = [
-          ...new Set(vehicles.map((vehicle) => vehicle.make).filter(Boolean)),
+          ...new Set(vehicleModels.map((vehicle) => vehicle.make).filter(Boolean)),
         ].sort((a, b) => a.localeCompare(b, "pt"));
         brandSelect.innerHTML =
           '<option value="all">Todas as marcas</option>' +
@@ -630,8 +682,9 @@
                 `<option value="${escapeHtml(brand)}">${escapeHtml(brand)}</option>`,
             )
             .join("");
-        const saved = localStorage.getItem("ev-charge-vehicle");
-        const savedVehicle = vehicles.find((vehicle) => vehicle.id === saved);
+        let saved = null;
+        try { saved = localStorage.getItem("ev-charge-vehicle"); } catch {}
+        const savedVehicle = vehicleModels.find((vehicle) => vehicle.id === saved);
         const defaultVehicle =
           savedVehicle ||
           vehicles.find(
@@ -733,14 +786,10 @@
           vehicleModels[0] ||
           null;
         if (!currentVehicle) return;
-        localStorage.setItem("ev-charge-vehicle", currentVehicle.id);
-        document.getElementById("vehicle-specs").textContent =
-          `🔋 ${currentVehicle.battery_capacity_kwh} kWh · ${currentVehicle.consumption_wh_km} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
-        renderVehicleImage(currentVehicle);
-        const compatible = new Set(currentVehicle.connector_types || []);
-        document.querySelectorAll(".connector-filter").forEach((input) => {
-          input.checked = compatible.has(input.value);
-        });
+        try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
+         document.getElementById("vehicle-specs").textContent =
+           `🔋 ${currentVehicle.battery_capacity_kwh ?? "—"} kWh · ${currentVehicle.consumption_wh_km ?? "—"} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
+         renderVehicleImage(currentVehicle);
         sim();
         renderStations(false);
       }
@@ -914,6 +963,7 @@
 
       function closeStationPanel() {
         selectedStation = null;
+        document.getElementById("refresh-station").disabled = true;
         setNavigationMode("map");
         document.querySelector(".main")?.classList.remove("station-selected");
         document.querySelector(".right")?.classList.remove("station-open");
@@ -931,17 +981,17 @@
         target.innerHTML = connectors
           .map((connector, index) => {
             const quantity = Math.max(1, Number(connector.quantity) || 1);
+            const reading = stationAvailability([connector]);
+            const previous = reading.kind === "stale";
             const free =
-              connector.available_count == null
-                ? null
-                : Math.max(0, Number(connector.available_count) || 0);
+              reading.kind === "live" || previous ? reading.available : null;
             const state =
               free == null
                 ? "unknown"
                 : free > 0
                   ? "available"
-                  : connector.status === "occupied" ||
-                      connector.status === "charging"
+                  : (connector.last_known_status || connector.status) === "occupied" ||
+                      (connector.last_known_status || connector.status) === "charging"
                     ? "occupied"
                     : "unavailable";
             const label =
@@ -953,13 +1003,13 @@
                   ? "Ocupado"
                   : state === "unavailable"
                     ? "Indisponível"
-                    : "Sem live";
+                    : "Sem leitura atual";
             const type =
               connectorCategory(connector.type) || connector.type || "Conector";
             const power = connector.power_kw
               ? `${connector.power_kw} kW`
               : "Potência não comunicada";
-            return `<div class="connector-row"><div><b>Tomada ${index + 1} · ${escapeHtml(type)}</b><small>${escapeHtml(power)}${quantity > 1 ? ` · ${quantity} tomadas` : ""}</small></div><span class="connector-state ${state}">${escapeHtml(label)}</span></div>`;
+             return `<div class="connector-row"><div><b>Tomada ${index + 1} · ${escapeHtml(type)}</b><small>${escapeHtml(power)}${quantity > 1 ? ` · ${quantity} tomadas` : ""}</small></div><span class="connector-state ${state}${previous ? " previous" : ""}">${previous ? "Última leitura: " : ""}${escapeHtml(label)}</span></div>`;
           })
           .join("");
       }
@@ -989,6 +1039,11 @@
 
       function selectStation(station, operatorName) {
         selectedStation = station;
+        const napStation = String(station.source || "").startsWith("nap");
+        document.getElementById("refresh-station").disabled = !napStation;
+        document.getElementById("station-refresh-message").textContent = napStation
+          ? currentLanguage === "en" ? "Requests a new source reading and checks this station." : "Pede uma nova leitura à fonte e confirma se este posto foi atualizado."
+          : currentLanguage === "en" ? "This source does not provide live updates for this station." : "Esta fonte não disponibiliza atualização em tempo real por posto.";
         document
           .getElementById("route-planner")
           ?.classList.remove("route-visible");
@@ -1007,7 +1062,7 @@
         document.getElementById("station-operator").textContent =
           operatorName || "Operador não indicado";
         document.getElementById("station-meta").textContent =
-          `⌖ ${location} · ${isOfficialTeslaStation(station) ? "Tesla oficial" : station.source === "nap" ? "NAP oficial" : station.source === "openchargemap" ? "OpenChargeMap" : station.source || "Fonte"} ${station.external_id || "—"}`;
+          `⌖ ${location} · ${isOfficialTeslaStation(station) ? "Tesla oficial" : String(station.source).startsWith("nap") ? "NAP oficial" : station.source === "openchargemap" ? "OpenChargeMap" : station.source || "Fonte"} ${station.external_id || "—"}`;
         document.getElementById("station-power").textContent =
           station.max_power_kw ? `${station.max_power_kw} kW` : "—";
         updateStationConnectorPanel(station, stationConnectors);
@@ -1016,7 +1071,7 @@
             "A consultar…";
           document.getElementById("station-points").textContent = "—";
         }
-        loadStationConnectors(station.id)
+        loadStationConnectors(station.id, true)
           .then((connectors) => {
             if (selectedStation?.id === station.id)
               updateStationConnectorPanel(station, connectors);
@@ -1148,7 +1203,7 @@
         if (!button) return;
         const active =
           selectedStation && favoriteStationIds.has(selectedStation.id);
-        button.disabled = !selectedStation;
+           button.disabled = !selectedStation || !String(selectedStation.source || "").startsWith("nap");
         button.classList.toggle("fav-on", Boolean(active));
         button.textContent = active
           ? "★ Remover dos favoritos"
@@ -1625,13 +1680,39 @@
             !vehicleTypes.size ||
             vehicleTypes.has(officialConnectorCategory(item.connector_type)),
         );
-        return compatible.length ? compatible : selectedOpcTariffs;
+        return compatible;
+      }
+
+      function cardEnergyRate(card, period) {
+        return Number(period === "vazio" && card.energy_price_vazio_eur_kwh != null
+          ? card.energy_price_vazio_eur_kwh : card.energy_price_eur_kwh);
+      }
+
+      function fixedCardRate(card, opc) {
+        if (!Number.isFinite(Number(card.fixed_fast_eur_kwh)) || Number(opc.power_kw) < 50) return null;
+        const operator = String(operatorMap.get(selectedStation?.operator_id) || selectedStation?.name || "").toLowerCase();
+        const nationalPromo = card.fixed_fast_national_until && new Date().toISOString().slice(0, 10) <= card.fixed_fast_national_until;
+        return operator.includes("atlante") || nationalPromo ? Number(card.fixed_fast_eur_kwh) : null;
+      }
+
+      function cardSourceLink(card) {
+        const links = [card.source_url, card.alternative_source_url, card.promo_source_url].filter(Boolean);
+        return links.map((url, index) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${index ? "Condições" : "Fonte"}</a>`).join(" · ");
+      }
+
+      function publishedCardRates(period) {
+        return cemeCards.map((card) => {
+          const rate = cardEnergyRate(card, period).toFixed(4).replace(".", ",");
+          const alternative = card.alternative_energy_price_eur_kwh == null ? "" : `–${Number(card.alternative_energy_price_eur_kwh).toFixed(4).replace(".", ",")}`;
+          return `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${rate}${alternative}<small>€/kWh energia${card.fixed_fast_eur_kwh ? " · ver condições" : ""}</small></div></div>`;
+        }).join("");
       }
 
       function calculateCardPrice(card, opc, scenario, period) {
         const energy = Number(scenario.energyKwh);
+        const isAc = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
         const vehiclePower =
-          Number(currentVehicle?.max_dc_power_kw) || Number(opc.power_kw) || 22;
+          Number(isAc ? currentVehicle?.max_ac_power_kw : currentVehicle?.max_dc_power_kw) || Number(opc.power_kw) || 22;
         const optionPower = Math.max(
           1,
           Math.min(Number(opc.power_kw) || 1, vehiclePower),
@@ -1640,8 +1721,10 @@
           5,
           Math.ceil(((energy / optionPower) * 60) / 0.75),
         );
-        if (card.pricing_mode === "final_fixed") {
-          const total = Number(card.energy_price_eur_kwh) * energy;
+        const fixedRate = fixedCardRate(card, opc);
+        if (card.pricing_mode === "final_fixed" || fixedRate !== null) {
+          const rate = fixedRate ?? Number(card.energy_price_eur_kwh);
+          const total = rate * energy;
           const operator = String(
             operatorMap.get(selectedStation?.operator_id) ||
               selectedStation?.name ||
@@ -1661,8 +1744,9 @@
             opcCost: 0,
             iec: 0,
             minutes,
-            effectiveKwh: Number(card.energy_price_eur_kwh),
+            effectiveKwh: rate,
             finalFixed: true,
+            fixedCondition: card.fixed_fast_national_until && !ownNetwork ? `Campanha até ${card.fixed_fast_national_until.split("-").reverse().join("/")}` : "Rede Atlante",
             cashback: total * cashbackRate,
             cashbackRate,
           };
@@ -1675,7 +1759,7 @@
           ? 0
           : networkTariff(opc.voltage_level, period) * energy;
         const ceme =
-          Number(card.energy_price_eur_kwh) * energy +
+          cardEnergyRate(card, period) * energy +
           Number(card.session_fee_eur || 0);
         const iec = Number(card.iec_eur_kwh || 0.001) * energy;
         const subtotal = ceme + tar + opcCost + iec;
@@ -1758,27 +1842,37 @@
           return;
         }
         const directPrice = adHocPriceMarkup();
-        if (
-          selectedStation.source !== "nap" ||
-          Number(selectedStation.max_power_kw) < 22
-        ) {
+        if (!["nap", "nap-mobie"].includes(selectedStation.source)) {
           headline.textContent = "Preço oficial indisponível";
           container.innerHTML =
             directPrice +
-            '<div class="price-empty">O comparador de cartões é apresentado apenas em postos oficiais NAP/MOBI.E com potência igual ou superior a 22 kW.</div>';
+            '<div class="price-empty">O comparador requer um posto oficial NAP/MOBI.E.</div>';
           return;
         }
         if (!selectedOpcTariffs.length) {
           headline.textContent = "Preço oficial indisponível";
           container.innerHTML =
             directPrice +
-            '<div class="price-empty">Este posto ainda não tem uma correspondência tarifária oficial inequívoca para cartões. Não é apresentada qualquer estimativa.</div>';
+            '<div class="price-empty">Tarifa OPC recente indisponível neste posto. Valores publicados da energia dos cartões abaixo; não são totais de carregamento.</div>' +
+            publishedCardRates(document.getElementById("price-period").value);
           return;
         }
         const scenario = pricingScenario();
         const period = document.getElementById("price-period").value;
         const tariffs = compatibleOfficialTariffs();
+        if (!tariffs.length) {
+          headline.textContent = "Tomada incompatível";
+          container.innerHTML = directPrice + '<div class="price-empty">Não há uma tarifa para tomadas compatíveis com o veículo selecionado neste posto. Os valores abaixo são só a energia publicada.</div>' + publishedCardRates(period);
+          return;
+        }
+        const opcOptions = tariffs.map((opc) => {
+          const estimate = calculateCardPrice({ energy_price_eur_kwh: 0, session_fee_eur: 0, includes_tar: true, iec_eur_kwh: 0, vat_rate: 0 }, opc, scenario, period);
+          return estimate;
+        }).sort((a, b) => a.opcCost - b.opcCost);
+        const cheapestOpc = opcOptions[0];
+        const opcOnly = `<div class="price-empty"><span class="official-price">TARIFA DO OPERADOR · MOBI.E</span><br><b>Componente OPC desde ${cheapestOpc.opcCost.toFixed(2).replace(".", ",")} €</b> para ~${scenario.energyKwh.toFixed(1).replace(".", ",")} kWh e ~${cheapestOpc.minutes} min (${escapeHtml(cheapestOpc.opc.connector_type)} ${escapeHtml(cheapestOpc.opc.power_kw)} kW). É apenas a parcela do operador; o valor final depende do cartão CEME, impostos e condições aplicáveis.</div>`;
         const comparisons = cemeCards
+          .filter((card) => card.estimate_enabled !== false)
           .map((card) => {
             const eligibleTariffs =
               card.pricing_mode === "final_fixed"
@@ -1793,19 +1887,22 @@
           .sort((a, b) => a.total - b.total);
         if (!comparisons.length) {
           container.innerHTML =
-            directPrice +
-            '<div class="price-empty">Não foi possível calcular os cartões de referência.</div>';
+            directPrice + opcOnly +
+            '<div class="price-empty">Ainda não há preços verificados de cartões CEME para calcular e comparar o custo final.</div>';
+          headline.textContent = `OPC desde ${cheapestOpc.opcCost.toFixed(2).replace(".", ",")} €`;
           return;
         }
         headline.textContent = `≈ ${comparisons[0].total.toFixed(2).replace(".", ",")} €`;
+        const incomplete = cemeCards.filter((card) => card.estimate_enabled === false);
         container.innerHTML =
-          directPrice +
+          directPrice + opcOnly +
           comparisons
             .map(
               (item, index) =>
-                `<div class="price-card"><span class="price-rank">${index + 1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index === 0 ? '<span class="official-price">MENOR ESTIMATIVA</span>' : ""}<span class="price-breakdown">${item.finalFixed ? `Preço final promocional · taxas incluídas${item.cashbackRate ? ` · ${Math.round(item.cashbackRate * 100)}% em Green Gems (~${item.cashback.toFixed(2).replace(".", ",")} €) para uso futuro` : ""}` : `CEME ${item.ceme.toFixed(2).replace(".", ",")} € · OPC ${item.opcCost.toFixed(2).replace(".", ",")} €${item.tar ? ` · TAR ${item.tar.toFixed(2).replace(".", ",")} €` : ""} · taxas + IVA`}</span></div><div class="price-total">${item.total.toFixed(2).replace(".", ",")} €<small>${item.effectiveKwh.toFixed(3).replace(".", ",")} €/kWh final</small></div></div>`,
+                `<div class="price-card"><span class="price-rank">${index + 1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index === 0 ? '<span class="official-price">MENOR ESTIMATIVA</span>' : ""}<span class="price-breakdown">${item.finalFixed ? `Preço final · taxas incluídas · ${escapeHtml(item.fixedCondition || "ver condições")}` : `CEME + EGME ${item.ceme.toFixed(2).replace(".", ",")} € · OPC ${item.opcCost.toFixed(2).replace(".", ",")} €${item.tar ? ` · TAR ${item.tar.toFixed(2).replace(".", ",")} €` : ""} · IEC + IVA`} · ${escapeHtml(item.card.conditions)} · ${cardSourceLink(item.card)}</span></div><div class="price-total">≈ ${item.total.toFixed(2).replace(".", ",")} €<small>${item.effectiveKwh.toFixed(3).replace(".", ",")} €/kWh estimado</small></div></div>`,
             )
             .join("") +
+          incomplete.map((card) => `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${cardEnergyRate(card, period).toFixed(4).replace(".", ",")}–${Number(card.alternative_energy_price_eur_kwh).toFixed(4).replace(".", ",")}<small>€/kWh energia · total por confirmar</small></div></div>`).join("") +
           `<div class="price-empty">Cenário: ${scenario.energyKwh.toFixed(1).replace(".", ",")} kWh · ~${comparisons[0].minutes} min · tomada ${escapeHtml(comparisons[0].opc.connector_type || "compatível")} ${escapeHtml(comparisons[0].opc.power_kw)} kW. Fonte OPC: MOBI.E. Campanhas só aparecem durante a respetiva validade.</div>`;
       }
 
@@ -1814,7 +1911,7 @@
         selectedOpcTariffs = [];
         selectedAdHocPriceComponents = [];
         const container = document.getElementById("price-comparison");
-        if (station.source !== "nap" || Number(station.max_power_kw) < 22) {
+        if (!["nap", "nap-mobie"].includes(station.source)) {
           renderPriceComparison();
           return;
         }
@@ -1824,7 +1921,7 @@
           const [rows, adHoc] = await Promise.all([
             getRows(
               "official_opc_tariffs",
-              `select=station_id,connector_uid,voltage_level,tariff_period,connector_type,power_kw,activation_fee_eur,energy_price_eur_kwh,time_price_eur_min&station_id=eq.${encodeURIComponent(station.id)}&tariff_period=eq.REGULAR&order=power_kw.desc`,
+              `select=station_id,connector_uid,voltage_level,tariff_period,connector_type,power_kw,activation_fee_eur,energy_price_eur_kwh,time_price_eur_min,updated_at&station_id=eq.${encodeURIComponent(station.id)}&tariff_period=eq.REGULAR&order=power_kw.desc`,
             ),
             getRows(
               "station_ad_hoc_price_components",
@@ -1832,15 +1929,14 @@
             ),
           ]);
           if (request !== pricingRequest) return;
-          selectedOpcTariffs = rows;
+          selectedOpcTariffs = rows.filter((row) => Date.parse(row.updated_at || "") > Date.now() - 48 * 60 * 60 * 1000);
           selectedAdHocPriceComponents = adHoc;
           renderPriceComparison();
         } catch (error) {
           console.error(error);
           if (request === pricingRequest) {
-            document.getElementById("price").textContent = "Preço indisponível";
-            container.innerHTML =
-              '<div class="price-empty">Não foi possível consultar a tarifa oficial neste momento.</div>';
+            selectedOpcTariffs = [];
+            renderPriceComparison();
           }
         }
       }
@@ -1891,12 +1987,69 @@
         throw lastError || new Error("No Overpass endpoint available");
       }
 
-      async function loadFallbackStations(place) {
-        const params = new URLSearchParams();
-        const area = place || { lat: 39.55, lon: -8 };
-        params.set("lat", String(area.lat));
-        params.set("lon", String(area.lon));
-        params.set("limit", "300");
+      const PUBLIC_AVAILABILITY_CACHE_KEY = "chargevoy-public-availability-v1";
+      let publicAvailabilityRequest = null;
+      function applyPublicAvailability(snapshot) {
+        if (!snapshot?.statuses || !snapshot.publication_time) return false;
+        const published = Date.parse(snapshot.publication_time);
+        if (!Number.isFinite(published) || published > Date.now() + 300000) return false;
+        const fresh = Date.now() - published <= 300000;
+        for (const connectors of connectorMap.values()) for (const connector of connectors) {
+          const site = String(connector.station_id || "").replace(/^nap-/, "");
+          const external = String(connector.external_id || connector.id || "").replace(/^nap-/, "");
+          let point = external.startsWith(site + "-") ? external.slice(site.length + 1) : external;
+          let status = snapshot.statuses[site + "|" + point];
+          while (!status && /-\d+$/.test(point)) {
+            point = point.replace(/-\d+$/, "");
+            status = snapshot.statuses[site + "|" + point];
+          }
+          if (!status || published < (Date.parse(connector.availability_updated_at) || 0)) continue;
+          connector.availability_updated_at = snapshot.publication_time;
+          connector.availability_source = fresh ? "mobie_nap" : "mobie_nap_stale";
+          connector.last_known_status = status;
+          connector.status = fresh ? status : "unknown";
+          connector.last_known_available_count = status === "available" ? 1
+            : ["charging", "outOfOrder", "blocked", "inoperative", "reserved"].includes(status) ? 0 : null;
+          connector.available_count = fresh ? connector.last_known_available_count : null;
+        }
+        return true;
+      }
+      async function refreshPublicAvailability() {
+        if (publicAvailabilityRequest) return publicAvailabilityRequest;
+        publicAvailabilityRequest = (async () => {
+          for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+            try {
+              const response = await fetchWithTimeout(
+                `${endpoint.replace(/\/api\/stations$/, "")}/api/availability`,
+                { headers: { Accept: "application/json" }, cache: "no-cache" }, 10000,
+              );
+              if (!response.ok) throw new Error(`Disponibilidade HTTP ${response.status}`);
+              const snapshot = await response.json();
+              if (!applyPublicAvailability(snapshot)) throw new Error("Leitura inválida");
+              try { localStorage.setItem(PUBLIC_AVAILABILITY_CACHE_KEY, JSON.stringify(snapshot)); } catch {}
+              renderStations(false);
+              return;
+            } catch (error) { console.warn("Disponibilidade nacional indisponível", endpoint, error); }
+          }
+        })().finally(() => { publicAvailabilityRequest = null; });
+        return publicAvailabilityRequest;
+      }
+      async function loadFallbackStations(locationPromise) {
+        // The static national catalogue is the primary source. It does not
+        // consume D1 rows or Worker requests when served as a matched asset.
+        try {
+          const response = await fetchWithTimeout("./assets/stations-snapshot.json", { cache: "no-cache" }, 30000);
+          if (!response.ok) throw new Error(`NAP snapshot HTTP ${response.status}`);
+          const payload = await response.json();
+          if (!Array.isArray(payload.stations) || payload.stations.length < 8000 ||
+              !Array.isArray(payload.connectors) || payload.connectors.length < 15000)
+            throw new Error("NAP snapshot incompleto");
+          restoreConnectorRows(payload.connectors);
+          try { applyPublicAvailability(JSON.parse(localStorage.getItem(PUBLIC_AVAILABILITY_CACHE_KEY) || "null")); } catch {}
+          return payload.stations;
+        } catch (error) { console.warn("Catálogo estático indisponível", error); }
+        // Both APIs use the same national seed so background pages have stable offsets.
+        const params = new URLSearchParams({ limit: "300" });
         for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
           try {
             const response = await fetchWithTimeout(
@@ -1920,7 +2073,69 @@
             console.warn("Station API unavailable:", endpoint, error);
           }
         }
-        return loadOverpassStations(place);
+        return loadOverpassStations(await locationPromise);
+      }
+
+      async function loadRemainingNationalStations(generation) {
+        if (nationalLoadBusy) return;
+        nationalLoadBusy = true;
+        nationalLoadState = "loading";
+        try {
+        // Load the rest in the background. The first 300 markers are already
+        // interactive while later pages fill gaps across the country.
+        for (let offset = nationalNextOffset; offset < 30000; offset += 500) {
+          let payload;
+          for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+            try {
+              const params = new URLSearchParams({ limit: "500", offset: String(offset) });
+              const response = await fetchWithTimeout(`${endpoint}?${params}`, { cache: "no-store" }, 20000);
+              if (!response.ok) throw new Error(`Station API HTTP ${response.status}`);
+              const candidate = await response.json();
+              if (!Array.isArray(candidate.stations)) throw new Error("Invalid station page");
+              payload = candidate;
+              break;
+            } catch (error) { console.warn("Página nacional indisponível:", offset, endpoint, error); }
+          }
+          if (generation !== nationalLoadGeneration) return;
+          if (!payload) { nationalLoadState = "partial"; return; }
+          const known = new Set(allStations.map((station) => station.id));
+          for (const station of payload.stations) {
+            if (!known.has(station.id)) { allStations.push(station); known.add(station.id); }
+          }
+          for (const connector of payload.connectors || []) {
+            const list = connectorMap.get(connector.station_id) || [];
+            if (!list.some((item) => item.id === connector.id)) list.push(connector);
+            connectorMap.set(connector.station_id, list);
+          }
+          hydrateStationOperators(payload.stations);
+          nationalNextOffset = offset + payload.stations.length;
+          renderStations(false);
+          if (payload.stations.length < 500) { nationalLoadState = "ready"; return; }
+        }
+        nationalLoadState = "partial";
+        } finally {
+          nationalLoadBusy = false;
+          renderStations(false);
+        }
+      }
+
+      function hydrateStationOperators(stations) {
+        const selector = document.getElementById("operator-filter");
+        const existing = new Set([...selector.options].map((option) => option.value));
+        for (const station of stations) {
+          let amenities = station.amenities || {};
+          if (typeof amenities === "string") {
+            try { amenities = JSON.parse(amenities); } catch { amenities = {}; }
+          }
+          station.amenities = amenities;
+          const name = station.operator_name || amenities.operator_name;
+          if (!name) continue;
+          station.operator_name = name;
+          if (station.operator_id) operatorMap.set(station.operator_id, name);
+          if (!existing.has(name)) {
+            selector.add(new Option(name, name)); existing.add(name);
+          }
+        }
       }
 
       const stationFields =
@@ -1990,9 +2205,10 @@
         // full catalogue in parallel with geolocation and station loading.
         const cachedVehicles = readVehicleCache();
         populateVehicles(cachedVehicles || LOCAL_VEHICLE_FALLBACK);
-        const vehiclePromise = getRows(
-          "vehicle_models",
-          "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.true&order=make.asc,model.asc,variant.asc",
+         const vehiclePromise = getAllRows(
+           "vehicle_models",
+           "select=id,external_id,source,make,model,variant,model_year_start,battery_capacity_kwh,consumption_wh_km,wltp_range_km,max_ac_power_kw,max_dc_power_kw,connector_types,body_style,data_quality,consumption_basis&active=eq.1&order=make.asc,model.asc,variant.asc",
+           500,
         ).then((rows) => {
           if (rows.length) {
             cacheVehicleRows(rows);
@@ -2016,6 +2232,7 @@
               station.operator_name || "Operador não indicado",
             ]),
           );
+          hydrateStationOperators(allStations);
           renderStations(false);
         }
 
@@ -2023,24 +2240,25 @@
           const locationPromise = useMyLocation({
             setRouteOrigin: true,
             silent: true,
+            focusMap: false,
           }).catch((error) => {
             console.warn("Localização indisponível; usando fallback nacional", error);
             return null;
           });
 
-          const place = await locationPromise;
-          void getRows(
-            "ceme_cards",
-            "select=id,name,energy_price_eur_kwh,session_fee_eur,includes_tar,vat_rate,iec_eur_kwh,conditions,source_url,valid_from,valid_to,pricing_mode,network_scope,cashback_own_rate,cashback_other_rate&active=eq.true",
-          ).then((rows) => {
+          void fetch("./assets/ceme-cards.json", { cache: "no-cache" }).then((response) => {
+            if (!response.ok) throw new Error(`Catálogo CEME: HTTP ${response.status}`);
+            return response.json();
+          }).then((rows) => {
             const today = new Date().toISOString().slice(0, 10);
             cemeCards = rows.filter(
               (card) => (!card.valid_from || card.valid_from <= today) &&
                         (!card.valid_to || card.valid_to >= today),
             );
+            if (selectedStation) renderPriceComparison();
           }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));
 
-          const stations = await loadFallbackStations(place);
+          const stations = await loadFallbackStations(locationPromise);
           if (!stations.length) throw new Error("D1/OSM sem postos disponíveis");
 
           reliabilityMap = new Map();
@@ -2049,6 +2267,10 @@
             station.operator_name || "Operador não indicado",
           ]));
           allStations = stations;
+          hydrateStationOperators(stations);
+          const generation = ++nationalLoadGeneration;
+          nationalNextOffset = stations.length;
+          nationalLoadState = stations.length === 300 ? "loading" : "ready";
           cacheStationRows(stations, [...connectorMap.values()].flat());
           const operatorSelect = document.getElementById("operator-filter");
           const seenOperators = new Set(
@@ -2064,14 +2286,21 @@
               operatorSelect.appendChild(option);
             });
           renderStations(false);
+          void refreshPublicAvailability();
+          if (stations.length === 300) void loadRemainingNationalStations(generation);
 
           const vehicles = await vehiclePromise;
           if (vehicles.length) cacheVehicleRows(vehicles);
         } catch (error) {
           console.error(error);
-          badge.textContent = "erro";
-          cards.innerHTML =
-            '<article class="card"><div class="op">Os postos estão temporariamente indisponíveis</div><div class="st">A tentar novamente automaticamente quando a base de dados responder.</div></article>';
+          if (allStations.length) {
+            nationalLoadState = "partial";
+            renderStations(false);
+          } else {
+            badge.textContent = "erro";
+            cards.innerHTML =
+              '<article class="card"><div class="op">Os postos estão temporariamente indisponíveis</div><div class="st">A tentar novamente automaticamente quando o serviço responder.</div></article>';
+          }
           if (!stationLoadRetryScheduled) {
             stationLoadRetryScheduled = true;
             setTimeout(() => {
@@ -2090,11 +2319,19 @@
 
       function matchesPower(power) {
         const value = Number(power) || 0;
-        if (selectedPower === "0-50") return value <= 50;
+         if (selectedPower === "0-50") return value > 0 && value <= 50;
         if (selectedPower === "50-150") return value > 50 && value <= 150;
         if (selectedPower === "150-250") return value > 150 && value <= 250;
         if (selectedPower === "250+") return value > 250;
         return true;
+      }
+
+      function stationMaxPowerKw(station) {
+        const declared = Number(station?.max_power_kw) || 0;
+        const connectorPower = (connectorMap.get(station?.id) || []).reduce(
+          (max, connector) => Math.max(max, Number(connector.power_kw) || 0), 0,
+        );
+        return Math.max(declared, connectorPower);
       }
 
       function markerCellKey(station, zoom) {
@@ -2118,6 +2355,14 @@
           );
         return station.id;
       }
+      function matchesConnectorFilters(station, stationConnectors, selected) {
+        const teslaOnly = selected.includes("Tesla");
+        const requestedTypes = selected.filter((filter) => filter !== "Tesla");
+        return (!teslaOnly || isOfficialTeslaStation(station)) &&
+          (!requestedTypes.length || requestedTypes.some((filter) =>
+            stationConnectors.some((connector) => connectorCategory(connector.type) === filter)
+          ));
+      }
       function renderStations(zoomToResults = true) {
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
@@ -2137,26 +2382,20 @@
             .filter(Boolean)
             .join(" ")
             .toLocaleLowerCase("pt");
-          const connectorMatch =
-            !connectors.length ||
-            connectors.some((filter) =>
-              filter === "Tesla"
-                ? isOfficialTeslaStation(s)
-                : stationConnectors.some(
-                    (c) => connectorCategory(c.type) === filter,
-                  ),
-            );
+         const connectorMatch = matchesConnectorFilters(s, stationConnectors, connectors);
           const statusMatch =
             !statuses.length || statuses.includes(effectiveStationStatus(s));
           return (
             (!search || haystack.includes(search)) &&
-            matchesPower(s.max_power_kw) &&
+            matchesPower(stationMaxPowerKw(s)) &&
             connectorMatch &&
             statusMatch &&
             (selectedOperator === "all" || operatorName === selectedOperator)
           );
         });
+        // Keep map markers separate from the nearby sidebar shortlist.
         const mapStations = filtered.slice();
+        let nearbyCount = 0;
         if (searchPosition) {
           filtered = filtered.map((s) => ({
             ...s,
@@ -2166,6 +2405,7 @@
             }),
           }));
           const nearby = filtered.filter((s) => s.distance_km <= 75);
+          nearbyCount = nearby.length;
           filtered = nearby.length
             ? nearby
             : filtered
@@ -2187,11 +2427,16 @@
             );
           return (Number(b.max_power_kw) || 0) - (Number(a.max_power_kw) || 0);
         });
-        badge.textContent = filtered.length.toLocaleString("pt-PT");
+        badge.textContent = mapStations.length.toLocaleString("pt-PT");
+        document.getElementById("station-count-label").textContent = currentLanguage === "en" ? "stations on the map" : "postos no mapa";
+        const coverage = [];
+        if (searchPosition) coverage.push(currentLanguage === "en" ? `${nearbyCount} nearby (up to 75 km)` : `${nearbyCount} próximos (até 75 km)`);
+        coverage.push(nationalLoadState === "loading" ? t("A carregar o país…") : nationalLoadState === "partial" ? t("Carregamento parcial") : `${allStations.length.toLocaleString("pt-PT")} ${t("postos carregados")}`);
+        document.getElementById("station-coverage").textContent = coverage.join(" · ");
+        document.getElementById("retry-national").hidden = nationalLoadState !== "partial";
         stationLayer.clearLayers();
         markerMap.clear();
         const markerZoom = map.getZoom();
-        const markerSeen = new Set();
         const viewport = markerZoom >= 10 ? map.getBounds() : null;
         const markerStations = mapStations.filter((s) => {
           if (
@@ -2199,12 +2444,25 @@
             !viewport.contains([Number(s.latitude), Number(s.longitude)])
           )
             return false;
-          const cell = markerCellKey(s, markerZoom);
-          if (markerSeen.has(cell)) return false;
-          markerSeen.add(cell);
           return true;
         });
-        markerStations.forEach((s) => {
+        const markerGroups = new Map();
+        for (const station of markerStations) {
+          const cell = markerCellKey(station, markerZoom);
+          const group = markerGroups.get(cell) || [];
+          group.push(station); markerGroups.set(cell, group);
+        }
+        markerGroups.forEach((group) => {
+          if (group.length > 1) {
+            const bounds = L.latLngBounds(group.map((s) => [s.latitude, s.longitude]));
+            const count = group.length.toLocaleString("pt-PT");
+            L.marker(bounds.getCenter(), {
+              icon: L.divIcon({className: "station-cluster", html: `<span>${count}</span>`, iconSize: [40, 40]}),
+              title: `${count} ${t("postos — aproximar")}`,
+            }).addTo(stationLayer).on("click", () => map.fitBounds(bounds, {padding: [35,35], maxZoom: Math.max(12, markerZoom + 2)}));
+            return;
+          }
+          const s = group[0];
           const stationConnectors = connectorMap.get(s.id) || [];
           const connectorText =
             [...new Set(stationConnectors.map((c) => c.type))].join(" · ") ||
@@ -2253,7 +2511,7 @@
                 ? `${s.distance_km.toFixed(1).replace(".", ",")} km`
                 : isOfficialTeslaStation(s)
                   ? "Tesla oficial"
-                  : s.source === "nap"
+                  : String(s.source).startsWith("nap")
                     ? "NAP oficial"
                     : "Dados comunitários";
             const totalPoints = stationConnectors.reduce(
@@ -2466,13 +2724,15 @@
             fillColor: "#60a5fa",
             fillOpacity: 0.16,
           }).addTo(searchLayer);
-          L.marker([place.lat, place.lon])
+          const locationMarker = L.marker([place.lat, place.lon])
             .addTo(searchLayer)
-            .bindPopup("<b>A sua localização aproximada</b>")
-            .openPopup();
+            .bindPopup("<b>A sua localização aproximada</b>");
           document.getElementById("sort-filter").value = "distance-asc";
           renderStations(false);
-          map.setView([place.lat, place.lon], 12, { animate: false });
+          if (options.focusMap !== false) {
+            map.setView([place.lat, place.lon], 12, { animate: false });
+            locationMarker.openPopup();
+          }
           return place;
         } catch (error) {
           console.error(error);
@@ -3028,7 +3288,8 @@
       }
       function setupAnalyticsConsent() {
         const banner = document.getElementById("analytics-consent");
-        const choice = localStorage.getItem("analytics-consent");
+        let choice = null;
+        try { choice = localStorage.getItem("analytics-consent"); } catch {}
         if (choice === "granted") enableAnalytics();
         if (choice) return;
         banner.hidden = false;
@@ -3047,6 +3308,11 @@
           });
       }
       async function initAuth() {
+        if (!authClient) {
+          console.warn("Autenticação indisponível; mapa público continua disponível");
+          updateAuthUI();
+          return;
+        }
         const { data } = await authClient.auth.getSession();
         currentSession = data.session;
         updateAuthUI();
@@ -3073,28 +3339,94 @@
       setupAnalyticsConsent();
       loadRealStations();
       let availabilityRefreshBusy = false;
-      async function refreshAvailability() {
+      function stationPublicationTime(connectors) {
+        return Math.max(0, ...connectors.map((c) => Date.parse(c.availability_updated_at) || 0));
+      }
+      async function refreshAvailability(manual = false) {
         if (
           document.hidden ||
           availabilityRefreshBusy ||
           !allStations.length ||
-          !selectedStation
+          !selectedStation ||
+          !String(selectedStation.source || "").startsWith("nap")
         )
           return;
         availabilityRefreshBusy = true;
-        try {
-          const connectors = await loadStationConnectors(selectedStation.id, true);
-          updateStationConnectorPanel(selectedStation, connectors);
+        const station = selectedStation;
+        const button = document.getElementById("refresh-station");
+        const message = document.getElementById("station-refresh-message");
+        button.disabled = true;
+         button.textContent = t("A consultar…");
+         try {
+           const previous = stationPublicationTime(connectorMap.get(station.id) || []);
+           let requested = null;
+           if (manual) {
+             const response = await fetchWithTimeout(
+               `${D1_API_WORKER_URL.replace(/\/api\/stations$/, "")}/api/refresh-station`,
+               { method: "POST", headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({ station_id: station.id }), cache: "no-store" }, 10000,
+             );
+             requested = await response.json();
+             if (!response.ok) throw new Error(requested.error || "Atualização indisponível");
+             message.textContent = requested.queued || requested.reason === "already_requested"
+               ? currentLanguage === "en" ? "New MOBI.E reading requested. Checking this station…" : "Nova leitura solicitada à MOBI.E. A verificar este posto…"
+               : currentLanguage === "en" ? "The source has a recent reading. Checking this station…" : "A fonte já tem uma leitura recente. A consultar este posto…";
+           }
+           let connectors = await loadStationConnectors(station.id, true);
+           const baseline = Math.max(previous, Date.parse(requested?.publication_time) || 0);
+           if (manual && (requested.queued || requested.reason === "already_requested")) {
+             for (let attempt = 0; attempt < 6 && stationPublicationTime(connectors) <= baseline; attempt++) {
+               if (document.hidden || selectedStation?.id !== station.id) break;
+               await new Promise((resolve) => setTimeout(resolve, 20000));
+               connectors = await loadStationConnectors(station.id, true);
+             }
+           }
+           if (selectedStation?.id === station.id) {
+             updateStationConnectorPanel(station, connectors);
+             const time = new Date().toLocaleTimeString(currentLanguage === "en" ? "en-GB" : "pt-PT", {hour: "2-digit", minute: "2-digit"});
+             const newer = stationPublicationTime(connectors) > baseline;
+             message.textContent = manual && !newer
+               ? currentLanguage === "en" ? "The source has not published a newer reading for this station. Last reading retained." : "A fonte ainda não publicou uma leitura mais recente para este posto. Última leitura mantida."
+               : currentLanguage === "en" ? `Checked at ${time}. Source time is shown above.` : `Consultado às ${time}. A hora da fonte está indicada acima.`;
+           }
+          renderStations(false);
         } catch (error) {
-          console.warn("Não foi possível atualizar a disponibilidade");
+           console.warn("Não foi possível atualizar a disponibilidade", error);
+           if (selectedStation?.id === station.id) {
+             message.textContent = `${t("Não foi possível atualizar. Última leitura mantida.")} ${error.message || ""}`.trim();
+            if (manual) notifyUser(message.textContent, {kind: "error"});
+          }
         } finally {
           availabilityRefreshBusy = false;
+          button.disabled = !selectedStation || !String(selectedStation.source || "").startsWith("nap");
+          button.textContent = t("↻ Atualizar este posto");
         }
       }
-      setInterval(refreshAvailability, 5 * 60000);
+      document.getElementById("refresh-station").addEventListener("click", () => refreshAvailability(true));
+      setInterval(() => {
+        if (!document.hidden) renderStations(false);
+        refreshAvailability();
+      }, 60000);
+      setInterval(() => {
+        if (!document.hidden && allStations.length) void refreshPublicAvailability();
+      }, 300000);
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) refreshAvailability();
+        if (!document.hidden) {
+          refreshAvailability();
+          if (allStations.length) void refreshPublicAvailability();
+        }
       });
+
+      document.getElementById("show-portugal").addEventListener("click", () => {
+        searchPosition = null;
+        searchLayer.clearLayers();
+        document.getElementById("global-search").value = "";
+        document.getElementById("location-search").value = "";
+        closeStationPanel();
+        renderStations(false);
+        if (allStations.length) map.fitBounds(L.latLngBounds(allStations.map((s) => [s.latitude, s.longitude])), {padding: [35,35], maxZoom: 7});
+      });
+      document.getElementById("retry-national").addEventListener("click", () => loadRemainingNationalStations(nationalLoadGeneration));
 
       // Simulator controls are initialized above with energy/time modes.
       document.querySelectorAll("#power-filter .chip").forEach((button) =>
@@ -3277,7 +3609,7 @@
       function openPriceComparator() {
         if (!selectedStation) {
           const station = allStations.find(
-            (item) => item.source === "nap" && Number(item.max_power_kw) >= 22,
+            (item) => ["nap", "nap-mobie"].includes(item.source) && Number(item.max_power_kw) >= 22,
           );
           if (station)
             selectStation(station, operatorMap.get(station.operator_id));

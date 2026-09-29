@@ -5,7 +5,14 @@ on:
     paths:
       - "ev-charge-portugal-github-ready/assets/**"
       - "ev-charge-portugal-github-ready/worker/**"
+      - "ev-charge-portugal-github-ready/worker-api/**"
+      - "ev-charge-portugal-github-ready/service-worker.js"
       - "ev-charge-portugal-github-ready/scripts/verify-*.mjs"
+      - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
+      - "ev-charge-portugal-github-ready/scripts/build-web.mjs"
+      - "ev-charge-portugal-github-ready/wrangler.toml"
+      - "ev-charge-portugal-github-ready/index.html"
+      - ".github/workflows/deploy-chargevoy-web.yml"
       - "ev-charge-portugal-github-ready/package.json"
       - ".github/workflows/validate-live-map.yml"
 
@@ -23,6 +30,10 @@ jobs:
       - name: Regression tests
         working-directory: ev-charge-portugal-github-ready
         run: npm test
-      - name: Build web bundle
+      - name: Build and validate national snapshot and Cloudflare bundle
         working-directory: ev-charge-portugal-github-ready
-        run: npm run build:web
+        run: |
+          node scripts/import-nap-datex.mjs --web-snapshot
+          node scripts/verify-static-snapshot.mjs
+          npm run build:web
+          npx --yes wrangler@4 deploy --dry-run --outdir /tmp/chargevoy-wrangler-dry-run --config wrangler.toml

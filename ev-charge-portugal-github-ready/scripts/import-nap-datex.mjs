@@ -65,6 +65,27 @@ if (args.has("--d1")) {
   process.exit(0);
 }
 
+if (args.has("--web-snapshot")) {
+  const output = process.env.NAP_WEB_SNAPSHOT || "assets/stations-snapshot.json";
+  const stations = parsed.stations.map((row) => ({
+    id: `nap-${row.external_id}`, external_id: row.external_id, source: "nap-mobie",
+    name: row.name, address: row.address || "", city: row.city || "",
+    latitude: row.latitude, longitude: row.longitude, max_power_kw: row.max_power_kw,
+    status: "unknown", operator_id: d1OperatorId(row.operator_name),
+    operator_name: row.operator_name,
+    amenities: { operator_name: row.operator_name, source_updated_at: row.source_updated_at },
+  })).sort((a, b) => (b.max_power_kw || 0) - (a.max_power_kw || 0) || a.id.localeCompare(b.id));
+  const connectors = parsed.connectors.map((row) => ({
+    id: `nap-${row.external_id}`, station_id: `nap-${row.station_external_id}`,
+    type: row.type, power_kw: row.power_kw, quantity: row.quantity,
+    status: "unknown", available_count: null,
+  }));
+  await mkdir(join(output, ".."), { recursive: true });
+  await writeFile(output, JSON.stringify({ publication_time: parsed.publicationTime, stations, connectors }));
+  console.log(JSON.stringify({ ...summary, mode: "web-snapshot", output }, null, 2));
+  process.exit(0);
+}
+
 if (!stage) {
   console.log(JSON.stringify(summary, null, 2));
   process.exit(0);
@@ -362,10 +383,11 @@ async function writeD1Snapshot(parsed) {
     connectors,
     operators,
   };
+  const chunkSize = 100;
   let fileNumber = 2;
   for (const [table, rows] of Object.entries(datasets)) {
-    for (let index = 0; index < rows.length; index += 250) {
-      const chunk = rows.slice(index, index + 100);
+    for (let index = 0; index < rows.length; index += chunkSize) {
+      const chunk = rows.slice(index, index + chunkSize);
       const values = chunk.map((row) => "(" + columns[table].map((column) => d1Sql(row[column])).join(", ") + ")").join(",\n");
       await writeFile(
         join(outputDir, String(fileNumber).padStart(4, "0") + "_" + table + ".sql"),
@@ -374,5 +396,6 @@ async function writeD1Snapshot(parsed) {
       fileNumber += 1;
     }
   }
+  await writeFile(join(outputDir, "expected-counts.json"), JSON.stringify({stations: stations.length, connectors: connectors.length}));
   await writeFile(join(outputDir, "999_validate.sql"), "SELECT 'stations' AS table_name, count(*) AS row_count FROM station_cache_v2 UNION ALL SELECT 'connectors', count(*) FROM connectors UNION ALL SELECT 'operators', count(*) FROM operators;\n");
 }
