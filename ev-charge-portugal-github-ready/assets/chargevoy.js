@@ -2690,13 +2690,14 @@
 
       function closeFilterMenu() {
         document.getElementById("filter-menu").classList.remove("mobile-open");
-        document.getElementById("filter-backdrop").classList.remove("is-visible");
-        document.getElementById("mobile-filters").setAttribute("aria-expanded", "false");
+        document.querySelector(".layout").classList.add("sidebar-collapsed");
+        requestAnimationFrame(() => map.invalidateSize());
       }
       function openFilterMenu() {
-        document.getElementById("filter-menu").classList.add("mobile-open");
-        document.getElementById("filter-backdrop").classList.add("is-visible");
-        document.getElementById("mobile-filters").setAttribute("aria-expanded", "true");
+        document.querySelector(".layout").classList.remove("sidebar-collapsed");
+        if (window.innerWidth <= 780 || document.body.classList.contains("mobile-landscape"))
+          document.getElementById("filter-menu").classList.add("mobile-open");
+        requestAnimationFrame(() => map.invalidateSize());
       }
       async function searchPortugal() {
         const input = document.getElementById("location-search");
@@ -3559,8 +3560,10 @@
         });
       document.getElementById("global-search").addEventListener("input", () => {
         renderStations(false);
-        if (document.getElementById("global-search").value.trim())
-          closeFilterMenu();
+      });
+      document.getElementById("global-search").addEventListener("focus", openFilterMenu);
+      document.getElementById("global-search").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") { closeFilterMenu(); event.target.blur(); }
       });
       document
         .querySelectorAll(".connector-filter,.status-filter")
@@ -3634,6 +3637,7 @@
         .addEventListener("click", openRoutePlanner);
       document.getElementById("nav-map").addEventListener("click", () => {
         closeStationPanel();
+        closeFilterMenu();
         document
           .getElementById("route-planner")
           .classList.remove("route-visible");
@@ -3670,10 +3674,12 @@
         .addEventListener("click", (event) => {
           if (event.target.id === "app-modal") closeModal();
         });
-      document
-        .getElementById("mobile-filters")
-        .addEventListener("click", openFilterMenu);
-      document.getElementById("filter-backdrop").addEventListener("click", closeFilterMenu);
+      map.on("click", closeFilterMenu);
+      document.addEventListener("pointerdown", (event) => {
+        if (document.getElementById("filter-menu").classList.contains("mobile-open") &&
+            !event.target.closest("#filter-menu") && !event.target.closest("#global-search"))
+          closeFilterMenu();
+      });
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") closeFilterMenu();
       });
@@ -3691,9 +3697,9 @@
           .getElementById("route-planner")
           .classList.remove("route-visible");
         setNavigationMode("vehicle");
-        if (window.innerWidth <= 780)
-          openFilterMenu();
-        else document.getElementById("vehicle-select").focus();
+        openFilterMenu();
+        if (window.innerWidth > 780 && !document.body.classList.contains("mobile-landscape"))
+          document.getElementById("vehicle-select").focus();
       });
       const quickRoute = document.getElementById("open-route-planner");
       quickRoute.addEventListener("click", openRoutePlanner);
