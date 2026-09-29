@@ -432,7 +432,10 @@ test('the national static catalogue loads without a D1 request and the KV overla
 
 test('availability endpoints still work when D1 is unavailable', async () => {
   const publication = new Date().toISOString();
-  const env={AVAILABILITY_KV:{async get(){return {publication_time:publication,statuses:{'ABC-SITE|POINT':'available'}};}}};
+  const env={AVAILABILITY_KV:{async get(_key,type){
+    assert.equal(type,'text');
+    return JSON.stringify({publication_time:publication,statuses:{'ABC-SITE|POINT':'available'}});
+  }}};
   for (const worker of [siteWorker,apiWorker]) {
     const response=await worker.fetch(new Request('https://site/api/availability'),env);
     assert.equal(response.status,200);
