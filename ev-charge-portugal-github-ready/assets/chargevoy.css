@@ -44,6 +44,11 @@
         height: 38px;
         flex: 0 0 38px;
       }
+      .brand h1 {
+        margin: 0;
+        font-size: inherit;
+        line-height: inherit;
+      }
       .brand b {
         font-size: 19px;
       }
