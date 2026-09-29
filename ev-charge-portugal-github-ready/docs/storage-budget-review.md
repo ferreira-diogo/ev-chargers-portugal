@@ -7,7 +7,7 @@ Análise de código em 2026-09-29. Nenhuma base de dados, binding, cron ou armaz
 | Serviço | Limite | Implicação |
 | --- | ---: | --- |
 | D1 | 100 000 linhas escritas/dia, 5 milhões lidas/dia, por conta | Uma segunda D1 na mesma conta não duplica o orçamento diário. Índices também podem aumentar linhas escritas. |
-| Workers KV | 1 000 escritas/dia, 100 000 leituras/dia | O snapshot nacional a cada 5 min consome até 288 escritas/dia. Um pedido manual por janela de 5 min pode acrescentar até 288; reservar margem para outras chaves e para propagação/concor­rência. |
+| Workers KV | 1 000 escritas/dia, 100 000 leituras/dia | O snapshot nacional a cada 5 min consome até 288 escritas/dia. Um pedido manual por janela de 5 min pode acrescentar até 288; reservar margem para outras chaves e para propagação/concorrência. |
 | Workers Free | 100 000 pedidos/dia, 10 ms de CPU por pedido | O Worker que serve site e API deve ser separado do site estático para preservar a página se a API atingir o limite. |
 | Supabase Free | 500 MB de Postgres, 5 GB de egress e 5 GB de egress em cache por mês | Útil para Auth e dados editáveis; um catálogo nacional entregue integralmente a cada visita pode consumir egress rapidamente. Projetos inativos podem pausar. |
 | R2 Standard | 10 GB-mês, 1 milhão de operações A e 10 milhões B por mês | Opção para snapshots publicados independentemente do deploy. Confirmar requisitos de ativação e controlar operações antes de adotar. |

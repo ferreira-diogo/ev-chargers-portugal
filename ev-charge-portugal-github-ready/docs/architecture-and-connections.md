@@ -4,7 +4,7 @@ Estado analisado no PR #18 em 2026-09-29. Este documento descreve os fluxos pres
 
 ```mermaid
 flowchart TD
-    U["Navegador / app"] --> P["Pages · site e snapshot estático"]
+    U["Navegador / app"] --> P["Worker do site · assets e snapshot"]
     P --> A["Worker API · postos e catálogos"]
     P --> S["Supabase · Auth e dados pessoais"]
     A --> D["D1 · catálogo, conectores e tarifas"]
