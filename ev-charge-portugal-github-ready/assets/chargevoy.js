@@ -3296,7 +3296,8 @@
           document.hidden ||
           availabilityRefreshBusy ||
           !allStations.length ||
-          !selectedStation
+          !selectedStation ||
+          !String(selectedStation.source || "").startsWith("nap")
         )
           return;
         availabilityRefreshBusy = true;
@@ -3346,7 +3347,7 @@
           }
         } finally {
           availabilityRefreshBusy = false;
-          button.disabled = !selectedStation;
+          button.disabled = !selectedStation || !String(selectedStation.source || "").startsWith("nap");
           button.textContent = t("↻ Atualizar este posto");
         }
       }
