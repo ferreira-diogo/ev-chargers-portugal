@@ -479,9 +479,9 @@
       }
       .stale-pill {
         display: inline-block;
-        background: #fff7ed;
-        color: #c2410c;
-        border: 1px solid #fdba74;
+        background: #e8eef4;
+        color: #264761;
+        border: 1px solid #a9bfce;
         border-radius: 10px;
         padding: 2px 6px;
         font-size: 8px;
@@ -2646,10 +2646,10 @@
 .station-refresh { display: grid; gap: 7px; margin: 12px 0; }
 .station-refresh button { width: 100%; min-height: 40px; }
 .station-refresh small { color: #a9bfce; line-height: 1.4; font-size: 11px; }
-.connector-state.stale { background: rgba(245,158,11,.12); color: #f8c575; border-color: rgba(245,158,11,.3); }
+.connector-state.previous { border-style: dashed; }
 @media (max-width: 780px) { .mapbadge { padding: 8px 10px; font-size: 12px; } .mapbadge small { font-size: 10px; } }
 
 .mapbadge { left: 58px; right: auto; border-radius: 12px; max-width: calc(100% - 74px); }
 .map-coverage-actions button { border: 1px solid #446078; background: #17344d; color: #eaf4fc; cursor: pointer; }
-#station-status:has(.stale-pill) { color: #f8c575; }
+#station-status:has(.stale-pill) { color: #eaf4fc; }
 #station-status:not(:has(.live-pill)):not(:has(.stale-pill)) { color: #b9cbd8; }

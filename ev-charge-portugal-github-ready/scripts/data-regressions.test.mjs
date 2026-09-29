@@ -59,18 +59,41 @@ test('power filter uses connector power when station aggregate is missing or low
   assert.equal(context.matchesPower(context.stationMaxPowerKw({id:'s',max_power_kw:null})), false);
   assert.equal(context.matchesPower(context.stationMaxPowerKw({id:'s',max_power_kw:50})), false);
   assert.equal(context.stationMaxPowerKw({id:'other',max_power_kw:175}), 175);
+  context.selectedPower = '0-50';
+  assert.equal(context.matchesPower(0), false);
+  assert.equal(context.matchesPower(50), true);
+});
+
+test('Tesla-only and connector type filters must both match', () => {
+  const context = vm.createContext({});
+  vm.runInContext(extract('function connectorCategory(', 'function isTeslaVehicle('), context);
+  vm.runInContext(extract('function matchesConnectorFilters(', 'function renderStations('), context);
+  const official = {amenities:{tesla_official_supercharger:true}};
+  const ordinary = {amenities:{}};
+  assert.equal(context.matchesConnectorFilters(official, [{type:'CCS2'}], ['Tesla','CCS']), true);
+  assert.equal(context.matchesConnectorFilters(official, [{type:'Type 2'}], ['Tesla','CCS']), false);
+  assert.equal(context.matchesConnectorFilters(ordinary, [{type:'CCS2'}], ['Tesla','CCS']), false);
+});
+
+test('local vehicle catalogue contains battery EVs and the electric GLC', () => {
+  const context = vm.createContext({});
+  vm.runInContext(extract('const LOCAL_VEHICLE_FALLBACK = [', 'let vehicleModels ='), context);
+  const cars = vm.runInContext('LOCAL_VEHICLE_FALLBACK', context);
+  assert(cars.some(v => v.make === 'Mercedes-Benz' && v.model === 'GLC' && v.variant.includes('Elétrico')));
+  assert(cars.some(v => v.make === 'Renault' && v.model === '4 E-Tech'));
+  assert(!cars.some(v => v.variant === '300e'));
 });
 
 test('vehicle catalogue merges D1 rows with local fallback and keeps D1 values', () => {
   const elements = new Map();
   function makeElement(id) { if (!elements.has(id)) elements.set(id, {innerHTML:'', value:'', options:[], add(option){this.options.push(option);}}); return elements.get(id); }
   const context = vm.createContext({LOCAL_VEHICLE_FALLBACK:[
-    {id:'local-1',source:'local-fallback',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023},
-    {id:'local-2',source:'local-fallback',make:'BMW',model:'i4',variant:'eDrive40',model_year_start:2023},
+    {id:'local-1',source:'local-fallback',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023,max_dc_power_kw:170},
+    {id:'local-2',source:'local-fallback',make:'BMW',model:'i4',variant:'eDrive40',model_year_start:2023,max_dc_power_kw:200},
   ], document:{getElementById:makeElement}, localStorage:{getItem(){return null;}}, escapeHtml:s=>String(s), normalizeVehicle:v=>v, applyVehicle(){}});
   vm.runInContext(extract('function populateVehicles(', 'function vehicleIllustration('), context);
   context.renderVehicleOptions = () => {};
-  context.populateVehicles([{id:'d1-1',source:'gaia-evdb',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023}]);
+  context.populateVehicles([{id:'d1-1',source:'gaia-evdb',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023,max_dc_power_kw:170}]);
   assert.equal(context.vehicleModels.length, 2);
   assert.equal(context.vehicleModels.find(v=>v.make==='Tesla').id, 'd1-1');
   assert.equal(context.vehicleModels.find(v=>v.make==='BMW').id, 'local-2');
@@ -103,7 +126,7 @@ test('both APIs and the map distinguish live, previous and expired readings', as
   const context = vm.createContext({Date: Clock, t: s => s, currentLanguage: 'pt', connectorCategory: s => s});
   vm.runInContext(extract('function stationAvailability(', 'function availabilityHtml('), context);
   for (const worker of [siteWorker, apiWorker]) {
-    for (const [minutes, kind] of [[4, 'live'], [6, 'stale'], [19, 'stale'], [21, 'none']]) {
+    for (const [minutes, kind] of [[4, 'live'], [6, 'stale'], [19, 'stale'], [21, 'stale']]) {
       const env = {
         CHARGEVOY_DB: { prepare(sql) { return { bind() { return this; }, async all() {
           return {results: sql.includes('nap_connector_mapping') ? [{connector_id: 'c', site_id: 's', point_id: 'p'}] : [{id: 'c', station_id: 'nap-s', type: 'CCS', quantity: 1}]};
@@ -115,11 +138,11 @@ test('both APIs and the map distinguish live, previous and expired readings', as
       const {connectors} = await response.json();
       const c = connectors[0];
       assert.equal(c.available_count, minutes <= 5 ? 1 : null);
-      assert.equal(c.last_known_available_count, minutes <= 20 ? 1 : null);
+      assert.equal(c.last_known_available_count, 1);
       assert.equal(context.stationAvailability(connectors).kind, kind);
     }
   }
-  for (const [age, kind] of [[300000,'live'],[300001,'stale'],[1200000,'stale'],[1200001,'expired']]) {
+  for (const [age, kind] of [[300000,'live'],[300001,'stale'],[1200000,'stale'],[1200001,'stale']]) {
     assert.equal(context.stationAvailability([{quantity:1, available_count:1, availability_source:'mobie_nap', availability_updated_at:new Date(now-age).toISOString()}]).kind, kind);
   }
 });
@@ -240,7 +263,7 @@ test('restricted mobile storage does not abort the public map script', () => {
   assert.equal(vm.runInContext('authClient == null',auth),true);
 });
 
-test('station markers retain the last known colour for twenty minutes without claiming LIVE', () => {
+test('station markers retain last known colour beyond twenty minutes without claiming LIVE', () => {
   const now = Date.now();
   class Clock extends Date { static now() { return now; } }
   const connectorMap = new Map();
@@ -249,15 +272,15 @@ test('station markers retain the last known colour for twenty minutes without cl
   const station = {id: 's', status: 'unknown'};
   for (const [minutes, available, expected] of [
     [4, 1, 'available'], [6, 1, 'available'], [19, 0, 'unavailable'],
-    [21, 1, 'unknown'],
+    [21, 1, 'available'], [180, 0, 'unavailable'],
   ]) {
     connectorMap.set('s', [{quantity: 1, available_count: minutes <= 5 ? available : null,
-      last_known_available_count: minutes <= 20 ? available : null,
+      last_known_available_count: available,
       availability_source: minutes <= 5 ? 'mobie_nap' : 'mobie_nap_stale',
       availability_updated_at: new Date(now - minutes * 60000).toISOString()}]);
     assert.equal(context.effectiveStationStatus(station), expected);
     assert.equal(context.stationAvailability(connectorMap.get('s')).kind,
-      minutes <= 5 ? 'live' : minutes <= 20 ? 'stale' : 'none');
+      minutes <= 5 ? 'live' : 'stale');
   }
 });
 
@@ -276,4 +299,76 @@ test('station refresh requests only the selected station, coalesces and preserve
   await assert.rejects(context.loadStationConnectors('one', true));
   assert.equal(connectorMap.get('one'), rows);
   assert(calls.every(url => url.endsWith('/api/connectors?station_id=one')));
+});
+
+test('manual source refresh is throttled globally and confirms its publication time', async () => {
+  const oldFetch = globalThis.fetch;
+  const calls = [];
+  let lock = null;
+  globalThis.fetch = async (url, options) => {
+    calls.push({url, options});
+    return new Response(null, {status:204});
+  };
+  try {
+    const env = {
+      GITHUB_ACTIONS_TOKEN: 'test-only',
+      AVAILABILITY_KV: {
+        async get(key) {
+          if (key === 'mobie_nap_current') return {publication_time:new Date(Date.now()-6*60000).toISOString(),statuses:{}};
+          return lock;
+        },
+        async put(key, value, options) {lock = value; assert.equal(options.expirationTtl,300);},
+      },
+    };
+    const request = () => new Request('https://test/api/refresh-station', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({station_id:'nap-site-123'}),
+    });
+    const first = await apiWorker.fetch(request(),env);
+    assert.equal(first.status,202);
+    assert.equal((await first.json()).queued,true);
+    const second = await apiWorker.fetch(request(),env);
+    assert.equal(second.status,202);
+    assert.equal((await second.json()).reason,'already_requested');
+    assert.equal(calls.length,1);
+    assert.equal((await apiWorker.fetch(new Request('https://test/api/refresh-station',{method:'POST',body:'{"station_id":"bad"}'}),env)).status,400);
+  } finally {globalThis.fetch = oldFetch;}
+});
+
+test('manual refresh displays a newly published reading for the selected station', async () => {
+  const oldTime = new Date(Date.now()-10*60000).toISOString();
+  const newTime = new Date().toISOString();
+  const station = {id:'nap-one',source:'nap-mobie'};
+  const nodes = new Map([
+    ['refresh-station',{disabled:false,textContent:''}],
+    ['station-refresh-message',{textContent:''}],
+  ]);
+  const connectorMap = new Map([['nap-one',[{availability_updated_at:oldTime}]]]);
+  let reads = 0, rendered = 0, otherRead = false;
+  const context = vm.createContext({
+    document:{hidden:false,getElementById:id=>nodes.get(id)},
+    selectedStation:station, allStations:[station], connectorMap,
+    D1_API_WORKER_URL:'https://api/api/stations', t:s=>s,
+    currentLanguage:'pt', console, Date, setTimeout:fn=>fn(),
+    async fetchWithTimeout(url,options){
+      assert.equal(url,'https://api/api/refresh-station');
+      assert.equal(options.method,'POST');
+      assert.equal(JSON.parse(options.body).station_id,'nap-one');
+      return Response.json({queued:true,publication_time:oldTime},{status:202});
+    },
+    async loadStationConnectors(id) {
+      if(id!=='nap-one') otherRead=true;
+      const rows=[{availability_updated_at:++reads===1?oldTime:newTime}];
+      connectorMap.set(id,rows);
+      return rows;
+    },
+    updateStationConnectorPanel(){rendered++},
+    renderStations(){}, notifyUser(){},
+  });
+  vm.runInContext(extract('let availabilityRefreshBusy = false;', 'document.getElementById("refresh-station").addEventListener'),context);
+  await context.refreshAvailability(true);
+  assert.equal(reads,2);
+  assert.equal(rendered,1);
+  assert.equal(otherRead,false);
+  assert.match(nodes.get('station-refresh-message').textContent,/Consultado às/);
 });
