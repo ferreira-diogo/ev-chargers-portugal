@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScript, refreshWorkflow, cardCatalog, apiWorkerConfig] = await Promise.all([
+const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScript, refreshWorkflow, cardCatalog, apiWorkerConfig, robots, sitemap] = await Promise.all([
   readFile(resolve(root, "index.html"), "utf8"),
   readFile(resolve(root, "assets/chargevoy.js"), "utf8"),
   readFile(resolve(root, "assets/route-corridor.js"), "utf8"),
@@ -14,6 +14,8 @@ const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScri
   readFile(resolve(root, "../.github/workflows/refresh-nap-availability.yml"), "utf8"),
   readFile(resolve(root, "assets/ceme-cards.json"), "utf8"),
   readFile(resolve(root, "wrangler-api.toml"), "utf8"),
+  readFile(resolve(root, "robots.txt"), "utf8"),
+  readFile(resolve(root, "sitemap.xml"), "utf8"),
 ]);
 
 const canParse = (source) => { try { new Function(source); return true; } catch (error) { console.error(error.message); return false; } };
@@ -29,7 +31,11 @@ const checks = [
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA shell caches corridor planner", worker.includes("./assets/route-corridor.js")],
-  ["PWA cache version is current", worker.includes("ev-charge-shell-v28") && html.includes("chargevoy.js?v=28")],
+  ["PWA cache version is current", worker.includes("ev-charge-shell-v29") && worker.includes("chargevoy.css?v=22") && html.includes("chargevoy.css?v=22") && html.includes("chargevoy.js?v=28")],
+  ["Homepage declares its canonical URL", html.includes('<link rel="canonical" href="https://chargevoy.pt/"')],
+  ["Homepage has one visible brand heading", (html.match(/<h1\b/g) || []).length === 1 && html.includes("Postos elétricos em Portugal")],
+  ["Sitemap lists the public homepage", sitemap.includes("<loc>https://chargevoy.pt/</loc>") && (sitemap.match(/<loc>/g) || []).length === 1],
+  ["Robots advertises the sitemap", robots.includes("Sitemap: https://chargevoy.pt/sitemap.xml") && !robots.includes("Disallow: /\n")],
   ["PWA shell includes photo credits", worker.includes("./assets/vehicle-images/credits.json?v=1") && js.includes("vehicle-images/credits.json?v=1")],
   ["PWA shell includes card catalog", worker.includes("./assets/ceme-cards.json")],
   ["PWA shell includes vehicle catalog", worker.includes("./assets/vehicle-catalog.json?v=2") && js.includes('vehicle-catalog.json?v=2')],
