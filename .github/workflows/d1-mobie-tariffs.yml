@@ -6,7 +6,7 @@ on:
     - cron: "43 5 * * *"
 
 concurrency:
-  group: d1-mobie-tariffs
+  group: chargevoy-d1-writes
   cancel-in-progress: false
 
 jobs:

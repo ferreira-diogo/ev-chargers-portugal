@@ -4,9 +4,12 @@ Estado analisado no PR #18 em 2026-09-29. Este documento descreve os fluxos pres
 
 ```mermaid
 flowchart TD
-    U["Navegador / app"] --> P["Worker do site · assets e snapshot"]
-    P --> A["Worker API · postos e catálogos"]
-    P --> S["Supabase · Auth e dados pessoais"]
+    U["Navegador / app"] --> P["Assets estáticos · site e catálogo"]
+    U --> A
+    U --> W["Worker do site · API dinâmica"]
+    W --> K
+    A["Worker API · postos e catálogos"]
+    U --> S["Supabase · Auth e dados pessoais"]
     A --> D["D1 · catálogo, conectores e tarifas"]
     A --> K["KV · estado MOBI.E mais recente"]
     A --> G["GitHub Actions · pedido manual"]
@@ -19,10 +22,10 @@ flowchart TD
 
 ## Percurso do mapa
 
-1. O site pede páginas de postos ao Worker local e, se necessário, ao Worker API dedicado.
-2. O Worker lê o catálogo da D1, com cache de páginas estruturais. A disponibilidade é aplicada do KV depois da leitura da cache.
-3. Se a D1 falhar no Worker local, o catálogo estático nacional mantém os postos no mapa. A aplicação também tenta esse ficheiro diretamente.
-4. A pesquisa de rotas pede postos nas secções do corredor e mantém o conjunto local como alternativa.
+1. O site descarrega diretamente o catálogo nacional estático validado antes da publicação. Os postos e conectores entram no mapa sem consultar a D1.
+2. A API dinâmica entrega o último estado do KV separadamente; o navegador junta a leitura aos conectores e mostra a hora da fonte. Se a KV falhar, usa a última leitura datada em cache.
+3. Se o asset falhar, o site tenta páginas de postos no Worker local e depois no Worker API dedicado; os dois mantêm o fallback do catálogo estático quando a D1 falha.
+4. A pesquisa de rotas usa os postos nacionais já carregados como alternativa aos pedidos por corredor.
 
 ## Disponibilidade
 

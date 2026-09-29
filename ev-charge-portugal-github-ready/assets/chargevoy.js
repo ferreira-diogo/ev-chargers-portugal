@@ -1987,7 +1987,67 @@
         throw lastError || new Error("No Overpass endpoint available");
       }
 
+      const PUBLIC_AVAILABILITY_CACHE_KEY = "chargevoy-public-availability-v1";
+      let publicAvailabilityRequest = null;
+      function applyPublicAvailability(snapshot) {
+        if (!snapshot?.statuses || !snapshot.publication_time) return false;
+        const published = Date.parse(snapshot.publication_time);
+        if (!Number.isFinite(published) || published > Date.now() + 300000) return false;
+        const fresh = Date.now() - published <= 300000;
+        for (const connectors of connectorMap.values()) for (const connector of connectors) {
+          const site = String(connector.station_id || "").replace(/^nap-/, "");
+          const external = String(connector.external_id || connector.id || "").replace(/^nap-/, "");
+          let point = external.startsWith(site + "-") ? external.slice(site.length + 1) : external;
+          let status = snapshot.statuses[site + "|" + point];
+          while (!status && /-\d+$/.test(point)) {
+            point = point.replace(/-\d+$/, "");
+            status = snapshot.statuses[site + "|" + point];
+          }
+          if (!status || published < (Date.parse(connector.availability_updated_at) || 0)) continue;
+          connector.availability_updated_at = snapshot.publication_time;
+          connector.availability_source = fresh ? "mobie_nap" : "mobie_nap_stale";
+          connector.last_known_status = status;
+          connector.status = fresh ? status : "unknown";
+          connector.last_known_available_count = status === "available" ? 1
+            : ["charging", "outOfOrder", "blocked", "inoperative", "reserved"].includes(status) ? 0 : null;
+          connector.available_count = fresh ? connector.last_known_available_count : null;
+        }
+        return true;
+      }
+      async function refreshPublicAvailability() {
+        if (publicAvailabilityRequest) return publicAvailabilityRequest;
+        publicAvailabilityRequest = (async () => {
+          for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
+            try {
+              const response = await fetchWithTimeout(
+                `${endpoint.replace(/\/api\/stations$/, "")}/api/availability`,
+                { headers: { Accept: "application/json" }, cache: "no-cache" }, 10000,
+              );
+              if (!response.ok) throw new Error(`Disponibilidade HTTP ${response.status}`);
+              const snapshot = await response.json();
+              if (!applyPublicAvailability(snapshot)) throw new Error("Leitura inválida");
+              try { localStorage.setItem(PUBLIC_AVAILABILITY_CACHE_KEY, JSON.stringify(snapshot)); } catch {}
+              renderStations(false);
+              return;
+            } catch (error) { console.warn("Disponibilidade nacional indisponível", endpoint, error); }
+          }
+        })().finally(() => { publicAvailabilityRequest = null; });
+        return publicAvailabilityRequest;
+      }
       async function loadFallbackStations(locationPromise) {
+        // The static national catalogue is the primary source. It does not
+        // consume D1 rows or Worker requests when served as a matched asset.
+        try {
+          const response = await fetchWithTimeout("./assets/stations-snapshot.json", { cache: "no-cache" }, 30000);
+          if (!response.ok) throw new Error(`NAP snapshot HTTP ${response.status}`);
+          const payload = await response.json();
+          if (!Array.isArray(payload.stations) || payload.stations.length < 8000 ||
+              !Array.isArray(payload.connectors) || payload.connectors.length < 15000)
+            throw new Error("NAP snapshot incompleto");
+          restoreConnectorRows(payload.connectors);
+          try { applyPublicAvailability(JSON.parse(localStorage.getItem(PUBLIC_AVAILABILITY_CACHE_KEY) || "null")); } catch {}
+          return payload.stations;
+        } catch (error) { console.warn("Catálogo estático indisponível", error); }
         // Both APIs use the same national seed so background pages have stable offsets.
         const params = new URLSearchParams({ limit: "300" });
         for (const endpoint of [D1_FALLBACK_URL, D1_API_WORKER_URL]) {
@@ -2013,16 +2073,6 @@
             console.warn("Station API unavailable:", endpoint, error);
           }
         }
-        // The static catalogue also works when the Worker API is temporarily slow.
-        try {
-          const response = await fetchWithTimeout("./assets/stations-snapshot.json", {}, 30000);
-          if (!response.ok) throw new Error(`NAP snapshot HTTP ${response.status}`);
-          const payload = await response.json();
-          if (!Array.isArray(payload.stations) || payload.stations.length < 8000)
-            throw new Error("NAP snapshot incomplete");
-          restoreConnectorRows(payload.connectors);
-          return payload.stations;
-        } catch (error) { console.warn("Catálogo estático indisponível", error); }
         return loadOverpassStations(await locationPromise);
       }
 
@@ -2236,6 +2286,7 @@
               operatorSelect.appendChild(option);
             });
           renderStations(false);
+          void refreshPublicAvailability();
           if (stations.length === 300) void loadRemainingNationalStations(generation);
 
           const vehicles = await vehiclePromise;
@@ -3356,8 +3407,14 @@
         if (!document.hidden) renderStations(false);
         refreshAvailability();
       }, 60000);
+      setInterval(() => {
+        if (!document.hidden && allStations.length) void refreshPublicAvailability();
+      }, 300000);
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) refreshAvailability();
+        if (!document.hidden) {
+          refreshAvailability();
+          if (allStations.length) void refreshPublicAvailability();
+        }
       });
 
       document.getElementById("show-portugal").addEventListener("click", () => {

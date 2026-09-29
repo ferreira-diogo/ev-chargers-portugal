@@ -398,3 +398,46 @@ test('manual refresh displays a newly published reading for the selected station
   assert.equal(otherRead,false);
   assert.match(nodes.get('station-refresh-message').textContent,/Consultado às/);
 });
+
+test('the national static catalogue loads without a D1 request and the KV overlay retains stale readings', async () => {
+  const publication = new Date(Date.now() - 8 * 60000).toISOString();
+  const station = {id:'nap-ABC-SITE',latitude:39,longitude:-8};
+  const connectors = [{id:'nap-ABC-SITE-POINT-1',station_id:station.id,quantity:1}];
+  const rows = new Map();
+  const context = vm.createContext({
+    connectorMap:rows, localStorage:{getItem(){return null;},setItem(){}},
+    Date, Map, console:{warn(){}},
+    D1_FALLBACK_URL:'https://site/api/stations',
+    D1_API_WORKER_URL:'https://api/api/stations',
+    async fetchWithTimeout(url) {
+      assert.equal(url,'./assets/stations-snapshot.json');
+      return {ok:true,json:async()=>({
+        stations:Array.from({length:8001},(_,i)=>({...station,id:i?String(i):station.id})),
+        connectors:Array.from({length:15001},(_,i)=>({...connectors[0],id:i?String(i):connectors[0].id})),
+      })};
+    },
+    restoreConnectorRows(items){rows.set(station.id,items.filter(x=>x.station_id===station.id));},
+    renderStations(){},
+    loadOverpassStations(){throw new Error('unwanted fallback');},
+  });
+  vm.runInContext(extract('const PUBLIC_AVAILABILITY_CACHE_KEY', 'async function loadRemainingNationalStations('),context);
+  const loaded = await context.loadFallbackStations(Promise.resolve(null));
+  assert.equal(loaded.length,8001);
+  assert.equal(rows.get(station.id).length,15001);
+  assert.equal(context.applyPublicAvailability({publication_time:publication,statuses:{'ABC-SITE|POINT':'available'}}),true);
+  assert.equal(rows.get(station.id)[0].availability_source,'mobie_nap_stale');
+  assert.equal(rows.get(station.id)[0].last_known_available_count,1);
+  assert.equal(rows.get(station.id)[0].available_count,null);
+});
+
+test('availability endpoints still work when D1 is unavailable', async () => {
+  const publication = new Date().toISOString();
+  const env={AVAILABILITY_KV:{async get(){return {publication_time:publication,statuses:{'ABC-SITE|POINT':'available'}};}}};
+  for (const worker of [siteWorker,apiWorker]) {
+    const response=await worker.fetch(new Request('https://site/api/availability'),env);
+    assert.equal(response.status,200);
+    const body=await response.json();
+    assert.equal(body.publication_time,publication);
+    assert.equal(body.statuses['ABC-SITE|POINT'],'available');
+  }
+});

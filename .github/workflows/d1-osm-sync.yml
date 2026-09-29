@@ -3,6 +3,10 @@ name: D1 OpenStreetMap station sync
 on:
   workflow_dispatch:
 
+concurrency:
+  group: chargevoy-d1-writes
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -35,6 +39,15 @@ jobs:
         run: wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=cloudflare/d1/schema.sql
       - name: Download and prepare OpenStreetMap snapshot
         run: node scripts/sync-d1-openstreetmap.mjs
+      - name: Refuse destructive or oversized OSM writes
+        run: |
+          set -euo pipefail
+          if grep -Eiq 'DELETE FROM (station_cache|station_cache_v2|connectors)|DROP TABLE' tmp/d1-osm-sync/*.sql; then
+            echo "::error::OSM export contains destructive SQL; convert it to incremental UPSERT before importing"
+            exit 1
+          fi
+          rows="$(grep -Eic 'INSERT|UPDATE' tmp/d1-osm-sync/*.sql | awk -F: '{sum += $NF} END {print sum+0}')"
+          test "$rows" -le 20000 || { echo "::error::OSM candidate statements exceed 20,000"; exit 1; }
       - name: Upload snapshot to D1
         run: |
           set -e

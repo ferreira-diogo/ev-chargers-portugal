@@ -138,6 +138,11 @@ async function stations(request, env) {
 export default {async fetch(request,env){
   const url=new URL(request.url);
   if(request.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type"}});
+  if(url.pathname==="/api/availability"){
+    const snapshot=await readAvailabilitySnapshot(env);
+    if(!snapshot) return json({error:"Availability snapshot unavailable"},503);
+    return json({publication_time:snapshot.publication_time||snapshot.refreshed_at,statuses:snapshot.statuses},200,"public, max-age=30");
+  }
   if(url.pathname==="/api/stations"||url.pathname.startsWith("/api/stations/"))return stations(request,env);
   if(url.pathname==="/api/connectors"){
     const stationId=url.searchParams.get("station_id");if(!stationId||stationId.length>180)return json({connectors:[],error:"station_id inválido"},400);
@@ -145,4 +150,3 @@ export default {async fetch(request,env){
   }
   return env.ASSETS.fetch(request);
 }};
-

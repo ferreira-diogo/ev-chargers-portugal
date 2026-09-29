@@ -16,6 +16,19 @@
     // corridor's later stops. Each request keeps the existing 20 km margin.
     const sections = Math.min(8, Math.max(1, Math.ceil(coordinates.length / 500)));
     const stationsById = new Map(), connectorsById = new Map();
+    if (allStations.length >= 8000) {
+      for (let section = 0; section < sections; section++) {
+        const start = Math.floor(section * (coordinates.length - 1) / sections);
+        const end = Math.floor((section + 1) * (coordinates.length - 1) / sections);
+        const bounds = routeBounds(coordinates.slice(start, end + 1));
+        for (const station of allStations) {
+          if (station.latitude >= bounds.minLat && station.latitude <= bounds.maxLat &&
+              station.longitude >= bounds.minLon && station.longitude <= bounds.maxLon)
+            stationsById.set(station.id, station);
+        }
+      }
+      if (stationsById.size) return [...stationsById.values()];
+    }
     for (let section = 0; section < sections; section++) {
       const start = Math.floor(section * (coordinates.length - 1) / sections);
       const end = Math.floor((section + 1) * (coordinates.length - 1) / sections);

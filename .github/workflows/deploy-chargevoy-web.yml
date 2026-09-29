@@ -42,6 +42,7 @@ jobs:
           npm install --no-audit --no-fund
           npm test
           node scripts/import-nap-datex.mjs --web-snapshot
+          node scripts/verify-static-snapshot.mjs
           npm run build:web
       - name: Install Wrangler
         run: npm install --global wrangler@4
@@ -75,17 +76,19 @@ jobs:
       - name: Deploy static Worker with D1 + KV
         working-directory: ev-charge-portugal-github-ready
         run: wrangler deploy --config wrangler-deploy.toml
-      - name: Verify deployed site Worker station binding
+      - name: Verify deployed static site and national snapshot
         run: |
           set -euo pipefail
-          for attempt in 1 2 3 4 5 6; do
-            code="$(curl --silent --show-error --max-time 20 -o /tmp/site-stations.json -w '%{http_code}' 'https://broken-mud-373e.zombid.workers.dev/api/stations?limit=10' || true)"
-            if [ "$code" = 200 ] && node -e 'const x=require("/tmp/site-stations.json");if(!Array.isArray(x.stations)||!x.stations.length)process.exit(1)'; then
-              echo "Site Worker station API available (D1 or NAP snapshot + KV)"
+          expected="$(grep -o 'chargevoy.js?v=[0-9]*' ev-charge-portugal-github-ready/index.html | head -1)"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            page="$(curl --silent --show-error --max-time 20 'https://broken-mud-373e.zombid.workers.dev/' || true)"
+            code="$(curl --silent --show-error --max-time 30 -o /tmp/site-snapshot.json -w '%{http_code}' 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' || true)"
+            if [ "$code" = 200 ] && echo "$page" | grep -Fq "$expected" && node -e 'const x=require("/tmp/site-snapshot.json");if(x.stations?.length<8000||x.connectors?.length<15000)process.exit(1)'; then
+              echo "Static site and national catalogue available without a D1 query"
               exit 0
             fi
-            echo "Attempt $attempt: HTTP $code; waiting for deployment propagation"
+            echo "Attempt $attempt: static asset HTTP $code; waiting for deployment propagation"
             sleep 10
           done
-          echo "::error::Site station API failed after deployment; check CHARGEVOY_DB binding and route"
+          echo "::error::Static site validation failed; roll back the Worker deployment to the previous version"
           exit 1

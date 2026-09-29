@@ -15,8 +15,8 @@ on:
     - cron: "17 3 * * *"
 
 concurrency:
-  group: d1-station-sync
-  cancel-in-progress: true
+  group: chargevoy-d1-writes
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -32,7 +32,7 @@ jobs:
         working-directory: ev-charge-portugal-github-ready
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Validate Cloudflare configuration
@@ -61,8 +61,8 @@ jobs:
           ceiling=$((stations + connectors + mappings))
           echo "Maximum candidate rows: $ceiling (stations=$stations connectors=$connectors mappings=$mappings)"
           echo "Unchanged existing rows use conditional UPSERT/IGNORE and therefore do not execute an UPDATE."
-          if [ "$ceiling" -gt 95000 ]; then
-            echo "::error::Refusing D1 sync: candidate write ceiling $ceiling exceeds 95,000-row safety budget"
+          if [ "$ceiling" -gt 60000 ]; then
+            echo "::error::Refusing D1 sync: candidate rows $ceiling exceed the 60,000-row safety budget"
             exit 1
           fi
       - name: Guard against destructive full refresh
@@ -90,12 +90,13 @@ jobs:
           done
       - name: Upload grouped incremental NAP catalogue
         run: |
-          set -e
+          set -euo pipefail
+          written_total=0
           for file in tmp/d1-nap-upload/*.sql; do
             echo "Uploading $file"
             success=0
             for attempt in 1 2 3; do
-              if wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"; then
+              if wrangler d1 execute "$D1_DATABASE_NAME" --remote --json --file="$file" > /tmp/d1-batch-result.json; then
                 success=1
                 break
               fi
@@ -103,6 +104,13 @@ jobs:
               sleep $((attempt * 5))
             done
             test "$success" = "1" || exit 1
+            written="$(node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("/tmp/d1-batch-result.json","utf8"));const rows=Array.isArray(r)?r:[r];if(!rows.length||rows.some(x=>!Number.isFinite(x.meta?.rows_written)))process.exit(2);process.stdout.write(String(rows.reduce((n,x)=>n+x.meta.rows_written,0)))')"
+            written_total=$((written_total + written))
+            echo "D1 rows written this run: $written_total"
+            if [ "$written_total" -gt 60000 ]; then
+              echo "::error::Stopping D1 import after exceeding the 60,000-row run budget"
+              exit 1
+            fi
           done
       - name: Verify catalogue completeness
         run: |
@@ -120,32 +128,6 @@ jobs:
           result="$(wrangler d1 execute "$D1_DATABASE_NAME" --remote --command="SELECT count(*) AS mapping_count FROM nap_connector_mapping")"
           echo "$result"
           echo "$result" | grep -q 'mapping_count'
-      - name: Prepare MOBI.E official tariff batches
-        run: python3 scripts/import-mobie-tariffs.py
-      - name: Upload official tariffs
-        run: |
-          set -e
-          for file in tmp/d1-tariffs/*.sql; do
-            success=0
-            for attempt in 1 2 3; do
-              if wrangler d1 execute "$D1_DATABASE_NAME" --remote --file="$file"; then
-                success=1
-                break
-              fi
-              sleep $((attempt * 5))
-            done
-            test "$success" = 1 || exit 1
-          done
-      - name: Verify official tariff coverage
-        run: |
-          wrangler d1 execute "$D1_DATABASE_NAME" --remote --json --command="SELECT count(*) AS tariff_count, count(DISTINCT t.station_id) AS station_count FROM official_opc_tariffs t JOIN station_cache_v2 s ON s.id=t.station_id WHERE t.updated_at > datetime('now','-2 days')" > /tmp/tariff-counts.json
-          python3 - <<'PY'
-          import json
-          row = json.load(open('/tmp/tariff-counts.json'))[0]['results'][0]
-          print(row)
-          if row['tariff_count'] < 8000 or row['station_count'] < 5000:
-              raise SystemExit('D1 tariff coverage below safety threshold')
-          PY
       - name: Verify D1 station API
         run: |
           set -euo pipefail

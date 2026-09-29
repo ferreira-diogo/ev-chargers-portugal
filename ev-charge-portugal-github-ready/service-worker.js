@@ -1,5 +1,5 @@
-const CACHE_NAME='ev-charge-shell-v21';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=17','./assets/chargevoy.js?v=21','./assets/ceme-cards.json','./assets/route-corridor.js?v=16'];
+const CACHE_NAME='ev-charge-shell-v22';
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=17','./assets/chargevoy.js?v=22','./assets/ceme-cards.json','./assets/route-corridor.js?v=17'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -21,6 +21,17 @@ self.addEventListener('fetch',event=>{
     // Availability can change every few minutes. Never replay a cached API
     // response as though it were the current status.
     event.respondWith(fetch(event.request));
+    return;
+  }
+  if(url.pathname.endsWith('/assets/stations-snapshot.json')){
+    // Refresh the structural catalogue on every visit. The last complete
+    // version remains available when a network request fails.
+    event.respondWith(fetch(event.request).then(response=>{
+      if(!response.ok)throw new Error('Station snapshot unavailable');
+      const copy=response.clone();
+      caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));
+      return response;
+    }).catch(()=>caches.match(event.request)));
     return;
   }
   event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{
