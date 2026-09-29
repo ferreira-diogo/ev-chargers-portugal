@@ -84,10 +84,22 @@ test('local vehicle catalogue contains battery EVs and the electric GLC', () => 
   assert(!cars.some(v => v.variant === '300e'));
 });
 
+test('static BEV catalogue remains useful when D1 has no vehicles', async () => {
+  const catalog = JSON.parse(await readFile(new URL('../assets/vehicle-catalog.json', import.meta.url), 'utf8'));
+  assert(catalog.models.length >= 100);
+  assert.equal(new Set(catalog.models.map(row => row.id)).size, catalog.models.length);
+  assert(catalog.models.some(row => row.make === 'Kia' && row.model === 'EV5'));
+  assert(catalog.models.some(row => row.make === 'Peugeot' && row.model === 'E-5008'));
+  assert(catalog.models.some(row => row.make === 'Mercedes-Benz' && row.model === 'GLC'));
+  assert(catalog.models.every(row => Array.isArray(row.connector_types) && row.connector_types.includes('CCS2')));
+  assert(catalog.models.every(row => row.battery_capacity_kwh == null && row.max_dc_power_kw == null));
+  assert(catalog.models.every(row => !/PHEV|DM-i|h[ií]brido/i.test(`${row.model} ${row.variant}`)));
+});
+
 test('vehicle catalogue merges D1 rows with local fallback and keeps D1 values', () => {
   const elements = new Map();
   function makeElement(id) { if (!elements.has(id)) elements.set(id, {innerHTML:'', value:'', options:[], add(option){this.options.push(option);}}); return elements.get(id); }
-  const context = vm.createContext({LOCAL_VEHICLE_FALLBACK:[
+  const context = vm.createContext({staticVehicleModels:[], LOCAL_VEHICLE_FALLBACK:[
     {id:'local-1',source:'local-fallback',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023,max_dc_power_kw:170},
     {id:'local-2',source:'local-fallback',make:'BMW',model:'i4',variant:'eDrive40',model_year_start:2023,max_dc_power_kw:200},
   ], document:{getElementById:makeElement}, localStorage:{getItem(){return null;}}, escapeHtml:s=>String(s), normalizeVehicle:v=>v, applyVehicle(){}});

@@ -1,0 +1,1297 @@
+{
+  "reviewed_at": "2026-09-29",
+  "description": "Modelos 100% elétricos; nomes da gama, sem especificações de uma versão específica. Dados técnicos desconhecidos ficam nulos.",
+  "attribution": "Seleção editorial ChargeVoy, com referência ao projeto Gaia EVDB (CC BY-SA 4.0) e gamas dos fabricantes.",
+  "models": [
+    {
+      "id": "catalog-caa5a6c4632b",
+      "make": "Abarth",
+      "model": "500e",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-9700f90d519d",
+      "make": "Audi",
+      "model": "Q4 e-tron",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d0421e08b536",
+      "make": "Audi",
+      "model": "Q4 Sportback e-tron",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-bfe38f280990",
+      "make": "Audi",
+      "model": "Q6 e-tron",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-541fb8f87c4e",
+      "make": "Audi",
+      "model": "A6 Sportback e-tron",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-3aff7cf6c56e",
+      "make": "Audi",
+      "model": "A6 Avant e-tron",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-5685aefc83b0",
+      "make": "Audi",
+      "model": "e-tron GT",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-df8068967a45",
+      "make": "BMW",
+      "model": "iX1",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-e270e2e4394b",
+      "make": "BMW",
+      "model": "iX2",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-e35edd01292e",
+      "make": "BMW",
+      "model": "iX3",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-ba3b8f5e14ce",
+      "make": "BMW",
+      "model": "i4",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-94e96a407311",
+      "make": "BMW",
+      "model": "i5",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-f265298d54a2",
+      "make": "BMW",
+      "model": "i5 Touring",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-202b9247b38c",
+      "make": "BMW",
+      "model": "i7",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-b390714aff11",
+      "make": "BMW",
+      "model": "iX",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-da8a1e061637",
+      "make": "BYD",
+      "model": "Dolphin Surf",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-a83a0dde239c",
+      "make": "BYD",
+      "model": "Dolphin",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-76e0585d0e8c",
+      "make": "BYD",
+      "model": "Atto 2",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d1dd17d6c177",
+      "make": "BYD",
+      "model": "Atto 3",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-61e32b164321",
+      "make": "BYD",
+      "model": "Seal",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-a35ff60b882d",
+      "make": "BYD",
+      "model": "Seal U EV",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-b4be1ce96ca5",
+      "make": "BYD",
+      "model": "Sealion 7",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-67f9edb5a4b1",
+      "make": "BYD",
+      "model": "Han",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-3cbc50036211",
+      "make": "BYD",
+      "model": "Tang",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-a5484a799c76",
+      "make": "Citroën",
+      "model": "ë-C3",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d3c6bf854951",
+      "make": "Citroën",
+      "model": "ë-C3 Aircross",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-9ff4a244d2a0",
+      "make": "Citroën",
+      "model": "ë-C4",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-cc5a2c14df36",
+      "make": "Citroën",
+      "model": "ë-C4 X",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-4d6824dadf2c",
+      "make": "Citroën",
+      "model": "ë-Berlingo",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-da82960c3659",
+      "make": "Cupra",
+      "model": "Born",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-61d4447da846",
+      "make": "Cupra",
+      "model": "Tavascan",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-005a6bda9809",
+      "make": "Dacia",
+      "model": "Spring",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-8cb3d3163976",
+      "make": "Fiat",
+      "model": "500e",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-e6c8e8114aae",
+      "make": "Fiat",
+      "model": "600e",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-a53a38231795",
+      "make": "Fiat",
+      "model": "Grande Panda Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d98dc7a487d8",
+      "make": "Ford",
+      "model": "Puma Gen-E",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-baed5eb64562",
+      "make": "Ford",
+      "model": "Explorer",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-ae0fda168463",
+      "make": "Ford",
+      "model": "Capri",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-6623964b0ef7",
+      "make": "Ford",
+      "model": "Mustang Mach-E",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-848e5166dd3a",
+      "make": "Honda",
+      "model": "e:Ny1",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-2cf697ac72a2",
+      "make": "Hyundai",
+      "model": "Inster",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-10679073ef01",
+      "make": "Hyundai",
+      "model": "Kona Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-26c0c828d2bd",
+      "make": "Hyundai",
+      "model": "Ioniq 5",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-98dca198db4c",
+      "make": "Hyundai",
+      "model": "Ioniq 6",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-9500a93744dd",
+      "make": "Hyundai",
+      "model": "Ioniq 9",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-e1b08b804acd",
+      "make": "Jeep",
+      "model": "Avenger",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-8e1deb98b245",
+      "make": "Kia",
+      "model": "EV2",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-18299b740d44",
+      "make": "Kia",
+      "model": "EV3",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-3e40f0f11636",
+      "make": "Kia",
+      "model": "EV4",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-6971d2b6b4b6",
+      "make": "Kia",
+      "model": "EV4 Fastback",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-93b179e9ff09",
+      "make": "Kia",
+      "model": "EV5",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-3eabff0d9b49",
+      "make": "Kia",
+      "model": "EV6",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-b4d6d0ff345c",
+      "make": "Kia",
+      "model": "EV9",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-0d37ccc15e8b",
+      "make": "Kia",
+      "model": "Niro EV",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-e88e4f5606a8",
+      "make": "Leapmotor",
+      "model": "T03",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-815f394e3948",
+      "make": "Leapmotor",
+      "model": "C10",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-5f0d2fd7e8db",
+      "make": "Lexus",
+      "model": "RZ",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-c2cfdad5fe57",
+      "make": "Mazda",
+      "model": "6e",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-ac51afaf0331",
+      "make": "Mercedes-Benz",
+      "model": "EQA",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-1ec5924e3173",
+      "make": "Mercedes-Benz",
+      "model": "EQB",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d604406b9fce",
+      "make": "Mercedes-Benz",
+      "model": "CLA Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d6a779fdea36",
+      "make": "Mercedes-Benz",
+      "model": "GLC",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-7e2ab926b09a",
+      "make": "Mercedes-Benz",
+      "model": "EQE",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-e11521189a55",
+      "make": "Mercedes-Benz",
+      "model": "EQE SUV",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-84114fe25ee7",
+      "make": "Mercedes-Benz",
+      "model": "EQS",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-244df1f72751",
+      "make": "Mercedes-Benz",
+      "model": "EQS SUV",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-e4de82684dae",
+      "make": "Mercedes-Benz",
+      "model": "EQV",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-5a9409497e7b",
+      "make": "MG",
+      "model": "MG4 Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-5d795d47e1be",
+      "make": "MG",
+      "model": "MGS5 EV",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-771d951cd1c2",
+      "make": "Mini",
+      "model": "Cooper Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d080276009fa",
+      "make": "Mini",
+      "model": "Aceman",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-802bdb938310",
+      "make": "Mini",
+      "model": "Countryman Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-49155bbbd6a8",
+      "make": "Nissan",
+      "model": "Ariya",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-a4eb7e1c093b",
+      "make": "Nissan",
+      "model": "Leaf (2026)",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-87c56b0a852b",
+      "make": "Nissan",
+      "model": "Micra Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-76c7fb99377c",
+      "make": "Opel",
+      "model": "Corsa Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-56270f747ddd",
+      "make": "Opel",
+      "model": "Mokka Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-c7605cb32030",
+      "make": "Opel",
+      "model": "Astra Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-673a8838d2df",
+      "make": "Opel",
+      "model": "Frontera Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-256f3c9c137f",
+      "make": "Opel",
+      "model": "Grandland Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-fa29bbb5f31d",
+      "make": "Peugeot",
+      "model": "e-208",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-90f92e8d3261",
+      "make": "Peugeot",
+      "model": "E-2008",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-f943b4571137",
+      "make": "Peugeot",
+      "model": "E-308",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-35197ec05d79",
+      "make": "Peugeot",
+      "model": "E-308 SW",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-9608347af180",
+      "make": "Peugeot",
+      "model": "E-3008",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-2d25983a260c",
+      "make": "Peugeot",
+      "model": "E-408",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-237d88458ff3",
+      "make": "Peugeot",
+      "model": "E-5008",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-2db0a93d46f8",
+      "make": "Peugeot",
+      "model": "E-Rifter",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-a14814db3a5f",
+      "make": "Polestar",
+      "model": "2",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-7858937d7848",
+      "make": "Polestar",
+      "model": "3",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-53aa29100eaf",
+      "make": "Polestar",
+      "model": "4",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-cc77b49df5ff",
+      "make": "Polestar",
+      "model": "5",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-1f743d8c33c8",
+      "make": "Porsche",
+      "model": "Macan Electric",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-8c6ad068995b",
+      "make": "Porsche",
+      "model": "Taycan",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-6071224c1587",
+      "make": "Renault",
+      "model": "Twingo E-Tech",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-cd2ea716127f",
+      "make": "Renault",
+      "model": "4 E-Tech",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-2f6ae9a20486",
+      "make": "Renault",
+      "model": "5 E-Tech",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d12808726e3f",
+      "make": "Renault",
+      "model": "Megane E-Tech",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-af75efacc30a",
+      "make": "Renault",
+      "model": "Scenic E-Tech",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-a2e5b0441fa3",
+      "make": "Smart",
+      "model": "#1",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-4d8173691c14",
+      "make": "Smart",
+      "model": "#3",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-88e48cc5ff56",
+      "make": "Smart",
+      "model": "#5",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-0545bb53d37d",
+      "make": "Subaru",
+      "model": "Solterra",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-66b2843807ec",
+      "make": "Suzuki",
+      "model": "e Vitara",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-ac80709bf671",
+      "make": "Tesla",
+      "model": "Model 3",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-078cfbe91bdd",
+      "make": "Tesla",
+      "model": "Model Y",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-d2cb35403d27",
+      "make": "Tesla",
+      "model": "Model S",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-8a6a0c2500d3",
+      "make": "Tesla",
+      "model": "Model X",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-c96bcc3ab8e8",
+      "make": "Toyota",
+      "model": "bZ4X",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-2a70bceae916",
+      "make": "Toyota",
+      "model": "C-HR+",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-3193940bca8c",
+      "make": "Volkswagen",
+      "model": "ID.3",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-adafcefcc891",
+      "make": "Volkswagen",
+      "model": "ID.4",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-143d155788ce",
+      "make": "Volkswagen",
+      "model": "ID.5",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-cfc4568abae6",
+      "make": "Volkswagen",
+      "model": "ID.7",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-db65c0a8e1de",
+      "make": "Volkswagen",
+      "model": "ID.7 Tourer",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-f2211fbf0b2b",
+      "make": "Volkswagen",
+      "model": "ID. Buzz",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-e4e5d35b64e3",
+      "make": "Volvo",
+      "model": "EX30",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-00e93f7a1cb7",
+      "make": "Volvo",
+      "model": "EX40",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-50a80c52df24",
+      "make": "Volvo",
+      "model": "EC40",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-c728bdc5d24d",
+      "make": "Volvo",
+      "model": "EX90",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-09210d5eee3f",
+      "make": "Volvo",
+      "model": "ES90",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-ae1555f1ef31",
+      "make": "XPENG",
+      "model": "G6",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-6d37af62aa52",
+      "make": "XPENG",
+      "model": "G9",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-9546c48390cd",
+      "make": "XPENG",
+      "model": "P7",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-893a74892429",
+      "make": "XPENG",
+      "model": "P7+",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-3d15afd163f6",
+      "make": "Zeekr",
+      "model": "X",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-20a4531b5f7d",
+      "make": "Škoda",
+      "model": "Elroq",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-8a6d3a21c40a",
+      "make": "Škoda",
+      "model": "Enyaq",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    },
+    {
+      "id": "catalog-ffee800e1299",
+      "make": "Škoda",
+      "model": "Enyaq Coupé",
+      "variant": "Versão por confirmar",
+      "connector_types": [
+        "CCS2",
+        "Type 2"
+      ]
+    }
+  ]
+}
