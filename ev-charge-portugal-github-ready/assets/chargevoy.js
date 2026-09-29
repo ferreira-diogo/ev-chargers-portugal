@@ -92,6 +92,7 @@
       }));
 
       let staticVehicleModels = [];
+      let vehiclePhotoCatalog = new Map();
       let vehicleModels = [];
       let currentVehicle = null;
       let selectedStationPower = null;
@@ -109,7 +110,6 @@
         );
       } catch (error) { console.warn("Favoritos locais indisponíveis", error); }
       let lastPlannedRoute = null;
-      let vehicleImageRequest = 0;
       let currentSession = null;
       let installPrompt = null;
       const geocodeCache = new Map();
@@ -803,43 +803,42 @@
         return `<svg viewBox="0 0 94 58" role="img" aria-label="Ilustração ${escapeHtml(vehicle?.make || "")} ${escapeHtml(vehicle?.model || "")}"><defs><linearGradient id="carPaint" x1="0" x2="1"><stop stop-color="${color}"/><stop offset="1" stop-color="#071b31"/></linearGradient></defs><path d="${roof}" fill="#dff4ff" stroke="#123a57" stroke-width="2"/><path d="M10 31 Q13 27 20 27 H75 Q83 27 87 34 L85 42 H8 L7 36 Q7 33 10 31Z" fill="url(#carPaint)"/><path d="M29 18 L40 17 L40 28 H22Z M44 17 L57 18 L70 28 H44Z" fill="#bfe8f5" opacity=".9"/><circle cx="24" cy="42" r="7" fill="#10263d"/><circle cx="24" cy="42" r="3" fill="#cbd5e1"/><circle cx="72" cy="42" r="7" fill="#10263d"/><circle cx="72" cy="42" r="3" fill="#cbd5e1"/><path d="M11 34h7M80 34h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`;
       }
 
-      async function renderVehicleImage(vehicle) {
+      function vehiclePhotoFor(vehicle) {
+        const key = `${vehicle.make}|${vehicle.model}`.toLocaleLowerCase("pt");
+        const photo = vehiclePhotoCatalog.get(key);
+        if (!photo) return null;
+        const year = Number(vehicle.model_year_start);
+        if (year && (year < photo.min_year || (photo.max_year && year > photo.max_year))) return null;
+        return photo;
+      }
+
+      function renderVehicleImage(vehicle) {
         const target = document.getElementById("vehicle-image");
         const credit = document.getElementById("vehicle-image-credit");
-        const request = ++vehicleImageRequest;
-        target.innerHTML = vehicleIllustration(vehicle);
-        credit.textContent = "A procurar imagem do modelo…";
-        try {
-          const query = `${vehicle.make} ${vehicle.model}`
-            .replace(/\s+/g, " ")
-            .trim();
-          const params = new URLSearchParams({
-            action: "query",
-            generator: "search",
-            gsrsearch: `intitle:${query} automobile`,
-            gsrnamespace: "0",
-            gsrlimit: "3",
-            prop: "pageimages|info",
-            pithumbsize: "320",
-            inprop: "url",
-            format: "json",
-            origin: "*",
-          });
-          const response = await fetch(
-            `https://en.wikipedia.org/w/api.php?${params}`,
-          );
-          if (!response.ok) throw new Error("Imagem indisponível");
-          const data = await response.json();
-          const pages = Object.values(data.query?.pages || {});
-          const page = pages.find((item) => item.thumbnail?.source) || pages[0];
-          if (request !== vehicleImageRequest) return;
-          if (!page?.thumbnail?.source) throw new Error("Sem fotografia");
-          target.innerHTML = `<img src="${escapeHtml(page.thumbnail.source)}" alt="${escapeHtml(query)}" loading="lazy">`;
-          credit.innerHTML = `Imagem: <a href="${escapeHtml(page.fullurl || "https://en.wikipedia.org/")}" target="_blank" rel="noopener">Wikipedia</a>`;
-        } catch (error) {
-          if (request === vehicleImageRequest)
-            credit.textContent = "Ilustração baseada no tipo de carro";
-        }
+        const illustration = () => {
+          target.innerHTML = vehicleIllustration(vehicle);
+          credit.textContent = "Ilustração baseada no tipo de carro";
+        };
+        const photo = vehiclePhotoFor(vehicle);
+        if (!photo) return illustration();
+
+        const img = document.createElement("img");
+        img.src = photo.image;
+        img.alt = `${vehicle.make} ${vehicle.model}`;
+        img.loading = "lazy";
+        img.onerror = () => { if (target.contains(img)) illustration(); };
+        target.replaceChildren(img);
+        const source = document.createElement("a");
+        source.href = photo.source_url;
+        source.textContent = photo.author;
+        source.target = "_blank";
+        source.rel = "noopener";
+        const license = document.createElement("a");
+        license.href = photo.license_url;
+        license.textContent = photo.license;
+        license.target = "_blank";
+        license.rel = "noopener";
+        credit.replaceChildren("Foto redimensionada: ", source, " · ", license);
       }
 
       function applyVehicle(vehicleId) {
@@ -2269,6 +2268,23 @@
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
 
+        fetch("./assets/vehicle-images/credits.json?v=1", { cache: "no-cache" })
+          .then((response) => {
+            if (!response.ok) throw new Error(`Fotografias HTTP ${response.status}`);
+            return response.json();
+          })
+          .then((photos) => {
+            if (!Array.isArray(photos)) throw new Error("Catálogo de fotografias inválido");
+            vehiclePhotoCatalog = new Map(photos.filter((photo) =>
+              photo.make && photo.model && Number.isInteger(photo.min_year) &&
+              /^\.\/assets\/vehicle-images\/[a-z0-9-]+\.jpg$/.test(photo.image) &&
+              photo.source_url.startsWith("https://commons.wikimedia.org/wiki/File:") &&
+              photo.license_url.startsWith("https://creativecommons.org/licenses/"),
+            ).map((photo) => [`${photo.make}|${photo.model}`.toLocaleLowerCase("pt"), photo]));
+            if (currentVehicle) renderVehicleImage(currentVehicle);
+          })
+          .catch((error) => console.warn("Fotografias de veículos indisponíveis", error));
+
         // Put a usable vehicle selection on screen immediately, then refresh the
         // full catalogue in parallel with geolocation and station loading.
         const cachedVehicles = readVehicleCache();
@@ -2326,7 +2342,8 @@
           const locationPromise = useMyLocation({
             setRouteOrigin: true,
             silent: true,
-            focusMap: false,
+            focusMap: true,
+            openPopup: false,
           }).catch((error) => {
             console.warn("Localização indisponível; usando fallback nacional", error);
             return null;
@@ -2827,7 +2844,7 @@
           renderStations(false);
           if (options.focusMap !== false) {
             map.setView([place.lat, place.lon], 12, { animate: false });
-            locationMarker.openPopup();
+            if (options.openPopup !== false) locationMarker.openPopup();
           }
           return place;
         } catch (error) {
