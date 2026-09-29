@@ -93,7 +93,10 @@ test('static BEV catalogue remains useful when D1 has no vehicles', async () => 
   assert(catalog.models.some(row => row.make === 'Peugeot' && row.model === 'E-5008'));
   assert(catalog.models.some(row => row.make === 'Mercedes-Benz' && row.model === 'GLC'));
   assert(catalog.models.every(row => Array.isArray(row.connector_types) && row.connector_types.includes('CCS2')));
-  assert(catalog.models.every(row => row.battery_capacity_kwh == null && row.max_dc_power_kw == null));
+  const sourced = catalog.models.filter(row => row.data_quality === 'sourced-variant');
+  assert(sourced.length >= 100);
+  assert(sourced.every(row => row.battery_capacity_kwh > 0 && row.consumption_wh_km > 0 && row.max_dc_power_kw > 0 && row.source_url.startsWith('https://')));
+  assert(catalog.models.filter(row => row.data_quality !== 'sourced-variant').every(row => row.battery_capacity_kwh == null && row.max_dc_power_kw == null));
   assert(catalog.models.every(row => !/PHEV|DM-i|h[ií]brido/i.test(`${row.model} ${row.variant}`)));
 });
 
@@ -107,6 +110,19 @@ test('any incomplete vehicle specification visibly uses generic route assumption
   assert(routeWeb.includes('vehicleUsesGenericRouteProfile(currentVehicle)'));
 });
 
+test('personal battery and charging values fill a missing variant without changing the catalogue', () => {
+  const stored = JSON.stringify({battery_capacity_kwh:64, consumption_wh_km:180, max_dc_power_kw:150});
+  const context = vm.createContext({localStorage:{getItem(){return stored;}}});
+  vm.runInContext(extract('function vehicleUsesGenericRouteProfile(', 'function populateVehicles('), context);
+  const original = {id:'custom-renault', battery_capacity_kwh:null, consumption_wh_km:null, max_dc_power_kw:null};
+  const adjusted = context.vehicleWithPersonalSpecs(original);
+  assert.equal(adjusted.battery_capacity_kwh, 64);
+  assert.equal(adjusted.consumption_wh_km, 180);
+  assert.equal(adjusted.max_dc_power_kw, 150);
+  assert.equal(context.vehicleUsesGenericRouteProfile(adjusted), false);
+  assert.equal(original.battery_capacity_kwh, null);
+});
+
 test('vehicle catalogue merges D1 rows with local fallback and keeps D1 values', () => {
   const elements = new Map();
   function makeElement(id) { if (!elements.has(id)) elements.set(id, {innerHTML:'', value:'', options:[], add(option){this.options.push(option);}}); return elements.get(id); }
@@ -117,7 +133,8 @@ test('vehicle catalogue merges D1 rows with local fallback and keeps D1 values',
   vm.runInContext(extract('function populateVehicles(', 'function vehicleIllustration('), context);
   context.renderVehicleOptions = () => {};
   context.populateVehicles([{id:'d1-1',source:'gaia-evdb',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023,max_dc_power_kw:170}]);
-  assert.equal(context.vehicleModels.length, 2);
+  assert.equal(context.vehicleModels.length, 4);
+  assert(context.vehicleModels.some(v => v.model === 'Outro modelo elétrico'));
   assert.equal(context.vehicleModels.find(v=>v.make==='Tesla').id, 'd1-1');
   assert.equal(context.vehicleModels.find(v=>v.make==='BMW').id, 'local-2');
 });

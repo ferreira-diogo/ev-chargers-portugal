@@ -1,18 +1,13 @@
 # Catálogo de veículos elétricos
 
-O site carrega `assets/vehicle-catalog.json` como catálogo estático de modelos BEV, independentemente da D1. As versões com especificações locais e, quando disponível, as versões da D1 continuam a ser apresentadas. Modelos estáticos que já têm uma versão local detalhada não são duplicados no seletor.
+O site lê `assets/vehicle-catalog.json`, mesmo com a D1 vazia. O catálogo contém versões de 2023–2027 com bateria útil, consumo e potência DC provenientes de [Gaia EVDB](https://github.com/gaia-charge/evdb), e modelos sem dados técnicos quando não existe uma versão suficientemente atribuída. A fonte de cada versão aparece em `source_url`; o conjunto de dados e a seleção derivada são CC BY-SA 4.0. `source_commit` fixa a revisão de origem. Os valores variam com mercado, ano, bateria e equipamento: selecionar a versão correspondente ao carro e conferir a ficha do fabricante.
 
-Revisto em 2026-09-29. Esta lista identifica **modelos**, não uma versão ou bateria concreta. As entradas estáticas têm potência e capacidade desconhecidas. Quando uma viatura tem dados incompletos, o simulador e as rotas identificam que utilizam valores genéricos nos campos em falta (60 kWh, 170 Wh/km ou 50 kW DC). Não acrescente especificações numéricas sem uma fonte para a versão exata.
+O gerador `scripts/refresh-vehicle-catalog.py` exige a marcação `verified` da origem, fonte HTTPS que aponte para uma página concreta, bateria útil entre 15–125 kWh, consumo entre 100–400 Wh/km e carga DC entre 30–400 kW. Exclui Leaf (CHAdeMO) e Model S/X (conector dependente do mercado). Isto é um filtro de plausibilidade, não uma verificação manual de cada fonte. Novas versões devem ser revistas no pull request antes de publicação.
 
-## Fontes e atribuição
+O seletor acrescenta “Outro modelo elétrico” por marca. Os campos “Bateria útil”, “Consumo” e “Carga DC” são guardados no navegador por veículo e substituem os dados da versão para simulação e rota. Campos em falta continuam com estimativas explícitas de 60 kWh, 170 Wh/km e 50 kW DC. Os modelos sem versão detalhada conservam nomes da seleção editorial anterior.
 
-Seleção editorial de nomes de modelos, com referência ao projeto [Gaia EVDB](https://github.com/gaia-charge/evdb) (dados CC BY-SA 4.0), complementada e conferida com gamas oficiais: [Mercedes-Benz GLC elétrico](https://www.mercedes-benz.pt/passengercars/models/suv/glc-electric/overview.html), [BMW iX3](https://www.bmw.pt/pt/all-models/x-series/ix3/bmw-ix3.html), [Renault](https://www.renault.pt/configuradores.html), [Volkswagen](https://www.volkswagen.pt/eletricos/eletricos), [Peugeot](https://www.peugeot.pt/showroom/peugeot-5008/eletrico.html), [Kia](https://m.kia.pt/modelos-kia/) e [BYD](https://media.byd.com/section/models/?lang=eng). A seleção do ficheiro JSON é partilhada sob [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); o código da aplicação mantém a sua licença própria.
+## Atualização semanal
 
-## Atualização
+Às segundas-feiras, `.github/workflows/refresh-vehicle-catalog.yml` obtém Gaia EVDB, gera o JSON e executa os testes. Se houver alterações, abre um pull request para revisão humana; só um merge inicia o deploy de produção. Se o repositório desativar a permissão do `GITHUB_TOKEN` para criar pull requests, ativar nas definições de Actions “Allow GitHub Actions to create and approve pull requests”. A execução manual (`workflow_dispatch`) usa o mesmo processo.
 
-1. Verificar nos fabricantes se o modelo é 100% elétrico e vendido ou anunciado para o mercado europeu. Excluir versões híbridas mesmo quando partilham o nome.
-2. Editar `assets/vehicle-catalog.json`, mantendo o `id` estável e sem inventar bateria, consumo ou potência de carga.
-3. Incrementar o `?v=` do ficheiro no carregamento da aplicação e no service worker, e a versão da cache PWA. Atualizar `reviewed_at`.
-4. Executar `npm test` e `npm run build:web`; validar no preview a marca, a seleção e a indicação de perfil genérico antes de publicar.
-
-O catálogo estático evita que uma D1 vazia ou indisponível reduza o seletor às poucas versões de recurso e não consome escritas diárias na D1.
+Para executar localmente: instalar `PyYAML==6.0.2`, clonar `https://github.com/gaia-charge/evdb`, executar `python3 scripts/refresh-vehicle-catalog.py /caminho/evdb` e `npm test`. Conferir as novas versões, os respetivos links de fonte, conectores e valores antes de aprovar o PR. Atualizar `reviewed_at` após revisão; se o JSON mudar manualmente, incrementar o parâmetro `?v=` e a cache PWA.

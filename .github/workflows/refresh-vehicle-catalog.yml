@@ -1,0 +1,39 @@
+name: Review vehicle catalogue weekly
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 7 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Fetch upstream EVDB
+        run: git clone --depth=1 https://github.com/gaia-charge/evdb.git /tmp/chargevoy-evdb
+      - name: Generate and validate catalogue
+        run: |
+          python -m pip install 'PyYAML==6.0.2'
+          cd ev-charge-portugal-github-ready
+          python scripts/refresh-vehicle-catalog.py /tmp/chargevoy-evdb
+          npm test
+      - name: Create review pull request for changed data
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/weekly-vehicle-catalog
+          delete-branch: true
+          commit-message: "chore: refresh sourced vehicle variants"
+          title: "Review weekly EV vehicle catalogue refresh"
+          body: |
+            Gaia EVDB changed. Review the affected versions and their source links before merging.
+            The automated quality gates checked year, battery, consumption, DC power and source URL.
+            Dataset CC BY-SA 4.0; production deploy occurs only after merge.
+          add-paths: ev-charge-portugal-github-ready/assets/vehicle-catalog.json

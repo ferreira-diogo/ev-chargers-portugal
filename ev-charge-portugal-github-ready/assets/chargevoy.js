@@ -663,6 +663,52 @@
         );
       }
 
+      const VEHICLE_SPEC_FIELDS = { "vehicle-battery": ["battery_capacity_kwh", 15, 125], "vehicle-consumption": ["consumption_wh_km", 100, 400], "vehicle-dc": ["max_dc_power_kw", 30, 400] };
+      function vehicleWithPersonalSpecs(vehicle) {
+        if (!vehicle) return null;
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem(`chargevoy-vehicle-specs:${vehicle.id}`) || "{}"); } catch {}
+        const result = { ...vehicle };
+        for (const [field, min, max] of Object.values(VEHICLE_SPEC_FIELDS)) {
+          const value = Number(saved[field]);
+          if (saved[field] != null && Number.isFinite(value) && value >= min && value <= max) result[field] = value;
+        }
+        return result;
+      }
+      function updateVehicleSpecs() {
+        const vehicle = vehicleModels.find((item) => item.id === currentVehicle?.id);
+        if (!vehicle) return;
+        const overrides = {};
+        for (const [elementId, [field, min, max]] of Object.entries(VEHICLE_SPEC_FIELDS)) {
+          const input = document.getElementById(elementId);
+          if (!input.value) continue;
+          const value = Number(input.value);
+          if (!Number.isFinite(value) || value < min || value > max) return;
+          overrides[field] = value;
+        }
+        try { localStorage.setItem(`chargevoy-vehicle-specs:${vehicle.id}`, JSON.stringify(overrides)); } catch {}
+        currentVehicle = vehicleWithPersonalSpecs(vehicle);
+        showVehicleSpecs();
+        sim();
+        renderStations(false);
+      }
+      function showVehicleSpecs() {
+        const incomplete = vehicleUsesGenericRouteProfile(currentVehicle);
+        document.getElementById("vehicle-specs").textContent = incomplete
+          ? `🔋 ${currentVehicle.battery_capacity_kwh || "—"} kWh · ${currentVehicle.consumption_wh_km || "—"} Wh/km · DC ${currentVehicle.max_dc_power_kw || "—"} kW · campos em falta usam estimativas`
+          : `🔋 ${currentVehicle.battery_capacity_kwh} kWh · ${currentVehicle.consumption_wh_km} Wh/km · DC ${currentVehicle.max_dc_power_kw} kW`;
+        const source = document.getElementById("vehicle-detail-source");
+        source.replaceChildren();
+        if (currentVehicle.source_url?.startsWith("https://")) {
+          const link = document.createElement("a");
+          link.href = currentVehicle.source_url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "Fonte da versão ↗";
+          source.append(link);
+        }
+      }
+
       function populateVehicles(vehicles) {
         const merged = new Map();
          for (const vehicle of [...LOCAL_VEHICLE_FALLBACK, ...staticVehicleModels, ...(Array.isArray(vehicles) ? vehicles : [])].filter(
@@ -683,6 +729,9 @@
         const brands = [
           ...new Set(vehicleModels.map((vehicle) => vehicle.make).filter(Boolean)),
         ].sort((a, b) => a.localeCompare(b, "pt"));
+        vehicleModels.push(...brands.map((make) => ({ id: `custom-${make.toLocaleLowerCase("pt").replace(/[^a-z0-9]+/g, "-")}`,
+          make, model: "Outro modelo elétrico", variant: "", data_quality: "model-only",
+          connector_types: ["CCS2", "Type 2"], source: "personal" })));
         brandSelect.innerHTML =
           '<option value="all">Todas as marcas</option>' +
           brands
@@ -716,7 +765,7 @@
         select.innerHTML = filtered
           .map(
             (vehicle) =>
-              `<option value="${escapeHtml(vehicle.id)}">${escapeHtml(vehicle.model)} · ${escapeHtml(vehicle.variant)}${vehicle.model_year_start ? ` (${vehicle.model_year_start})` : ""}</option>`,
+              `<option value="${escapeHtml(vehicle.id)}">${escapeHtml(vehicle.model)}${vehicle.data_quality === "model-only" ? " · Definir bateria" : vehicle.variant ? ` · ${escapeHtml(vehicle.variant)}` : ""}${vehicle.model_year_start ? ` (${vehicle.model_year_start})` : ""}</option>`,
           )
           .join("");
         if (
@@ -791,16 +840,20 @@
       }
 
       function applyVehicle(vehicleId) {
-        currentVehicle =
+        const selectedVehicle =
           vehicleModels.find((vehicle) => vehicle.id === vehicleId) ||
           vehicleModels[0] ||
           null;
+        currentVehicle = vehicleWithPersonalSpecs(selectedVehicle);
         if (!currentVehicle) return;
         try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
-         document.getElementById("vehicle-specs").textContent =
-           vehicleUsesGenericRouteProfile(currentVehicle)
-             ? "Dados técnicos incompletos · rota com valores genéricos nos dados em falta"
-             : `🔋 ${currentVehicle.battery_capacity_kwh ?? "—"} kWh · ${currentVehicle.consumption_wh_km ?? "—"} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
+        for (const [elementId, [field]] of Object.entries(VEHICLE_SPEC_FIELDS)) {
+          let saved = {};
+          try { saved = JSON.parse(localStorage.getItem(`chargevoy-vehicle-specs:${currentVehicle.id}`) || "{}"); } catch {}
+          document.getElementById(elementId).value = saved[field] ?? "";
+        }
+        showVehicleSpecs();
+        document.querySelector(".vehicle-adjust").open = vehicleUsesGenericRouteProfile(currentVehicle);
          renderVehicleImage(currentVehicle);
         sim();
         renderStations(false);
@@ -2163,7 +2216,7 @@
         return `select=${stationFields}&limit=500`;
       }
 
-      const VEHICLE_CACHE_KEY = "chargevoy-vehicle-catalog-v2";
+      const VEHICLE_CACHE_KEY = "chargevoy-vehicle-catalog-v3";
       const STATION_CACHE_KEY = "chargevoy-nearby-stations-v1";
 
       function readVehicleCache() {
@@ -2218,8 +2271,7 @@
         const cachedVehicles = readVehicleCache();
         let remoteVehicleRows = cachedVehicles || [];
         populateVehicles(remoteVehicleRows);
-        const localModelKeys = new Set(LOCAL_VEHICLE_FALLBACK.map((item) => `${item.make}|${item.model}`.toLocaleLowerCase("pt")));
-        fetch("./assets/vehicle-catalog.json?v=1", { cache: "no-cache" })
+        fetch("./assets/vehicle-catalog.json?v=2", { cache: "no-cache" })
           .then((response) => {
             if (!response.ok) throw new Error(`Catálogo estático HTTP ${response.status}`);
             return response.json();
@@ -2227,10 +2279,11 @@
           .then((catalogue) => {
             if (!Array.isArray(catalogue.models) || catalogue.models.length < 100)
               throw new Error("Catálogo estático incompleto");
+            const detailedKeys = new Set([...LOCAL_VEHICLE_FALLBACK, ...catalogue.models.filter((item) => item.data_quality === "sourced-variant")]
+              .map((item) => `${item.make}|${item.model}`.toLocaleLowerCase("pt")));
             staticVehicleModels = catalogue.models
-              .filter((item) => !localModelKeys.has(`${item.make}|${item.model}`.toLocaleLowerCase("pt")))
-              .map((item) => ({ ...item, source: "static-model", data_quality: "model-only",
-                battery_capacity_kwh: null, consumption_wh_km: null, max_dc_power_kw: null }));
+              .filter((item) => item.data_quality === "sourced-variant" || !detailedKeys.has(`${item.make}|${item.model}`.toLocaleLowerCase("pt")))
+              .map((item) => ({ ...item, source: "static-model", data_quality: item.data_quality || "model-only" }));
             populateVehicles(remoteVehicleRows);
           })
           .catch((error) => console.warn("Catálogo estático de veículos indisponível", error));
@@ -3518,6 +3571,9 @@
         .addEventListener("change", (event) =>
           renderVehicleOptions(event.target.value),
         );
+      for (const elementId of Object.keys(VEHICLE_SPEC_FIELDS)) {
+        document.getElementById(elementId).addEventListener("change", updateVehicleSpecs);
+      }
       document
         .getElementById("plan-route")
         .addEventListener("click", planRoute);
