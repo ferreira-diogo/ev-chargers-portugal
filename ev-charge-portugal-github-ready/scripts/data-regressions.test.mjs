@@ -52,6 +52,10 @@ test('Tesla Supercharger filter recognizes boolean amenities and JSON text', () 
   assert.equal(context.isOfficialTeslaStation({amenities:{tesla_official_supercharger:true}}), true);
   assert.equal(context.isOfficialTeslaStation({amenities:'{"tesla_official_supercharger":true}'}), true);
   assert.equal(context.isOfficialTeslaStation({amenities:'{}'}), false);
+  const napTesla = {source:'nap-mobie',operator_id:'nap-operator-tesla',operator_name:'Tesla',amenities:{operator_name:'Tesla'}};
+  assert.equal(context.isOfficialTeslaStation(napTesla), true);
+  assert.equal(context.isOfficialTeslaStation({...napTesla,operator_id:'nap-operator-other'}), false);
+  assert.equal(context.isOfficialTeslaStation({...napTesla,operator_name:'Outra rede'}), false);
 });
 
 test('power filter uses connector power when station aggregate is missing or lower', () => {
@@ -74,6 +78,35 @@ test('Tesla-only and connector type filters must both match', () => {
   assert.equal(context.matchesConnectorFilters(official, [{type:'CCS2'}], ['Tesla','CCS']), true);
   assert.equal(context.matchesConnectorFilters(official, [{type:'Type 2'}], ['Tesla','CCS']), false);
   assert.equal(context.matchesConnectorFilters(ordinary, [{type:'CCS2'}], ['Tesla','CCS']), false);
+  const napTesla = {source:'nap-mobie',operator_id:'nap-operator-tesla',operator_name:'Tesla'};
+  assert.equal(context.matchesConnectorFilters(napTesla, [{type:'CCS'}], ['Tesla']), true);
+  assert.equal(context.matchesConnectorFilters(napTesla, [{type:'CCS'}], ['Tesla','CCS']), true);
+  assert.equal(context.matchesConnectorFilters(napTesla, [{type:'CCS'}], ['Tesla','Type 2']), false);
+  assert.equal(context.matchesConnectorFilters(napTesla, [{type:'Type 2'}], ['Tesla','Type 2']), true);
+  assert.equal(context.matchesConnectorFilters(napTesla, [{type:'IEC_62196_T2_COMBO'}], ['CCS']), true);
+  assert.equal(context.matchesConnectorFilters(ordinary, [{type:'IEC_62196_T2'}], ['Type 2']), true);
+});
+
+test('mobile filter menu closes on search and on its backdrop', async () => {
+  const elements = new Map();
+  const element = (id) => {
+    if (!elements.has(id)) {
+      const classes = new Set();
+      elements.set(id, {value:'', classList:{add:c=>classes.add(c), remove:c=>classes.delete(c), contains:c=>classes.has(c)}, setAttribute(k,v){this[k]=v;}});
+    }
+    return elements.get(id);
+  };
+  const context = vm.createContext({document:{getElementById:element}, searchPosition:null, searchLayer:{clearLayers(){}}, renderStations(){}});
+  vm.runInContext(extract('function closeFilterMenu(', 'async function browserPosition('), context);
+  context.openFilterMenu();
+  assert.equal(element('filter-backdrop').classList.contains('is-visible'), true);
+  context.closeFilterMenu();
+  assert.equal(element('filter-menu').classList.contains('mobile-open'), false);
+  context.openFilterMenu();
+  await context.searchPortugal();
+  assert.equal(element('filter-menu').classList.contains('mobile-open'), false);
+  assert.equal(element('mobile-filters')['aria-expanded'], 'false');
+  assert(web.includes('getElementById("filter-backdrop").addEventListener("click", closeFilterMenu)'));
 });
 
 test('local vehicle catalogue contains battery EVs and the electric GLC', () => {

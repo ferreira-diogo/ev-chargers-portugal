@@ -610,14 +610,14 @@
         }
       }
       function connectorCategory(value) {
-        const type = String(value || "").toLowerCase();
+        const type = String(value || "").toLowerCase().replace(/[_-]+/g, " ");
         if (type.includes("chademo")) return "CHAdeMO";
-        if (type.includes("tesla") || type.includes("nacs")) return "Tesla";
         if (type.includes("ccs") || type.includes("combo")) return "CCS";
+        if (type.includes("tesla") || type.includes("nacs")) return "Tesla";
         if (
-          type.includes("type 2") ||
+          type.includes("type 2") || type.includes("type2") ||
           type.includes("mennekes") ||
-          type.includes("iec 62196-2")
+          type.includes("iec 62196-2") || type.includes("iec 62196 t2")
         )
           return "Type 2";
         return String(value || "Outro");
@@ -629,7 +629,10 @@
           try { amenities = JSON.parse(amenities); } catch { amenities = {}; }
         }
         return amenities.tesla_official_supercharger === true ||
-          amenities.tesla_official_supercharger === "true";
+          amenities.tesla_official_supercharger === "true" ||
+          (station?.source === "nap-mobie" &&
+            station?.operator_id === "nap-operator-tesla" &&
+            String(station?.operator_name || amenities.operator_name || "").toLowerCase() === "tesla");
       }
       function isTeslaVehicle() {
         return String(currentVehicle?.make || "").toLowerCase() === "tesla";
@@ -2685,10 +2688,21 @@
         };
       }
 
+      function closeFilterMenu() {
+        document.getElementById("filter-menu").classList.remove("mobile-open");
+        document.getElementById("filter-backdrop").classList.remove("is-visible");
+        document.getElementById("mobile-filters").setAttribute("aria-expanded", "false");
+      }
+      function openFilterMenu() {
+        document.getElementById("filter-menu").classList.add("mobile-open");
+        document.getElementById("filter-backdrop").classList.add("is-visible");
+        document.getElementById("mobile-filters").setAttribute("aria-expanded", "true");
+      }
       async function searchPortugal() {
         const input = document.getElementById("location-search");
         const button = document.getElementById("apply-filters");
         const query = input.value.trim();
+        closeFilterMenu();
         if (!query) {
           searchPosition = null;
           searchLayer.clearLayers();
@@ -2699,7 +2713,6 @@
           if (!searchPosition || searchPosition.label !== "A minha localização")
             await useMyLocation();
           else renderStations(true);
-          document.querySelector(".side").classList.remove("mobile-open");
           return;
         }
         try {
@@ -2714,7 +2727,6 @@
             .openPopup();
           document.getElementById("sort-filter").value = "distance-asc";
           renderStations(true);
-          document.querySelector(".side").classList.remove("mobile-open");
         } catch (error) {
           console.error(error);
           notifyUser(error.message || "Não foi possível pesquisar este local.", { kind: "error" });
@@ -3548,7 +3560,7 @@
       document.getElementById("global-search").addEventListener("input", () => {
         renderStations(false);
         if (document.getElementById("global-search").value.trim())
-          document.querySelector(".side")?.classList.remove("mobile-open");
+          closeFilterMenu();
       });
       document
         .querySelectorAll(".connector-filter,.status-filter")
@@ -3660,9 +3672,11 @@
         });
       document
         .getElementById("mobile-filters")
-        .addEventListener("click", () =>
-          document.querySelector(".side").classList.add("mobile-open"),
-        );
+        .addEventListener("click", openFilterMenu);
+      document.getElementById("filter-backdrop").addEventListener("click", closeFilterMenu);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeFilterMenu();
+      });
       document
         .getElementById("language-toggle")
         .addEventListener("click", () =>
@@ -3670,9 +3684,7 @@
         );
       document
         .getElementById("close-mobile-filters")
-        .addEventListener("click", () =>
-          document.querySelector(".side").classList.remove("mobile-open"),
-        );
+        .addEventListener("click", closeFilterMenu);
       document.getElementById("nav-vehicle").addEventListener("click", () => {
         closeStationPanel();
         document
@@ -3680,7 +3692,7 @@
           .classList.remove("route-visible");
         setNavigationMode("vehicle");
         if (window.innerWidth <= 780)
-          document.querySelector(".side").classList.add("mobile-open");
+          openFilterMenu();
         else document.getElementById("vehicle-select").focus();
       });
       const quickRoute = document.getElementById("open-route-planner");
