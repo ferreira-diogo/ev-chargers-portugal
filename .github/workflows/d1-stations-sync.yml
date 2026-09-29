@@ -2,14 +2,6 @@ name: D1 station fallback sync
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/d1-stations-sync.yml"
-      - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
-      - "ev-charge-portugal-github-ready/scripts/import-mobie-tariffs.py"
-      - "ev-charge-portugal-github-ready/scripts/build-nap-d1-mapping.mjs"
-      - "ev-charge-portugal-github-ready/scripts/optimize-d1-nap-sql.mjs"
-      - "ev-charge-portugal-github-ready/cloudflare/d1/schema.sql"
   schedule:
     # Structural catalogue only. Live availability is refreshed separately in KV.
     - cron: "17 3 * * *"
