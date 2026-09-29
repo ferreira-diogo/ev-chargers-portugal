@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScript, refreshWorkflow, cardCatalog, apiWorkerConfig, robots, sitemap] = await Promise.all([
+const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScript, refreshWorkflow, cardCatalog, apiWorkerConfig, robots, sitemap, ads] = await Promise.all([
   readFile(resolve(root, "index.html"), "utf8"),
   readFile(resolve(root, "assets/chargevoy.js"), "utf8"),
   readFile(resolve(root, "assets/route-corridor.js"), "utf8"),
@@ -16,6 +16,7 @@ const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScri
   readFile(resolve(root, "wrangler-api.toml"), "utf8"),
   readFile(resolve(root, "robots.txt"), "utf8"),
   readFile(resolve(root, "sitemap.xml"), "utf8"),
+  readFile(resolve(root, "ads.txt"), "utf8"),
 ]);
 
 const canParse = (source) => { try { new Function(source); return true; } catch (error) { console.error(error.message); return false; } };
@@ -36,6 +37,7 @@ const checks = [
   ["Homepage has one visible brand heading", (html.match(/<h1\b/g) || []).length === 1 && html.includes("Postos elétricos em Portugal")],
   ["Sitemap lists the public homepage", sitemap.includes("<loc>https://chargevoy.pt/</loc>") && (sitemap.match(/<loc>/g) || []).length === 1],
   ["Robots advertises the sitemap", robots.includes("Sitemap: https://chargevoy.pt/sitemap.xml") && !robots.includes("Disallow: /\n")],
+  ["AdSense publisher is declared exactly once", ads.trim() === "google.com, pub-2532609913918786, DIRECT, f08c47fec0942fa0"],
   ["PWA shell includes photo credits", worker.includes("./assets/vehicle-images/credits.json?v=1") && js.includes("vehicle-images/credits.json?v=1")],
   ["PWA shell includes card catalog", worker.includes("./assets/ceme-cards.json")],
   ["PWA shell includes vehicle catalog", worker.includes("./assets/vehicle-catalog.json?v=2") && js.includes('vehicle-catalog.json?v=2')],
