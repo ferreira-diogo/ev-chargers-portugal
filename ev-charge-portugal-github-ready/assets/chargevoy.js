@@ -406,10 +406,12 @@
         const rows = [];
         let offset = 0;
         while (true) {
-          const page = await getRows(
-            table,
-            `${query}&limit=${pageSize}&offset=${offset}`,
-          );
+           // A failed later page must not turn a complete vehicle catalogue into
+           // a cached partial one.
+           const page = await (D1_PUBLIC_TABLES.has(table) ? getD1Rows : getRows)(
+             table,
+             `${query}&limit=${pageSize}&offset=${offset}`,
+           );
           rows.push(...page);
           if (page.length < pageSize) break;
           offset += pageSize;

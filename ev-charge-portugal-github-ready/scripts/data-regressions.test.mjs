@@ -112,6 +112,19 @@ test('D1 vehicle catalogue pagination is ordered and uses the requested offset',
   assert.equal((await response.json()).rows[0].id,'vehicle-501');
 });
 
+test('an unavailable later vehicle page does not produce a partial catalogue', async () => {
+  const context = vm.createContext({
+    D1_PUBLIC_TABLES:new Set(['vehicle_models']),
+    async getD1Rows(_table, query){
+      if(query.includes('offset=0')) return Array.from({length:500},(_,i)=>({id:String(i)}));
+      throw new Error('D1 unavailable');
+    },
+    async getRows(){throw new Error('wrong source')},
+  });
+  vm.runInContext(extract('async function getAllRows(', 'const connectorRequests ='),context);
+  await assert.rejects(context.getAllRows('vehicle_models','select=id',500),/D1 unavailable/);
+});
+
 test('D1 export writes every record exactly once across batch boundaries', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'chargevoy-test-'));
   try {
