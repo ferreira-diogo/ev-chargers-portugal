@@ -8,6 +8,7 @@ import siteWorker from '../worker/index.js';
 import apiWorker from '../worker-api/index.js';
 
 const web = await readFile(new URL('../assets/chargevoy.js', import.meta.url), 'utf8');
+const routeWeb = await readFile(new URL('../assets/route-corridor.js', import.meta.url), 'utf8');
 function extract(start, end) { return web.slice(web.indexOf(start), web.indexOf(end, web.indexOf(start))); }
 
 test('six sourced card tariffs preserve period prices and fixed-price eligibility', async () => {
@@ -94,6 +95,16 @@ test('static BEV catalogue remains useful when D1 has no vehicles', async () => 
   assert(catalog.models.every(row => Array.isArray(row.connector_types) && row.connector_types.includes('CCS2')));
   assert(catalog.models.every(row => row.battery_capacity_kwh == null && row.max_dc_power_kw == null));
   assert(catalog.models.every(row => !/PHEV|DM-i|h[ií]brido/i.test(`${row.model} ${row.variant}`)));
+});
+
+test('any incomplete vehicle specification visibly uses generic route assumptions', () => {
+  const context = vm.createContext({});
+  vm.runInContext(extract('function vehicleUsesGenericRouteProfile(', 'function populateVehicles('), context);
+  assert.equal(context.vehicleUsesGenericRouteProfile({battery_capacity_kwh:60, consumption_wh_km:145, max_dc_power_kw:170}), false);
+  assert.equal(context.vehicleUsesGenericRouteProfile({battery_capacity_kwh:null, consumption_wh_km:null, max_dc_power_kw:400}), true);
+  assert.equal(context.vehicleUsesGenericRouteProfile({battery_capacity_kwh:null, consumption_wh_km:null, max_dc_power_kw:null}), true);
+  assert(web.includes('vehicleUsesGenericRouteProfile(currentVehicle)'));
+  assert(routeWeb.includes('vehicleUsesGenericRouteProfile(currentVehicle)'));
 });
 
 test('vehicle catalogue merges D1 rows with local fallback and keeps D1 values', () => {

@@ -655,6 +655,14 @@
         return { ...vehicle, connector_types: (Array.isArray(types) ? types : []).map(connectorCategory) };
       }
 
+      function vehicleUsesGenericRouteProfile(vehicle) {
+        return !vehicle || !(
+          Number(vehicle.battery_capacity_kwh) > 0 &&
+          Number(vehicle.consumption_wh_km) > 0 &&
+          Number(vehicle.max_dc_power_kw) > 0
+        );
+      }
+
       function populateVehicles(vehicles) {
         const merged = new Map();
          for (const vehicle of [...LOCAL_VEHICLE_FALLBACK, ...staticVehicleModels, ...(Array.isArray(vehicles) ? vehicles : [])].filter(
@@ -790,8 +798,8 @@
         if (!currentVehicle) return;
         try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
          document.getElementById("vehicle-specs").textContent =
-           currentVehicle.data_quality === "model-only"
-             ? "Versão e dados técnicos por confirmar · rota com valores genéricos (60 kWh, 170 Wh/km, DC 50 kW)"
+           vehicleUsesGenericRouteProfile(currentVehicle)
+             ? "Dados técnicos incompletos · rota com valores genéricos nos dados em falta"
              : `🔋 ${currentVehicle.battery_capacity_kwh ?? "—"} kWh · ${currentVehicle.consumption_wh_km ?? "—"} Wh/km · DC ${currentVehicle.max_dc_power_kw ?? "—"} kW`;
          renderVehicleImage(currentVehicle);
         sim();
@@ -3281,7 +3289,7 @@
                 : suggested.length
                   ? `<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`
                   : "<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>";
-          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${currentVehicle?.data_quality === "model-only" ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa um perfil genérico de 60 kWh, 170 Wh/km e 50 kW DC; confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
+          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${vehicleUsesGenericRouteProfile(currentVehicle) ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa valores genéricos nos dados em falta (60 kWh, 170 Wh/km ou 50 kW DC); confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
           result.classList.add("show");
           saveRouteToUserHistory();
         } catch (error) {
