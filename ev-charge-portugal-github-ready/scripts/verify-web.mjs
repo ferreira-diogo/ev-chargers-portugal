@@ -32,7 +32,7 @@ const checks = [
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA shell caches corridor planner", worker.includes("./assets/route-corridor.js")],
-  ["PWA cache version is current", worker.includes("ev-charge-shell-v31") && worker.includes("chargevoy.css?v=24") && html.includes("chargevoy.css?v=24") && html.includes("chargevoy.js?v=29")],
+  ["PWA cache version is current", worker.includes("ev-charge-shell-v29") && worker.includes("chargevoy.css?v=22") && html.includes("chargevoy.css?v=22") && html.includes("chargevoy.js?v=28")],
   ["Homepage declares its canonical URL", html.includes('<link rel="canonical" href="https://chargevoy.pt/"')],
   ["Homepage has one visible brand heading", (html.match(/<h1\b/g) || []).length === 1 && html.includes("Postos elétricos em Portugal")],
   ["Sitemap lists the public homepage", sitemap.includes("<loc>https://chargevoy.pt/</loc>") && (sitemap.match(/<loc>/g) || []).length === 1],
