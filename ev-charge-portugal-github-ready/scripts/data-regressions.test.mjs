@@ -87,6 +87,45 @@ test('Tesla-only and connector type filters must both match', () => {
   assert.equal(context.matchesConnectorFilters(ordinary, [{type:'IEC_62196_T2'}], ['Type 2']), true);
 });
 
+test('homepage quick filters share menu selections and clear only their categories', () => {
+  const canonical = (value, checked) => ({value, checked});
+  const connectors = [canonical('CCS', true), canonical('Type 2', false), canonical('CHAdeMO', false), canonical('Tesla', true)];
+  const statuses = [canonical('available', true), canonical('unavailable', false), canonical('unknown', false)];
+  const quick = [...connectors.map(input => ({...input, dataset:{filterKind:'connector'}})), ...statuses.map(input => ({...input, dataset:{filterKind:'status'}}))];
+  const powers = ['all','0-50','50-150','150-250','250+'].flatMap(power => [0,1].map(() => ({dataset:{power},classList:{toggle(name, selected){this.selected = selected;}},setAttribute(name, value){this[name] = value;}})));
+  const unrelated = {search:'Lisboa', operator:'EDP', vehicle:'Tesla', position:{lat:38.72,lon:-9.14}};
+  const context = vm.createContext({selectedPower:'250+', unrelated, renderCount:0, document:{querySelectorAll(selector){
+    if (selector.includes('#power-filter')) return powers;
+    if (selector === '.connector-filter') return connectors;
+    if (selector === '.status-filter') return statuses;
+    if (selector === '.quick-filter-input') return quick;
+    throw new Error(`Unexpected selector: ${selector}`);
+  }}});
+  vm.runInContext(extract('function syncQuickFilters(', 'function matchesPower('), context);
+  vm.runInContext('function renderStations(zoom) { if (zoom !== false) throw new Error("Quick filtering moved the map"); renderCount++; syncQuickFilters(); }', context);
+  context.syncQuickFilters();
+  assert.equal(powers.filter(button => button['aria-pressed'] === 'true').length, 2);
+  assert(quick.find(input => input.value === 'Tesla').checked);
+  quick.find(input => input.value === 'Tesla').checked = false;
+  context.updateQuickFilter(quick.find(input => input.value === 'Tesla'));
+  assert.equal(connectors.find(input => input.value === 'Tesla').checked, false);
+  statuses.find(input => input.value === 'unknown').checked = true;
+  context.syncQuickFilters();
+  assert.equal(quick.find(input => input.value === 'unknown').checked, true);
+  quick.find(input => input.value === 'available').checked = false;
+  context.updateQuickFilter(quick.find(input => input.value === 'available'));
+  assert.equal(statuses.find(input => input.value === 'available').checked, false);
+  assert.equal(context.renderCount, 2);
+  context.clearQuickFilters();
+  assert.equal(context.selectedPower, 'all');
+  assert(connectors.every(input => !input.checked));
+  assert(statuses.every(input => input.checked));
+  assert(quick.filter(input => input.dataset.filterKind === 'status').every(input => input.checked));
+  assert(quick.filter(input => input.dataset.filterKind === 'connector').every(input => !input.checked));
+  assert.deepEqual(unrelated, {search:'Lisboa',operator:'EDP',vehicle:'Tesla',position:{lat:38.72,lon:-9.14}});
+  assert.equal(context.renderCount, 3);
+});
+
 test('search collapses the desktop sidebar and map click closes the mobile menu', async () => {
   const elements = new Map();
   const element = (id) => {
