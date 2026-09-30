@@ -22,7 +22,7 @@ restriction and all availability states. Search, location, operator and vehicle
 are retained. The initial availability defaults remain unchanged.
 
 The national map summary uses a small translucent background. Ver Portugal
-remains clickable. The PWA shell uses cache v30, CSS v23 and JavaScript v29.
+remains clickable. The PWA shell uses cache v31, CSS v24 and JavaScript v29.
 
 ## Rollback
 

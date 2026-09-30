@@ -2721,9 +2721,9 @@ body:not(.map-mode) .quick-filters { display: none; }
   .quick-filter-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .quick-filter-card { padding: 12px; border-radius: 16px; }
   .quick-status-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .quick-status-filter { gap: 4px; padding: 8px 4px; font-size: clamp(10px, 2.8vw, 12px); }
-  .quick-status-filter input { width: 12px; height: 12px; }
-  .quick-status-dot { flex-basis: 6px; width: 6px; height: 6px; }
+  .quick-status-filter { gap: 4px; padding: 8px 4px; font-size: clamp(10px, 2.6vw, 11px); }
+  .quick-status-filter input { width: 11px; height: 11px; }
+  .quick-status-dot { flex-basis: 5px; width: 5px; height: 5px; }
   .main.station-selected .quick-filters { display: none; }
   .mapbadge { font-size: 10px; }
   .map-coverage-actions button { min-height: 44px; font-size: 11px; }
@@ -2733,6 +2733,13 @@ body:not(.map-mode) .quick-filters { display: none; }
   .quick-status-filter { gap: 2px; padding: 8px 2px; font-size: 10px; }
   .quick-status-filter input { width: 11px; height: 11px; }
   .quick-status-dot { flex-basis: 5px; width: 5px; height: 5px; }
+}
+@media (max-width: 340px) {
+  .quick-availability-card { padding: 8px; }
+  .quick-status-filters { gap: 3px; }
+  .quick-status-filter { gap: 1px; padding: 8px 1px; }
+  .quick-status-filter input { width: 10px; height: 10px; }
+  .quick-status-dot { flex-basis: 4px; width: 4px; height: 4px; }
 }
 @media (max-width: 780px) and (orientation: portrait) {
   .main:not(.station-selected) .mapbox { height: clamp(260px, 38dvh, 330px); min-height: 260px; }
