@@ -115,6 +115,14 @@
       const geocodeCache = new Map();
       // Interface translations: all platforms (web, PWA and Capacitor) share this file.
       const I18N_EN = {
+        "Filtros rápidos": "Quick filters",
+        "Limpar": "Clear",
+        "Limpar filtros rápidos": "Clear quick filters",
+        "Conectores / rede": "Connectors / network",
+        "Disponibilidade": "Availability",
+        "Desconhecido": "Unknown",
+        "Tesla oficial": "Official Tesla",
+        "Tesla Supercharger oficial": "Official Tesla Supercharger",
         "Ver Portugal": "Show Portugal",
         "Retomar carregamento": "Resume loading",
         "A carregar o país…": "Loading Portugal…",
@@ -2420,6 +2428,34 @@
         );
       }
 
+      // The menu controls remain the source of truth for both filter surfaces.
+      function syncQuickFilters() {
+        document.querySelectorAll("#power-filter .chip, #quick-power-filter .chip").forEach((button) => {
+          const selected = button.dataset.power === selectedPower;
+          button.classList.toggle("on", selected);
+          button.setAttribute("aria-pressed", String(selected));
+        });
+        document.querySelectorAll(".quick-filter-input").forEach((input) => {
+          const original = [...document.querySelectorAll(`.${input.dataset.filterKind}-filter`)]
+            .find((control) => control.value === input.value);
+          if (original) input.checked = original.checked;
+        });
+      }
+
+      function updateQuickFilter(input) {
+        const original = [...document.querySelectorAll(`.${input.dataset.filterKind}-filter`)]
+          .find((control) => control.value === input.value);
+        if (original) original.checked = input.checked;
+        renderStations(false);
+      }
+
+      function clearQuickFilters() {
+        selectedPower = "all";
+        document.querySelectorAll(".connector-filter").forEach((input) => { input.checked = false; });
+        document.querySelectorAll(".status-filter").forEach((input) => { input.checked = true; });
+        renderStations(false);
+      }
+
       function matchesPower(power) {
         const value = Number(power) || 0;
          if (selectedPower === "0-50") return value > 0 && value <= 50;
@@ -2467,6 +2503,7 @@
           ));
       }
       function renderStations(zoomToResults = true) {
+        syncQuickFilters();
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
         const search = document
@@ -3542,16 +3579,17 @@
       document.getElementById("retry-national").addEventListener("click", () => loadRemainingNationalStations(nationalLoadGeneration));
 
       // Simulator controls are initialized above with energy/time modes.
-      document.querySelectorAll("#power-filter .chip").forEach((button) =>
+      document.querySelectorAll("#power-filter .chip, #quick-power-filter .chip").forEach((button) =>
         button.addEventListener("click", () => {
-          document
-            .querySelectorAll("#power-filter .chip")
-            .forEach((other) => other.classList.remove("on"));
-          button.classList.add("on");
           selectedPower = button.dataset.power;
-          renderStations();
+          renderStations(false);
         }),
       );
+      document.querySelectorAll(".quick-filter-input").forEach((input) =>
+        input.addEventListener("change", () => updateQuickFilter(input)),
+      );
+      document.getElementById("clear-quick-filters").addEventListener("click", clearQuickFilters);
+      syncQuickFilters();
       document
         .getElementById("apply-filters")
         .addEventListener("click", searchPortugal);
