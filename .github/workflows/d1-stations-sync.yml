@@ -2,6 +2,11 @@ name: D1 station fallback sync
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/d1-stations-sync.yml"
+      - "ev-charge-portugal-github-ready/scripts/read-wrangler-json.mjs"
   schedule:
     # Structural catalogue only. Live availability is refreshed separately in KV.
     - cron: "17 3 * * *"
@@ -36,6 +41,17 @@ jobs:
         run: npm install --global wrangler@4
       - name: Install application dependencies
         run: npm install --no-audit --no-fund
+      - name: Save D1 rollback bookmark before catalogue writes
+        run: |
+          mkdir -p tmp/catalogue-rollback
+          wrangler d1 time-travel info "$D1_DATABASE_NAME" --json > tmp/catalogue-rollback/d1-before.json
+          node -e 'const x=require("./tmp/catalogue-rollback/d1-before.json");if(!x.bookmark)throw new Error("Missing D1 rollback bookmark")'
+          git rev-parse HEAD > tmp/catalogue-rollback/commit.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalogue-d1-rollback-${{ github.run_id }}
+          path: ev-charge-portugal-github-ready/tmp/catalogue-rollback/
+          retention-days: 7
       - name: Ensure D1 schema
         run: wrangler d1 execute "$D1_DATABASE_NAME" --remote --file=cloudflare/d1/schema.sql
       - name: Prepare NAP station snapshot
@@ -96,7 +112,7 @@ jobs:
               sleep $((attempt * 5))
             done
             test "$success" = "1" || exit 1
-            written="$(node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("/tmp/d1-batch-result.json","utf8"));const rows=Array.isArray(r)?r:[r];if(!rows.length||rows.some(x=>!Number.isFinite(x.meta?.rows_written)))process.exit(2);process.stdout.write(String(rows.reduce((n,x)=>n+x.meta.rows_written,0)))')"
+            written="$(node scripts/read-wrangler-json.mjs /tmp/d1-batch-result.json)"
             written_total=$((written_total + written))
             echo "D1 rows written this run: $written_total"
             if [ "$written_total" -gt 60000 ]; then

@@ -4,7 +4,13 @@ const site = process.env.CHARGEVOY_SITE_URL || "https://chargevoy.pt";
 const api = process.env.CHARGEVOY_API_URL || "https://chargevoy-api.zombid.workers.dev";
 async function get(url) {
   const response = await fetch(url, { signal: AbortSignal.timeout(45000) });
-  if (!response.ok) throw new Error(`${url} HTTP ${response.status}`);
+  if (!response.ok) {
+    const headers = Object.fromEntries(["cf-ray", "cf-mitigated", "server", "content-type"]
+      .map(name => [name, response.headers.get(name)]).filter(([,value]) => value));
+    const body = (await response.text()).replace(/\s+/g, " ").slice(0, 300);
+    console.error(JSON.stringify({url,status:response.status,headers,body_excerpt:body}));
+    throw new Error(`${url} HTTP ${response.status}`);
+  }
   return response;
 }
 const home = await (await get(site + "/")).text();

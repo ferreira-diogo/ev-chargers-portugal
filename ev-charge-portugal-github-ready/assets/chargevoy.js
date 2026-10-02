@@ -334,7 +334,7 @@
         // Do not recreate the map/card grid here: it keeps the language change instant on mobile.
         if (selectedStation) {
           const info = stationAvailability(
-            connectorMap.get(selectedStation.id) || [],
+            stationConnectorRows(selectedStation),
           );
           document.getElementById("station-live").innerHTML =
             availabilityHtml(info);
@@ -429,6 +429,61 @@
       }
 
       const connectorRequests = new Map();
+      function stationLocationKey(station) {
+        const normalize = (value) => String(value || "").normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
+        const lat = Number(station.latitude), lon = Number(station.longitude);
+        const operator = normalize(station.operator_id || station.operator_name);
+        const address = normalize(station.address);
+        // Only combine official records that name the same operator and address
+        // at the same coordinates. Nearby operators and opposite road sides stay separate.
+        if (station.source !== "nap-mobie" || !operator || !address ||
+            station.latitude == null || station.longitude == null || !Number.isFinite(lat) || !Number.isFinite(lon))
+          return `station:${station.id}`;
+        return [station.source, operator, address, normalize(station.city), lat.toFixed(5), lon.toFixed(5)].join("|");
+      }
+      function groupStationLocations(stations) {
+        const locations = new Map();
+        for (const station of stations) {
+          const key = stationLocationKey(station);
+          const members = locations.get(key) || [];
+          members.push(station);
+          locations.set(key, members);
+        }
+        return [...locations.values()].map((members) => {
+          if (members.length === 1) return members[0];
+          members.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+          const first = members[0];
+          return {...first, name: String(first.name || "Posto de carregamento").replace(/\s*#\d+\s*$/, ""),
+            max_power_kw: Math.max(...members.map(member => Number(member.max_power_kw) || 0)),
+            _location_members: members};
+        });
+      }
+      function resolveStationLocation(station) {
+        if (station._location_members) return station;
+        const key = stationLocationKey(station);
+        const location = groupStationLocations(allStations.filter(member => stationLocationKey(member) === key))[0];
+        return location ? {...location, id: station.id} : station;
+      }
+      function stationConnectorRows(station) {
+        const members = station?._location_members || [station];
+        const seen = new Set();
+        return members.flatMap(member => (connectorMap.get(member?.id) || []).filter(connector => {
+          if (seen.has(connector.id)) return false;
+          seen.add(connector.id);
+          return true;
+        }));
+      }
+      async function loadLocationConnectors(station, force = false) {
+        const members = station._location_members || [station];
+        const results = await Promise.allSettled(members.map(member => loadStationConnectors(member.id, force)));
+        const rows = stationConnectorRows(station);
+        if (results.every(result => result.status === "rejected"))
+          throw new Error("Não foi possível consultar os carregadores deste local.");
+        // Keep the catalogue's full connector set if D1 has an older partial
+        // version. New readings replace matching IDs; unknown rows stay unknown.
+        return rows;
+      }
       async function loadStationConnectors(stationId, force = false) {
         if (!force && connectorMap.has(stationId))
           return connectorMap.get(stationId) || [];
@@ -450,7 +505,9 @@
                  throw new Error("Resposta de outro posto");
                if (!payload.connectors.length && (connectorMap.get(stationId) || []).length)
                  throw new Error("Resposta sem conectores; última leitura mantida");
-               rows = payload.connectors;
+              const byId = new Map((connectorMap.get(stationId) || []).map(row => [row.id, row]));
+              for (const row of payload.connectors) byId.set(row.id, row);
+              rows = [...byId.values()];
               break;
             } catch (error) { console.warn("Consulta do posto indisponível", error); }
           }
@@ -565,7 +622,7 @@
       }
 
       function effectiveStationStatus(station) {
-        const info = stationAvailability(connectorMap.get(station.id) || []);
+        const info = stationAvailability(stationConnectorRows(station));
          // Preserve the last reported colour, but never label it LIVE after five minutes.
         if (info.kind === "live" || info.kind === "stale")
           return info.available > 0
@@ -909,7 +966,7 @@
       }
       function showStationAlternative() {
         if (!selectedStation) return;
-        const alternatives = allStations
+        const alternatives = groupStationLocations(allStations)
           .filter(
             (station) =>
               station.id !== selectedStation.id &&
@@ -1045,7 +1102,7 @@
         if (window.innerWidth <= 780)
           requestAnimationFrame(() => map.invalidateSize());
       }
-      function renderConnectorMatrix(connectors) {
+      function renderConnectorMatrix(connectors, station) {
         const target = document.getElementById("connector-matrix");
         if (!target) return;
         if (!connectors.length) {
@@ -1084,7 +1141,7 @@
             const power = connector.power_kw
               ? `${connector.power_kw} kW`
               : "Potência não comunicada";
-             return `<div class="connector-row"><div><b>Tomada ${index + 1} · ${escapeHtml(type)}</b><small>${escapeHtml(power)}${quantity > 1 ? ` · ${quantity} tomadas` : ""}</small></div><span class="connector-state ${state}${previous ? " previous" : ""}">${previous ? "Última leitura: " : ""}${escapeHtml(label)}</span></div>`;
+             return `<div class="connector-row"><div><b>Tomada ${index + 1} · ${escapeHtml(type)}</b><small>${escapeHtml(power)}${station?._location_members ? ` · ${escapeHtml(station._location_members.find(member => member.id === connector.station_id)?.name || connector.station_id)}` : ""}${quantity > 1 ? ` · ${quantity} tomadas` : ""}</small></div><span class="connector-state ${state}${previous ? " previous" : ""}">${previous ? "Última leitura: " : ""}${escapeHtml(label)}</span></div>`;
           })
           .join("");
       }
@@ -1107,12 +1164,17 @@
           connectorTypes.join(" · ") || "—";
         document.getElementById("station-points").textContent =
           totalPoints || "—";
+        const capacity = document.getElementById("station-capacity-note");
+        if (capacity) capacity.textContent = currentLanguage === "en"
+          ? `${station._location_members?.length || 1} charger(s) at this location. Connector count does not indicate simultaneous charging capacity.`
+          : `${station._location_members?.length || 1} ${station._location_members?.length > 1 ? "carregadores" : "carregador"} neste local. O total de fichas não indica quantos carros podem carregar em simultâneo.`;
         document.getElementById("station-live").innerHTML =
           availabilityHtml(availability);
-        renderConnectorMatrix(stationConnectors);
+        renderConnectorMatrix(stationConnectors, station);
       }
 
       function selectStation(station, operatorName) {
+        station = resolveStationLocation(station);
         selectedStation = station;
         const napStation = String(station.source || "").startsWith("nap");
         document.getElementById("refresh-station").disabled = !napStation;
@@ -1128,7 +1190,7 @@
         document.querySelector(".right")?.classList.add("station-open");
         loadStationPhoto(station);
         selectedStationPower = Number(station.max_power_kw) || null;
-        const stationConnectors = connectorMap.get(station.id) || [];
+        const stationConnectors = stationConnectorRows(station);
         const location =
           [station.address, station.city].filter(Boolean).join(", ") ||
           "Morada não comunicada";
@@ -1146,7 +1208,7 @@
             "A consultar…";
           document.getElementById("station-points").textContent = "—";
         }
-        loadStationConnectors(station.id, true)
+        loadLocationConnectors(station, true)
           .then((connectors) => {
             if (selectedStation?.id === station.id)
               updateStationConnectorPanel(station, connectors);
@@ -1582,7 +1644,7 @@
         let stationHtml = "";
         if (selectedStation) {
           const availability = stationAvailability(
-            connectorMap.get(selectedStation.id) || [],
+            stationConnectorRows(selectedStation),
           );
           stationHtml = `<p><b>${escapeHtml(selectedStation.name || "Posto selecionado")}</b><br>Estado atual: <b>${escapeHtml(availability.label)}</b></p><p><small>A fiabilidade do posto só será calculada depois de existirem snapshots provenientes de uma fonte live validada.</small></p>`;
         }
@@ -2467,7 +2529,7 @@
 
       function stationMaxPowerKw(station) {
         const declared = Number(station?.max_power_kw) || 0;
-        const connectorPower = (connectorMap.get(station?.id) || []).reduce(
+        const connectorPower = stationConnectorRows(station).reduce(
           (max, connector) => Math.max(max, Number(connector.power_kw) || 0), 0,
         );
         return Math.max(declared, connectorPower);
@@ -2515,8 +2577,8 @@
         const selectedOperator =
           document.getElementById("operator-filter").value;
         const sort = document.getElementById("sort-filter").value;
-        let filtered = allStations.filter((s) => {
-          const stationConnectors = connectorMap.get(s.id) || [];
+        let filtered = groupStationLocations(allStations).filter((s) => {
+          const stationConnectors = stationConnectorRows(s);
           const operatorName = operatorMap.get(s.operator_id) || "";
           const haystack = [s.name, s.address, s.city, operatorName]
             .filter(Boolean)
@@ -2571,7 +2633,7 @@
         document.getElementById("station-count-label").textContent = currentLanguage === "en" ? "stations on the map" : "postos no mapa";
         const coverage = [];
         if (searchPosition) coverage.push(currentLanguage === "en" ? `${nearbyCount} nearby (up to 75 km)` : `${nearbyCount} próximos (até 75 km)`);
-        coverage.push(nationalLoadState === "loading" ? t("A carregar o país…") : nationalLoadState === "partial" ? t("Carregamento parcial") : `${allStations.length.toLocaleString("pt-PT")} ${t("postos carregados")}`);
+        coverage.push(nationalLoadState === "loading" ? t("A carregar o país…") : nationalLoadState === "partial" ? t("Carregamento parcial") : `${allStations.length.toLocaleString("pt-PT")} ${currentLanguage === "en" ? "charger records loaded" : "registos carregados"}`);
         document.getElementById("station-coverage").textContent = coverage.join(" · ");
         document.getElementById("retry-national").hidden = nationalLoadState !== "partial";
         stationLayer.clearLayers();
@@ -2603,7 +2665,7 @@
             return;
           }
           const s = group[0];
-          const stationConnectors = connectorMap.get(s.id) || [];
+          const stationConnectors = stationConnectorRows(s);
           const connectorText =
             [...new Set(stationConnectors.map((c) => c.type))].join(" · ") ||
             "Conector não indicado";
@@ -2628,7 +2690,7 @@
             `<b>${escapeHtml(s.name || operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw ?? "—")} kW · ${escapeHtml(totalPoints)} tomadas · ${escapeHtml(connectorText)}<br>● ${escapeHtml(availability.kind === "none" && isOfficialTeslaStation(s) ? "Disponibilidade na app Tesla" : availability.label)}<br><button onclick="routeToStationById('${escapeHtml(s.id)}')" style="margin-top:7px;border:0;border-radius:6px;padding:6px 9px;background:#0eaf72;color:#fff;font-weight:700;cursor:pointer">🧭 Criar rota</button>`,
           );
           marker.on("click", () => selectStation(s, operatorName));
-          markerMap.set(s.id, marker);
+          for (const member of s._location_members || [s]) markerMap.set(member.id, marker);
         });
         if (zoomToResults && filtered.length) {
           const bounds = L.latLngBounds(
@@ -2639,7 +2701,7 @@
         const best = filtered.filter((s) => s.max_power_kw).slice(0, 5);
         cards.innerHTML = best
           .map((s, index) => {
-            const stationConnectors = connectorMap.get(s.id) || [];
+            const stationConnectors = stationConnectorRows(s);
             const connectorText =
               [...new Set(stationConnectors.map((c) => c.type))].join(" · ") ||
               "Não indicado";
@@ -2676,7 +2738,7 @@
                   Number(currentVehicle.max_dc_power_kw),
                 )
               : Number(s.max_power_kw) || 0;
-            return `<article class="card"><div class="rank">${index + 1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name || "Posto de carregamento")}</div><div class="avail">${availability.kind === "none" && isOfficialTeslaStation(s) ? "● Disponibilidade na app Tesla" : availabilityHtml(availability)}</div><div class="reliability">${reliabilityText}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower || "—")} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km != null ? "distância aproximada" : escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(s.max_power_kw)} kW</b> disponíveis no posto<div class="card-actions"><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button><button class="secondary" data-station-details="${escapeHtml(s.id)}">Ver detalhes e navegar</button></div></article>`;
+            return `<article class="card"><div class="rank">${index + 1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name || "Posto de carregamento")}</div><div class="avail">${availability.kind === "none" && isOfficialTeslaStation(s) ? "● Disponibilidade na app Tesla" : availabilityHtml(availability)}</div><div class="reliability">${reliabilityText}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower || "—")} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km != null ? "distância aproximada" : escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(totalPoints)} fichas no local</b> · ${escapeHtml(connectorText)}<br><small>${escapeHtml(s.max_power_kw)} kW máximo${s._location_members ? ` · ${s._location_members.length} carregadores` : ""}</small><div class="card-actions"><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button><button class="secondary" data-station-details="${escapeHtml(s.id)}">Ver detalhes e navegar</button></div></article>`;
           })
           .join("");
         if (!best.length)
@@ -3019,7 +3081,7 @@
           currentVehicle?.connector_types || [],
         );
         if (!vehicleConnectors.size) return true;
-        return (connectorMap.get(station.id) || []).some((connector) =>
+        return (stationConnectorRows(station)).some((connector) =>
           vehicleConnectors.has(connectorCategory(connector.type)),
         );
       }
@@ -3245,7 +3307,7 @@
             )
             .map((station) => {
               const availability = stationAvailability(
-                connectorMap.get(station.id) || [],
+                stationConnectorRows(station),
               );
               return {
                 ...station,
@@ -3508,7 +3570,7 @@
         button.disabled = true;
          button.textContent = t("A consultar…");
          try {
-           const previous = stationPublicationTime(connectorMap.get(station.id) || []);
+           const previous = stationPublicationTime(stationConnectorRows(station));
            let requested = null;
            if (manual) {
              const response = await fetchWithTimeout(
@@ -3522,13 +3584,13 @@
                ? currentLanguage === "en" ? "New MOBI.E reading requested. Checking this station…" : "Nova leitura solicitada à MOBI.E. A verificar este posto…"
                : currentLanguage === "en" ? "The source has a recent reading. Checking this station…" : "A fonte já tem uma leitura recente. A consultar este posto…";
            }
-           let connectors = await loadStationConnectors(station.id, true);
+           let connectors = await loadLocationConnectors(station, true);
            const baseline = Math.max(previous, Date.parse(requested?.publication_time) || 0);
            if (manual && (requested.queued || requested.reason === "already_requested")) {
              for (let attempt = 0; attempt < 6 && stationPublicationTime(connectors) <= baseline; attempt++) {
                if (document.hidden || selectedStation?.id !== station.id) break;
                await new Promise((resolve) => setTimeout(resolve, 20000));
-               connectors = await loadStationConnectors(station.id, true);
+               connectors = await loadLocationConnectors(station, true);
              }
            }
            if (selectedStation?.id === station.id) {

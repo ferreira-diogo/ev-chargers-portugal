@@ -6,3 +6,7 @@ android/app/build/
 android/local.properties
 *.keystore
 *.jks
+
+assets/stations-snapshot.json
+assets/stations-manifest.json
+tmp/

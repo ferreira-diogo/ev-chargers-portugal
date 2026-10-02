@@ -9,7 +9,11 @@ import apiWorker from '../worker-api/index.js';
 
 const web = await readFile(new URL('../assets/chargevoy.js', import.meta.url), 'utf8');
 const routeWeb = await readFile(new URL('../assets/route-corridor.js', import.meta.url), 'utf8');
-function extract(start, end) { return web.slice(web.indexOf(start), web.indexOf(end, web.indexOf(start))); }
+function extract(start, end) {
+  const source = web.slice(web.indexOf(start), web.indexOf(end, web.indexOf(start)));
+  const helper = web.slice(web.indexOf('function stationConnectorRows('), web.indexOf('async function loadLocationConnectors('));
+  return source.includes('stationConnectorRows(') && !source.includes('function stationConnectorRows(') ? helper + source : source;
+}
 
 test('six sourced card tariffs preserve period prices and fixed-price eligibility', async () => {
   const cards = JSON.parse(await readFile(new URL('../assets/ceme-cards.json', import.meta.url), 'utf8'));
@@ -453,10 +457,11 @@ test('station refresh requests only the selected station, coalesces and preserve
   vm.runInContext(extract('async function loadStationConnectors(', 'function markerColor('), context);
   await Promise.all([context.loadStationConnectors('one', true), context.loadStationConnectors('one', true)]);
   assert.deepEqual(calls, ['https://site/api/connectors?station_id=one']);
-  assert.equal(connectorMap.get('one'), rows);
+  assert.equal(connectorMap.get('one').at(-1).id, 'c');
+  const lastReading = connectorMap.get('one');
   fail = true;
   await assert.rejects(context.loadStationConnectors('one', true));
-  assert.equal(connectorMap.get('one'), rows);
+  assert.equal(connectorMap.get('one'), lastReading);
   assert(calls.every(url => url.endsWith('/api/connectors?station_id=one')));
 });
 
@@ -515,7 +520,8 @@ test('manual refresh displays a newly published reading for the selected station
       assert.equal(JSON.parse(options.body).station_id,'nap-one');
       return Response.json({queued:true,publication_time:oldTime},{status:202});
     },
-    async loadStationConnectors(id) {
+    async loadLocationConnectors(station) {
+      const id = station.id;
       if(id!=='nap-one') otherRead=true;
       const rows=[{availability_updated_at:++reads===1?oldTime:newTime}];
       connectorMap.set(id,rows);

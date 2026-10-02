@@ -2,6 +2,9 @@ name: Deploy ChargeVoy web
 
 on:
   workflow_dispatch:
+  schedule:
+    # Publish the primary map catalogue daily, independently of D1 availability.
+    - cron: "47 4 * * *"
   push:
     branches: [main, fix/d1-api-verification-retry]
     paths:
@@ -77,6 +80,31 @@ jobs:
           grep -q '^database_id = "' wrangler-deploy.toml
           grep -q '^id = "' wrangler-deploy.toml
           ! grep -q 'PLACEHOLDER' wrangler-deploy.toml
+      - name: Save the exact previous Worker version and catalogue
+        id: backup
+        working-directory: ev-charge-portugal-github-ready
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/web-rollback
+          wrangler deployments list --config wrangler-deploy.toml --json > tmp/web-rollback/deployments.json
+          version="$(node -e 'const x=require("./tmp/web-rollback/deployments.json");const d=x.sort((a,b)=>a.created_on.localeCompare(b.created_on)).at(-1);if(d?.versions?.length!==1||d.versions[0].percentage!==100)throw new Error("Expected one active Worker version");process.stdout.write(d.versions[0].version_id)')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "$version" > tmp/web-rollback/worker-version.txt
+          git rev-parse HEAD > tmp/web-rollback/new-commit.txt
+          curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > tmp/web-rollback/stations-snapshot.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const previous=JSON.parse(fs.readFileSync('tmp/web-rollback/stations-snapshot.json','utf8'));
+          const next=JSON.parse(fs.readFileSync('assets/stations-snapshot.json','utf8'));
+          if (previous.stations?.length<8000 || previous.connectors?.length<15000 ||
+              next.stations.length<previous.stations.length*0.95 || next.connectors.length<previous.connectors.length*0.95)
+            throw new Error('Refusing to replace the map with a catalogue that lost more than 5% of its records');
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalogue-web-rollback-${{ github.run_id }}
+          path: ev-charge-portugal-github-ready/tmp/web-rollback/
+          retention-days: 7
       - name: Deploy static Worker with D1 + KV
         id: deploy
         working-directory: ev-charge-portugal-github-ready
@@ -88,7 +116,7 @@ jobs:
           for attempt in 1 2 3 4 5 6 7 8; do
             page="$(curl --silent --show-error --max-time 20 'https://broken-mud-373e.zombid.workers.dev/' || true)"
             code="$(curl --silent --show-error --max-time 30 -o /tmp/site-snapshot.json -w '%{http_code}' 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' || true)"
-            if [ "$code" = 200 ] && echo "$page" | grep -Fq "$expected" && node -e 'const x=require("/tmp/site-snapshot.json");if(x.stations?.length<8000||x.connectors?.length<15000)process.exit(1)'; then
+            if [ "$code" = 200 ] && echo "$page" | grep -Fq "$expected" && node -e 'const fs=require("fs"),crypto=require("crypto");const bytes=fs.readFileSync("/tmp/site-snapshot.json");const expected=require("./ev-charge-portugal-github-ready/assets/stations-manifest.json");if(bytes.length!==expected.bytes||crypto.createHash("sha256").update(bytes).digest("hex")!==expected.sha256)process.exit(1)'; then
               echo "Static site and national catalogue available without a D1 query"
               exit 0
             fi
@@ -100,4 +128,4 @@ jobs:
       - name: Restore previous web Worker on failed verification
         if: ${{ failure() && steps.deploy.outcome == 'success' }}
         working-directory: ev-charge-portugal-github-ready
-        run: wrangler rollback --config wrangler-deploy.toml --message "Automated rollback after failed static site verification"
+        run: wrangler rollback "${{ steps.backup.outputs.version }}" --config wrangler-deploy.toml --message "Automated rollback after failed static site verification"

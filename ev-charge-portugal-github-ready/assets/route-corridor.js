@@ -102,15 +102,15 @@
         console.warn("Route corridor fallback:", error);
       }
 
-      let candidates = routeStations
+      let candidates = groupStationLocations(routeStations)
         .filter((station) => {
           if (!(Number(station.max_power_kw) > 0)) return false;
-          const knownConnectors = connectorMap.get(station.id) || [];
+          const knownConnectors = stationConnectorRows(station);
           // Missing connector metadata must not create a false negative.
           return !knownConnectors.length || stationCompatibleWithVehicle(station);
         })
         .map((station) => {
-          const availability = stationAvailability(connectorMap.get(station.id) || []);
+          const availability = stationAvailability(stationConnectorRows(station));
           return { ...station, ...stationRoutePosition(station, routeProfile), route_availability: availability };
         })
         .filter((station) => station.distance <= 15 && station.route_km > distance * 0.04 && station.route_km < distance * 0.96);
