@@ -1825,11 +1825,24 @@
           ? card.energy_price_vazio_eur_kwh : card.energy_price_eur_kwh);
       }
 
+      function portugalPricingDate(date = new Date()) {
+        const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Lisbon", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+        const value = (type) => parts.find((part) => part.type === type).value;
+        return `${value("year")}-${value("month")}-${value("day")}`;
+      }
+
+      function cardIsActive(card, date = new Date()) {
+        const today = portugalPricingDate(date);
+        const valid = (value) => !value || (/^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value);
+        return valid(card.valid_from) && valid(card.valid_to) &&
+          (!card.valid_from || today >= card.valid_from) && (!card.valid_to || today <= card.valid_to);
+      }
+
       function fixedCardRate(card, opc) {
-        if (!Number.isFinite(Number(card.fixed_fast_eur_kwh)) || Number(opc.power_kw) < 50) return null;
+        if (!cardIsActive(card) || card.fixed_fast_eur_kwh == null || !Number.isFinite(Number(card.fixed_fast_eur_kwh)) || !(Number(opc.power_kw) >= 50) || ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type)) return null;
         const operator = String(operatorMap.get(selectedStation?.operator_id) || selectedStation?.name || "").toLowerCase();
-        const nationalPromo = card.fixed_fast_national_until && new Date().toISOString().slice(0, 10) <= card.fixed_fast_national_until;
-        return operator.includes("atlante") || nationalPromo ? Number(card.fixed_fast_eur_kwh) : null;
+        if (card.fixed_fast_national_until && portugalPricingDate() > card.fixed_fast_national_until) return null;
+        return card.network_scope === "national_fast" || operator.includes("atlante") || card.fixed_fast_national_until ? Number(card.fixed_fast_eur_kwh) : null;
       }
 
       function cardSourceLink(card) {
@@ -1838,14 +1851,15 @@
       }
 
       function publishedCardRates(period) {
-        return cemeCards.map((card) => {
+        return cemeCards.filter((card) => cardIsActive(card)).map((card) => {
           const rate = cardEnergyRate(card, period).toFixed(4).replace(".", ",");
           const alternative = card.alternative_energy_price_eur_kwh == null ? "" : `–${Number(card.alternative_energy_price_eur_kwh).toFixed(4).replace(".", ",")}`;
-          return `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${rate}${alternative}<small>€/kWh energia${card.fixed_fast_eur_kwh ? " · ver condições" : ""}</small></div></div>`;
+          return `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${rate}${alternative}<small>€/kWh ${card.pricing_mode === "final_fixed" ? "final" : "energia"}</small></div></div>`;
         }).join("");
       }
 
       function calculateCardPrice(card, opc, scenario, period) {
+        if (!cardIsActive(card)) return null;
         const energy = Number(scenario.energyKwh);
         const isAc = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
         const vehiclePower =
@@ -1859,7 +1873,8 @@
           Math.ceil(((energy / optionPower) * 60) / 0.75),
         );
         const fixedRate = fixedCardRate(card, opc);
-        if (card.pricing_mode === "final_fixed" || fixedRate !== null) {
+        if (card.pricing_mode === "final_fixed" && fixedRate === null) return null;
+        if (fixedRate !== null) {
           const rate = fixedRate ?? Number(card.energy_price_eur_kwh);
           const total = rate * energy;
           const operator = String(
@@ -1883,7 +1898,7 @@
             minutes,
             effectiveKwh: rate,
             finalFixed: true,
-            fixedCondition: card.fixed_fast_national_until && !ownNetwork ? `Campanha até ${card.fixed_fast_national_until.split("-").reverse().join("/")}` : "Rede Atlante",
+            fixedCondition: card.network_scope === "national_fast" ? `Rápidos elegíveis · até ${card.valid_to.split("-").reverse().join("/")}` : card.fixed_fast_national_until && !ownNetwork ? `Campanha até ${card.fixed_fast_national_until.split("-").reverse().join("/")}` : "Rede Atlante",
             cashback: total * cashbackRate,
             cashbackRate,
           };
@@ -2009,7 +2024,7 @@
         const cheapestOpc = opcOptions[0];
         const opcOnly = `<div class="price-empty"><span class="official-price">TARIFA DO OPERADOR · MOBI.E</span><br><b>Componente OPC desde ${cheapestOpc.opcCost.toFixed(2).replace(".", ",")} €</b> para ~${scenario.energyKwh.toFixed(1).replace(".", ",")} kWh e ~${cheapestOpc.minutes} min (${escapeHtml(cheapestOpc.opc.connector_type)} ${escapeHtml(cheapestOpc.opc.power_kw)} kW). É apenas a parcela do operador; o valor final depende do cartão CEME, impostos e condições aplicáveis.</div>`;
         const comparisons = cemeCards
-          .filter((card) => card.estimate_enabled !== false)
+          .filter((card) => card.estimate_enabled !== false && cardIsActive(card))
           .map((card) => {
             const eligibleTariffs =
               card.pricing_mode === "final_fixed"
@@ -2018,10 +2033,10 @@
             const options = eligibleTariffs.map((opc) =>
               calculateCardPrice(card, opc, scenario, period),
             );
-            return options.sort((a, b) => a.total - b.total)[0];
+            return options.filter(Boolean).sort((a, b) => a.total - b.total)[0];
           })
           .filter(Boolean)
-          .sort((a, b) => a.total - b.total);
+          .sort((a, b) => Number(Boolean(a.card.subscription_required)) - Number(Boolean(b.card.subscription_required)) || a.total - b.total);
         if (!comparisons.length) {
           container.innerHTML =
             directPrice + opcOnly +
@@ -2030,13 +2045,13 @@
           return;
         }
         headline.textContent = `≈ ${comparisons[0].total.toFixed(2).replace(".", ",")} €`;
-        const incomplete = cemeCards.filter((card) => card.estimate_enabled === false);
+        const incomplete = cemeCards.filter((card) => card.estimate_enabled === false && cardIsActive(card));
         container.innerHTML =
           directPrice + opcOnly +
           comparisons
             .map(
               (item, index) =>
-                `<div class="price-card"><span class="price-rank">${index + 1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index === 0 ? '<span class="official-price">MENOR ESTIMATIVA</span>' : ""}<span class="price-breakdown">${item.finalFixed ? `Preço final · taxas incluídas · ${escapeHtml(item.fixedCondition || "ver condições")}` : `CEME + EGME ${item.ceme.toFixed(2).replace(".", ",")} € · OPC ${item.opcCost.toFixed(2).replace(".", ",")} €${item.tar ? ` · TAR ${item.tar.toFixed(2).replace(".", ",")} €` : ""} · IEC + IVA`} · ${escapeHtml(item.card.conditions)} · ${cardSourceLink(item.card)}</span></div><div class="price-total">≈ ${item.total.toFixed(2).replace(".", ",")} €<small>${item.effectiveKwh.toFixed(3).replace(".", ",")} €/kWh estimado</small></div></div>`,
+                `<div class="price-card"><span class="price-rank">${item.card.subscription_required ? "Plano" : index + 1}</span><div class="price-name">${escapeHtml(item.card.name)} ${index === 0 && !item.card.subscription_required ? '<span class="official-price">MENOR ESTIMATIVA</span>' : ""}<span class="price-breakdown">${item.finalFixed ? `Preço final · taxas incluídas · ${escapeHtml(item.fixedCondition || "ver condições")}` : `CEME + EGME ${item.ceme.toFixed(2).replace(".", ",")} € · OPC ${item.opcCost.toFixed(2).replace(".", ",")} €${item.tar ? ` · TAR ${item.tar.toFixed(2).replace(".", ",")} €` : ""} · IEC + IVA`}${item.card.subscription_required ? ` · ${Number(item.card.monthly_fee_eur).toFixed(2).replace(".", ",")} €/mês à parte` : ""}${item.cashback ? ` · ChargeBack: ${item.cashback.toFixed(2).replace(".", ",")} € em saldo futuro` : ""} · ${escapeHtml(item.card.conditions)} · ${cardSourceLink(item.card)}</span></div><div class="price-total">≈ ${item.total.toFixed(2).replace(".", ",")} €<small>${item.effectiveKwh.toFixed(3).replace(".", ",")} €/kWh estimado</small></div></div>`,
             )
             .join("") +
           incomplete.map((card) => `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${cardEnergyRate(card, period).toFixed(4).replace(".", ",")}–${Number(card.alternative_energy_price_eur_kwh).toFixed(4).replace(".", ",")}<small>€/kWh energia · total por confirmar</small></div></div>`).join("") +
@@ -2423,11 +2438,7 @@
             if (!response.ok) throw new Error(`Catálogo CEME: HTTP ${response.status}`);
             return response.json();
           }).then((rows) => {
-            const today = new Date().toISOString().slice(0, 10);
-            cemeCards = rows.filter(
-              (card) => (!card.valid_from || card.valid_from <= today) &&
-                        (!card.valid_to || card.valid_to >= today),
-            );
+            cemeCards = rows;
             if (selectedStation) renderPriceComparison();
           }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));
 

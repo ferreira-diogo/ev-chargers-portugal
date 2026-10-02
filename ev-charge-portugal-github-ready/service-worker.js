@@ -1,5 +1,5 @@
-const CACHE_NAME='ev-charge-shell-v32';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=24','./assets/chargevoy.js?v=30','./assets/ceme-cards.json','./assets/vehicle-catalog.json?v=2','./assets/vehicle-images/credits.json?v=1','./assets/route-corridor.js?v=19'];
+const CACHE_NAME='ev-charge-shell-v33';
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=24','./assets/chargevoy.js?v=31','./assets/ceme-cards.json','./assets/vehicle-catalog.json?v=2','./assets/vehicle-images/credits.json?v=1','./assets/route-corridor.js?v=19'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -23,11 +23,11 @@ self.addEventListener('fetch',event=>{
     event.respondWith(fetch(event.request));
     return;
   }
-  if(url.pathname.endsWith('/assets/stations-snapshot.json')){
+  if(url.pathname.endsWith('/assets/stations-snapshot.json') || url.pathname.endsWith('/assets/ceme-cards.json')){
     // Refresh the structural catalogue on every visit. The last complete
     // version remains available when a network request fails.
     event.respondWith(fetch(event.request).then(response=>{
-      if(!response.ok)throw new Error('Station snapshot unavailable');
+      if(!response.ok)throw new Error('Catalogue unavailable');
       const copy=response.clone();
       caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));
       return response;

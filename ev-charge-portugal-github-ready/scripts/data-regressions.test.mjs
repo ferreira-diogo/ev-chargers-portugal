@@ -17,8 +17,9 @@ function extract(start, end) {
 
 test('six sourced card tariffs preserve period prices and fixed-price eligibility', async () => {
   const cards = JSON.parse(await readFile(new URL('../assets/ceme-cards.json', import.meta.url), 'utf8'));
-  assert.equal(new Set(cards.map(card => card.name)).size, 6);
-  const context = vm.createContext({ currentVehicle: {max_dc_power_kw: 100}, operatorMap: new Map([['other', 'Other'], ['atlante', 'Atlante']]), selectedStation: {operator_id:'other'} });
+  assert.equal(new Set(cards.map(card => card.provider_id || card.id)).size, 6);
+  class PricingDate extends Date { constructor(...args) { super(...(args.length ? args : ["2026-10-02T12:00:00Z"])); } }
+  const context = vm.createContext({ Date: PricingDate, currentVehicle: {max_dc_power_kw: 100}, operatorMap: new Map([['other', 'Other'], ['atlante', 'Atlante']]), selectedStation: {operator_id:'other'} });
   vm.runInContext(extract('function networkTariff(', 'let simMode ='), context);
   vm.runInContext(extract('function cardEnergyRate(', 'function cardSourceLink('), context);
   vm.runInContext(extract('function calculateCardPrice(', 'function adHocPriceMarkup('), context);
@@ -31,9 +32,22 @@ test('six sourced card tariffs preserve period prices and fixed-price eligibilit
   assert(context.calculateCardPrice(galp, opc, scenario, 'vazio').total < context.calculateCardPrice(galp, opc, scenario, 'fora_vazio').total);
   const atlante = cards.find(card => card.id === 'myatlante');
   context.selectedStation = {operator_id:'atlante'};
-  assert.equal(context.calculateCardPrice(atlante, opc, scenario, 'fora_vazio').total, 9.8);
+  assert.equal(context.calculateCardPrice(atlante, opc, scenario, 'fora_vazio').total, 11);
   context.selectedStation = {operator_id:'other'};
-  assert.equal(context.calculateCardPrice(atlante, {...opc,power_kw:22}, scenario, 'fora_vazio').finalFixed, undefined);
+  assert.equal(context.calculateCardPrice(atlante, {...opc,power_kw:22}, scenario, 'fora_vazio'), null);
+  const go = cards.find(card => card.id === 'myatlante-go');
+  assert.equal(context.calculateCardPrice(go, opc, scenario, 'fora_vazio').total, 9.8);
+  assert.equal(go.monthly_fee_eur, 7.99);
+  assert.equal(go.subscription_required, true);
+  assert.equal(context.calculateCardPrice(atlante, {...opc,connector_type:'Type 2'}, scenario, 'fora_vazio'), null);
+  for (const [date, active] of [['2026-09-30T22:59:59Z',false],['2026-09-30T23:00:00Z',true],['2026-12-31T23:59:59Z',true],['2027-01-01T00:00:00Z',false]]) {
+    assert.equal(context.cardIsActive(atlante, new Date(date)), active, date);
+  }
+  assert.equal(context.cardIsActive({...atlante,valid_to:'2026-02-30'}), false);
+  assert.equal(context.calculateCardPrice({...atlante,valid_to:'2026-09-30'}, opc, scenario, 'fora_vazio'), null);
+  context.selectedStation = {operator_id:'atlante'};
+  assert.equal(context.calculateCardPrice(atlante, opc, scenario, 'fora_vazio').cashback, 2.75);
+  assert.equal(context.calculateCardPrice(go, opc, scenario, 'fora_vazio').cashback, 4.9);
   assert.equal(cards.find(card => card.id === 'edp-charge').estimate_enabled, false);
 });
 
