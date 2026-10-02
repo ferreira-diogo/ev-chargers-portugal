@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Postos de carregamento elétrico em Portugal | ChargeVoy</title>
+    <meta
+      name="description"
+      content="Encontre postos de carregamento elétrico em Portugal. Veja fichas, potência e disponibilidade, compare preços e planeie rotas com alternativas no ChargeVoy."
+    />
+    <link rel="canonical" href="https://chargevoy.pt/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ChargeVoy" />
+    <meta property="og:locale" content="pt_PT" />
+    <meta property="og:title" content="Postos de carregamento elétrico em Portugal | ChargeVoy" />
+    <meta property="og:description" content="Encontre postos, compare preços e planeie rotas elétricas em Portugal." />
+    <meta property="og:url" content="https://chargevoy.pt/" />
+    <meta name="theme-color" content="#071b31" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <link rel="icon" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/chargevoy.css?v=24" />
+  <link rel="stylesheet" href="./assets/android-ui.css" />
+</head>
+  <body class="map-mode">
+    <header class="top">
+      <div class="brand">
+        <img class="brand-mark" src="./icon.svg" alt="ChargeVoy" />
+        <div><h1><b>ChargeVoy</b></h1><small>Encontre. Compare. Siga viagem.</small></div>
+      </div>
+      <button
+        class="language-toggle"
+        id="language-toggle"
+        type="button"
+        aria-label="Mudar idioma"
+      >
+        EN
+      </button>
+      <div class="search">
+        <span class="material-symbols-outlined">travel_explore</span
+        ><input
+          id="global-search"
+          placeholder="Para onde quer viajar ou carregar?"
+        />
+      </div>
+      <nav class="nav">
+        <button class="active" id="nav-map">
+          <span class="nav-icon">map</span>Mapa</button
+        ><button id="nav-routes">
+          <span class="nav-icon">alt_route</span>Rotas</button
+        ><button id="nav-vehicle">
+          <span class="nav-icon">electric_car</span>Veículo</button
+        ><button id="nav-favorites">
+          <span class="nav-icon">bookmark</span>Favoritos</button
+        ><button id="nav-account">
+          <span class="nav-icon">account_circle</span
+          ><span id="account-label">Entrar</span>
+        </button>
+      </nav>
+    </header>
+    <div class="layout">
+      <aside class="side" id="filter-menu">
+        <button
+          class="drawer-close"
+          id="close-mobile-filters"
+          aria-label="Fechar filtros"
+        >
+          ×
+        </button>
+        <div class="vehicle">
+          <small>🚗 O meu veículo</small>
+          <div class="vehicle-row">
+            <div class="car" id="vehicle-image" aria-hidden="true">🚘</div>
+            <div class="vehicle-data">
+              <select id="vehicle-brand" aria-label="Marca do veículo">
+                <option>Todas as marcas</option></select
+              ><select id="vehicle-select" aria-label="Modelo do veículo">
+                <option>A carregar veículos…</option></select
+              ><small id="vehicle-specs">A obter dados da Cloudflare…</small>
+              <small id="vehicle-detail-source"></small>
+            </div>
+          </div>
+          <details class="vehicle-adjust">
+            <summary>Ajustar os dados da minha versão</summary>
+            <div class="vehicle-adjust-grid">
+              <label>Bateria útil (kWh)<input id="vehicle-battery" type="number" min="15" max="125" step="0.1" inputmode="decimal" placeholder="Ex.: 64" /></label>
+              <label>Consumo (Wh/km)<input id="vehicle-consumption" type="number" min="100" max="400" step="1" inputmode="numeric" placeholder="Ex.: 180" /></label>
+              <label>Carga DC máx. (kW)<input id="vehicle-dc" type="number" min="30" max="400" step="1" inputmode="numeric" placeholder="Ex.: 150" /></label>
+            </div>
+            <small>Valores guardados neste dispositivo para o veículo selecionado. Em branco, usamos os dados do catálogo ou uma estimativa.</small>
+          </details>
+          <div class="vehicle-image-credit" id="vehicle-image-credit"></div>
+          <small class="vehicle-source"
+            >Catálogo:
+            <a
+              href="https://github.com/gaia-charge/evdb"
+              target="_blank"
+              rel="noopener"
+              >Gaia EVDB</a
+            >
+            · CC BY-SA 4.0</small
+          >
+        </div>
+        <h3>Onde quer carregar?</h3>
+        <div class="loc">
+          ⌖<input
+            id="location-search"
+            aria-label="Pesquisar localização"
+            placeholder="Cidade, código postal ou localização"
+          /><button id="use-location" type="button" title="Usar a minha localização" aria-label="Usar a minha localização">
+            ◎
+          </button>
+        </div>
+        <div class="fg">
+          <div class="label">Potência</div>
+          <div class="chips" id="power-filter">
+            <button class="chip on" data-power="all">Todos</button
+            ><button class="chip" data-power="0-50">Até 50</button
+            ><button class="chip" data-power="50-150">50–150</button
+            ><button class="chip" data-power="150-250">150–250</button
+            ><button class="chip" data-power="250+">250+ kW</button>
+          </div>
+        </div>
+        <div class="fg">
+          <div class="label">Conectores</div>
+          <label class="check"
+            ><input class="connector-filter" type="checkbox" value="CCS" /> ⚡
+            CCS</label
+          ><label class="check"
+            ><input class="connector-filter" type="checkbox" value="Type 2" /> ◉
+            Type 2</label
+          ><label class="check"
+            ><input class="connector-filter" type="checkbox" value="CHAdeMO" />
+            CHAdeMO</label
+          ><label class="check"
+            ><input class="connector-filter" type="checkbox" value="Tesla" />
+            Tesla Supercharger oficial</label
+          >
+        </div>
+        <div class="fg">
+          <div class="label">Estado</div>
+          <label class="check"
+            ><input
+              class="status-filter"
+              type="checkbox"
+              value="available"
+              checked
+            />
+            🟢 Disponível</label
+          ><label class="check"
+            ><input
+              class="status-filter"
+              type="checkbox"
+              value="unavailable"
+              checked
+            />
+            🔴 Indisponível</label
+          ><label class="check"
+            ><input
+              class="status-filter"
+              type="checkbox"
+              value="unknown"
+              checked
+            />
+            🔵 Desconhecido</label
+          >
+        </div>
+        <div class="fg">
+          <div class="label">Operador</div>
+          <select id="operator-filter" aria-label="Filtrar por operador">
+            <option value="all">Todos os operadores</option>
+          </select>
+        </div>
+        <button class="go" id="apply-filters">⌕ Procurar</button>
+      </aside>
+      <main class="main">
+        <section class="routeplanner" id="route-planner">
+          <div class="routehead">
+            <div>
+              <b>🧭 Planeador de viagens</b
+              ><small
+                >Sugere paragens compatíveis, energia necessária e tempo até
+                80%.</small
+              >
+            </div>
+          </div>
+          <div class="routeform">
+            <div class="route-origin-control">
+              <input
+                id="route-origin"
+                aria-label="Origem da rota"
+                placeholder="Origem em Portugal"
+              /><button
+                type="button"
+                id="route-use-location"
+                title="Usar a minha localização"
+                aria-label="Usar a minha localização"
+              >
+                ◎
+              </button>
+            </div>
+            <input
+              id="route-destination"
+              aria-label="Destino da rota"
+              placeholder="Destino em Portugal"
+            /><input
+              id="route-battery"
+              aria-label="Bateria inicial em percentagem"
+              type="number"
+              min="5"
+              max="100"
+              value="80"
+              title="Bateria inicial (%)"
+              placeholder="Bateria %"
+            /><input
+              id="route-reserve"
+              aria-label="Reserva de bateria em percentagem"
+              type="number"
+              min="5"
+              max="40"
+              value="15"
+              title="Reserva à chegada (%)"
+              placeholder="Reserva %"
+            /><button id="plan-route">🧭 Calcular rota</button>
+          </div>
+          <div class="routeresult" id="route-result" aria-live="polite"></div>
+        </section>
+        <div class="mapbox" id="map-section">
+          <div id="map" role="region" aria-label="Mapa de postos de carregamento" style="height: 100%"></div>
+          <div class="mapbadge">
+            <div class="map-coverage-summary">
+              <div>⚡ <b id="station-count">…</b> <span id="station-count-label">postos carregados</span></div>
+              <small id="station-coverage" aria-live="polite">A carregar o mapa de Portugal…</small>
+            </div>
+            <div class="map-coverage-actions">
+              <button id="show-portugal" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" /></svg><span>Ver Portugal</span></button>
+              <button id="retry-national" type="button" hidden>Retomar carregamento</button>
+            </div>
+          </div>
+          <div
+            class="map-location-cta"
+            id="map-location-cta"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="map-cta-dot" aria-hidden="true"></span>
+            <span id="map-location-cta-text">A pesquisar postos na proximidade…</span>
+          </div>
+          <div class="legend">
+            <div><i class="dot g"></i>Disponível</div>
+            <div><i class="dot r"></i>Indisponível</div>
+            <div><i class="dot b"></i>Estado desconhecido</div>
+            ⚡ 50 · 150 · 250+ kW
+          </div>
+        </div>
+<section id="android-recommendations" aria-live="polite"><div class="android-scenario"><button id="android-vehicle">🚗 <span id="android-vehicle-label">Adicionar veículo</span></button><button id="android-soc">🔋 <span id="android-soc-label">Definir bateria</span> ✎</button></div><article id="android-hero" class="android-hero"><h2>A preparar opções próximas…</h2><p>Permite a localização e seleciona o veículo para personalizar.</p></article><div id="android-alternatives" class="android-alternatives"></div><p class="android-note" id="android-note"></p></section><details class="android-filters"><summary>☷ Filtros <span id="android-filter-summary">Personalizar pesquisa</span></summary>        <section class="quick-filters" aria-labelledby="quick-filter-heading">
+          <div class="quick-filters-heading">
+            <h2 id="quick-filter-heading">Filtros rápidos</h2>
+            <button id="clear-quick-filters" type="button" aria-label="Limpar filtros rápidos">Limpar</button>
+          </div>
+          <div class="quick-filter-grid">
+            <div class="quick-filter-card">
+              <fieldset class="quick-fieldset">
+                <legend>Potência</legend>
+                <div class="chips quick-power-chips" id="quick-power-filter">
+                  <button class="chip on" type="button" data-power="all" aria-pressed="true">Todos</button>
+                  <button class="chip" type="button" data-power="0-50" aria-pressed="false">Até 50</button>
+                  <button class="chip" type="button" data-power="50-150" aria-pressed="false">50–150</button>
+                  <button class="chip" type="button" data-power="150-250" aria-pressed="false">150–250</button>
+                  <button class="chip" type="button" data-power="250+" aria-pressed="false">250+ kW</button>
+                </div>
+              </fieldset>
+              <fieldset class="quick-fieldset quick-connectors-fieldset">
+                <legend>Conectores / rede</legend>
+                <div class="quick-connector-filters">
+                  <label class="quick-filter-toggle"><input class="quick-filter-input" data-filter-kind="connector" type="checkbox" value="CCS" /><span class="quick-connector-icon" aria-hidden="true">⚡</span><span>CCS</span></label>
+                  <label class="quick-filter-toggle"><input class="quick-filter-input" data-filter-kind="connector" type="checkbox" value="Type 2" /><span class="quick-connector-icon" aria-hidden="true">◉</span><span>Type 2</span></label>
+                  <label class="quick-filter-toggle"><input class="quick-filter-input" data-filter-kind="connector" type="checkbox" value="CHAdeMO" /><span>CHAdeMO</span></label>
+                  <label class="quick-filter-toggle"><input class="quick-filter-input" data-filter-kind="connector" type="checkbox" value="Tesla" aria-label="Tesla Supercharger oficial" /><span>Tesla oficial</span></label>
+                </div>
+              </fieldset>
+            </div>
+            <div class="quick-filter-card quick-availability-card">
+              <fieldset class="quick-fieldset">
+                <legend>Disponibilidade</legend>
+                <div class="quick-status-filters">
+                  <label class="quick-filter-toggle quick-status-filter"><input class="quick-filter-input" data-filter-kind="status" type="checkbox" value="available" checked /><span class="quick-status-dot available" aria-hidden="true"></span><span class="quick-filter-text">Disponível</span></label>
+                  <label class="quick-filter-toggle quick-status-filter"><input class="quick-filter-input" data-filter-kind="status" type="checkbox" value="unavailable" checked /><span class="quick-status-dot unavailable" aria-hidden="true"></span><span class="quick-filter-text">Indisponível</span></label>
+                  <label class="quick-filter-toggle quick-status-filter"><input class="quick-filter-input" data-filter-kind="status" type="checkbox" value="unknown" checked /><span class="quick-status-dot unknown" aria-hidden="true"></span><span class="quick-filter-text">Desconhecido</span></label>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </section>
+<button id="android-all-filters" type="button">Mais filtros e operadores</button></details>        <div class="head">
+          <h2>Outros postos próximos</h2>
+          <select class="sort" id="sort-filter" aria-label="Ordenar postos">
+            <option value="power-desc">Maior potência</option>
+            <option value="distance-asc">Mais próximo</option>
+            <option value="name-asc">Nome A–Z</option>
+            <option value="operator-asc">Operador A–Z</option>
+          </select>
+        </div>
+        <div class="cards" id="station-cards">
+          <article class="card">
+            <div class="op">A carregar postos reais…</div>
+            <div class="st">A consultar a base de dados nacional.</div>
+          </article>
+        </div>
+        <div class="quickgrid">
+          <div class="quick" id="open-route-planner" role="button" tabindex="0">
+            <b>🧭 Planeador de viagens</b>
+            <p>
+              Encontre paragens compatíveis, tempos e um Plano B para cada
+              paragem.
+            </p>
+          </div>
+          <div
+            class="quick"
+            id="open-price-comparator"
+            role="button"
+            tabindex="0"
+          >
+            <b>⚖️ Comparador de preços</b>
+            <p>
+              Compare cartões e apps com tarifa oficial, taxas e custo final.
+            </p>
+          </div>
+          <div class="quick" id="open-history" role="button" tabindex="0">
+            <b>📊 Histórico e fiabilidade</b>
+            <p>Consulte o estado atual e a cobertura histórica disponível.</p>
+          </div>
+        </div>
+      </main>
+      <aside class="right">
+        <button
+          class="mobile-station-close"
+          id="close-station-panel"
+          type="button"
+        >
+          ← Voltar ao mapa
+        </button>
+        <div class="panel">
+          <div class="photo">
+            <img
+              loading="lazy"
+              id="station-photo-fallback"
+              src="./assets/chargevoy-station-fallback.webp"
+              alt=""
+            />
+            <img
+              id="station-photo"
+              alt="Fotografia do posto de carregamento"
+              hidden
+            /><span
+              class="photo-source"
+              id="station-photo-source"
+              hidden
+            ></span>
+          </div>
+          <div class="pbody">
+            <div class="stationtitle">
+              <h2 id="sn">Selecione um posto no mapa</h2>
+              <span class="badge" id="station-operator">—</span>
+            </div>
+            <div class="meta" id="station-meta">
+              Os detalhes reais aparecerão aqui.
+            </div>
+            <div class="status" id="station-status">
+              ● Estado ainda não selecionado
+            </div>
+            <div class="station-refresh">
+              <button class="secondary" id="refresh-station" type="button" disabled>↻ Atualizar este posto</button>
+              <small id="station-refresh-message" role="status" aria-live="polite">Consulta a última leitura publicada para este posto.</small>
+            </div>
+            <div class="station-links">
+              <button class="secondary" id="station-google-maps" disabled>
+                🧭 Iniciar navegação</button
+              ><button class="secondary" id="station-photos" disabled>
+                📷 Fotos no Google Maps
+              </button>
+            </div>
+            <div class="specs">
+              <div class="spec"><b id="station-power">—</b>Potência máx.</div>
+              <div class="spec"><b id="station-connectors">—</b>Conectores</div>
+              <div class="spec"><b id="station-points">—</b>Tomadas</div>
+              <div class="spec"><b id="station-live">—</b>Disponibilidade</div>
+            </div>
+            <p class="meta" id="station-capacity-note"></p>
+            <div
+              class="connector-matrix"
+              id="connector-matrix"
+              aria-live="polite"
+            ></div>
+          </div>
+        </div>
+        <div class="panel poi-panel">
+          <div class="pbody">
+            <div class="poi-head">
+              <h3>O que há por perto?</h3>
+              <button class="poi-button" id="load-nearby-pois" type="button">
+                Atualizar
+              </button>
+            </div>
+            <p class="poi-hint">
+              Sugestões próximas, distância e tempo estimado a pé.
+            </p>
+            <div class="poi-filters">
+              <select id="poi-filter" aria-label="Filtrar pontos de interesse">
+                <option value="all">Todos</option>
+                <option value="restaurant">Restaurantes</option>
+                <option value="hotel">Hotéis</option>
+                <option value="toilets">WC</option>
+                <option value="supermarket">Supermercados</option>
+                <option value="cafe">Cafés</option>
+              </select>
+            </div>
+            <div class="poi-list" id="station-pois">
+              Selecione um posto para consultar locais próximos.
+            </div>
+          </div>
+        </div>
+        <div class="panel review-panel">
+          <div class="pbody">
+            <h3>⭐ Avaliações e fiabilidade</h3>
+            <div id="station-reviews">
+              Selecione um posto para consultar avaliações.
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="pbody">
+            <div class="sim">
+              <h3>Simulador de carregamento</h3>
+              <div class="tabs" role="tablist" aria-label="Modo do simulador">
+                <button
+                  class="on"
+                  type="button"
+                  data-sim-mode="energy"
+                  role="tab"
+                  aria-selected="true"
+                >
+                  Por energia</button
+                ><button
+                  type="button"
+                  data-sim-mode="time"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  Por tempo
+                </button>
+              </div>
+              <div class="srow">
+                <span id="from-label">Estado atual da bateria</span
+                ><b id="fv">20%</b>
+              </div>
+              <input
+                class="slider"
+                id="from"
+                type="range"
+                min="5"
+                max="90"
+                value="20"
+                aria-label="Estado atual da bateria"
+              />
+              <div class="srow">
+                <span id="to-label">Carregar até</span><b id="tv">80%</b>
+              </div>
+              <input
+                class="slider"
+                id="to"
+                type="range"
+                min="20"
+                max="100"
+                value="80"
+                aria-label="Bateria alvo"
+              />
+              <div class="res">
+                <b id="energy">~36 kWh</b>Energia necessária
+              </div>
+              <div class="res">
+                <b id="price">Selecione um posto</b>Melhor custo oficial
+                estimado
+              </div>
+              <div class="res"><b id="mins">~25 min</b>Tempo estimado</div>
+              <div class="price-head">
+                <b>Comparador de cartões e apps</b
+                ><select id="price-period">
+                  <option value="fora_vazio">Fora de vazio</option>
+                  <option value="vazio">Vazio</option>
+                </select>
+              </div>
+              <div class="price-list" id="price-comparison">
+                <div class="price-empty">
+                  Selecione um posto oficial MOBI.E/NAP com pelo menos 22 kW.
+                </div>
+              </div>
+              <div class="note">
+                Compara tarifas CEME com OPC, TAR, IEC e IVA, e campanhas de
+                preço final sem duplicar taxas. Benefícios futuros são mostrados
+                separadamente.
+              </div>
+              <button class="primary" id="route-selected-station" disabled>
+                Selecione um posto para criar rota</button
+              ><button class="secondary" id="station-alternative" disabled>
+                ↔ Ver opção B</button
+              ><button class="secondary" id="station-favorite">
+                ☆ Adicionar aos favoritos
+              </button>
+            </div>
+          </div>
+        </div>
+        <button
+          class="mobile-station-close mobile-station-close-bottom"
+          id="close-station-panel-bottom"
+          type="button"
+        >
+          ← Voltar ao mapa
+        </button>
+      </aside>
+    </div>
+    <div class="analytics-consent" id="analytics-consent" hidden>
+      <div>
+        <b>Privacidade e análise</b>
+        <p>
+          Podemos usar o Google Analytics para melhorar o site? A escolha fica
+          guardada neste dispositivo.
+        </p>
+      </div>
+      <div>
+        <button class="secondary" id="analytics-deny">Recusar</button
+        ><button class="primary" id="analytics-accept">Aceitar</button>
+      </div>
+    </div>
+    <footer class="site-footer">
+      <span>ChargeVoy · EV Charging & Routes · projeto pessoal</span>
+      <nav aria-label="Informação legal">
+        <button type="button" data-legal="legal">Aviso legal</button
+        ><button type="button" data-legal="privacy">Privacidade</button
+        ><button type="button" data-legal="cookies">Cookies</button
+        ><button type="button" data-legal="terms">Termos</button>
+      </nav>
+    </footer>
+    <div class="modal" id="app-modal" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2 id="modal-title">Detalhes</h2>
+          <button class="modal-close" id="modal-close" aria-label="Fechar">
+            ×
+          </button>
+        </div>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+    <div class="app-toast" id="app-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+    <script src="./assets/chargevoy.js"></script>
+    <script src="./assets/route-corridor.js?v=19"></script>
+  <script src="./assets/recommendations.js"></script><script src="./assets/android-ui.js"></script>
+<dialog id="android-scenario-dialog"><form method="dialog"><button class="android-close" aria-label="Fechar">×</button></form><h2>O teu carregamento</h2><p>Preferências guardadas apenas neste dispositivo.</p><label>Bateria atual (%)<input id="android-start" type="number" min="0" max="99" value="32"></label><label>Objetivo (%)<input id="android-target" type="number" min="1" max="100" value="80"></label><label>Período da tarifa<select id="android-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></label><p id="android-scenario-error" role="alert"></p><button id="android-save-scenario" type="button">Atualizar opções</button></dialog></body>
+</html>
