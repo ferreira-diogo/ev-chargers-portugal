@@ -1,0 +1,23 @@
+NOME (até 30 caracteres)
+ChargeVoy
+
+DESCRIÇÃO CURTA (até 80 caracteres)
+Encontre postos, compare custos e planeie a próxima carga em Portugal.
+
+DESCRIÇÃO COMPLETA
+Encontre. Compare. Siga viagem.
+
+A ChargeVoy ajuda-o a encontrar postos de carregamento elétrico em Portugal e a escolher uma opção adequada ao seu veículo.
+
+• Explore os postos no mapa e consulte os detalhes dos conectores.
+• Configure o veículo e o objetivo de bateria para obter estimativas de carregamento.
+• Compare opções por proximidade, tempo de carga estimado e custo, quando existem tarifas verificadas.
+• Consulte disponibilidade comunicada pela fonte, com indicação da atualidade dos dados.
+• Use filtros de potência, conector, operador e disponibilidade.
+• Planeie viagens com paragens e alternativas.
+• Guarde favoritos e abra a navegação até ao posto escolhido.
+
+As recomendações dependem dos dados disponíveis, da compatibilidade do veículo e dos filtros selecionados. Preços e tempos são estimativas; confirme as condições aplicáveis no operador ou cartão antes de carregar. A disponibilidade comunicada pode mudar antes da chegada.
+
+NOTAS DA VERSÃO 1.1.0
+Nova experiência Android com opções recomendadas, alternativas, filtros compactos e navegação inferior. Personalização da bateria e objetivo de carga guardada no dispositivo. O website mantém a apresentação atual.

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'ev-charge-portugal-github-ready/**'
+      - 'apps/chargevoy-android/**'
       - '.github/workflows/android-test-build.yml'
 
 permissions:
@@ -14,17 +14,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      ANDROID_INCLUDE_CATALOGUE: "1"
     defaults:
       run:
-        working-directory: ev-charge-portugal-github-ready
+        working-directory: apps/chargevoy-android
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
+          cache-dependency-path: apps/chargevoy-android/package-lock.json
 
       - uses: actions/setup-java@v5
         with:
@@ -34,13 +38,18 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run android:sync
-      - run: cd android && ./gradlew assembleDebug bundleDebug
+      - name: Install browser test dependency
+        run: npm install --no-save --package-lock=false playwright@1.58.2
+      - name: Verify mobile and tablet UI
+        run: node browser-test.mjs
+      - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug bundleDebug
 
       - uses: actions/upload-artifact@v4
         with:
           name: ev-charge-portugal-android-test
           path: |
-            ev-charge-portugal-github-ready/android/app/build/outputs/apk/debug/app-debug.apk
-            ev-charge-portugal-github-ready/android/app/build/outputs/bundle/debug/app-debug.aab
+            apps/chargevoy-android/android/app/build/outputs/apk/debug/app-debug.apk
+            apps/chargevoy-android/android/app/build/outputs/bundle/debug/app-debug.aab
+            apps/chargevoy-android/qa/*.png
           if-no-files-found: error
           retention-days: 14

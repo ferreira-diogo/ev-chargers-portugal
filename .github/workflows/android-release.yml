@@ -1,16 +1,19 @@
 name: Build signed Android bundle
 
 on:
+  push:
+    branches: [android-signed-candidate]
+    paths: ["apps/chargevoy-android/**", ".github/workflows/android-release.yml"]
   workflow_dispatch:
     inputs:
       version_name:
         description: Release version name
         required: true
-        default: "1.0.0"
+        default: "1.1.0"
       version_code:
         description: Positive integer version code
         required: true
-        default: "1"
+        default: "2"
 
 jobs:
   bundle:
@@ -18,27 +21,32 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ev-charge-portugal-github-ready
+        working-directory: apps/chargevoy-android
     env:
-      ANDROID_VERSION_NAME: ${{ inputs.version_name }}
-      ANDROID_VERSION_CODE: ${{ inputs.version_code }}
+      ANDROID_INCLUDE_CATALOGUE: "1"
+      ANDROID_VERSION_NAME: ${{ inputs.version_name || '1.1.0' }}
+      ANDROID_VERSION_CODE: ${{ inputs.version_code || '2' }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
+          cache-dependency-path: apps/chargevoy-android/package-lock.json
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
-      - name: Install web dependencies
+      - name: Install Android interface dependencies
         run: npm ci
+      - name: Validate Android interface and web isolation
+        run: node --test recommendations.test.mjs && node verify-isolation.mjs
       - name: Sync Capacitor Android project
         run: npm run android:sync
       - name: Restore upload key
@@ -46,12 +54,15 @@ jobs:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
           echo "ANDROID_KEYSTORE_PATH=$PWD/android/app/upload-keystore.jks" >> "$GITHUB_ENV"
       - name: Build signed Android App Bundle
-        run: cd android && ./gradlew bundleRelease
+        run: chmod +x android/gradlew && cd android && ./gradlew bundleRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: chargevoy-${{ inputs.version_name }}.aab
-          path: ev-charge-portugal-github-ready/android/app/build/outputs/bundle/release/app-release.aab
+          name: chargevoy-${{ inputs.version_name || '1.1.0' }}.aab
+          path: apps/chargevoy-android/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
