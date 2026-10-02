@@ -6,5 +6,20 @@ await cp(resolve(web,'assets'),resolve(dist,'assets'),{recursive:true});
 await cp(resolve(web,'icon.svg'),resolve(dist,'icon.svg'));
 await cp(resolve(app,'src/index.html'),resolve(dist,'index.html'));
 for(const name of ['chargevoy.js','android-ui.js','android-ui.css','recommendations.js'])await cp(resolve(app,'src',name),resolve(dist,'assets',name));
+if(process.env.ANDROID_INCLUDE_CATALOGUE === '1') {
+  let failure;
+  for(let attempt=1;attempt<=3;attempt++) {
+    try {
+      const response=await fetch('https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json',{signal:AbortSignal.timeout(45000)});
+      if(!response.ok)throw Error(`National catalogue HTTP ${response.status}`);
+      const text=await response.text(),snapshot=JSON.parse(text);
+      if(!Array.isArray(snapshot.stations)||snapshot.stations.length<8000||!Array.isArray(snapshot.connectors)||snapshot.connectors.length<15000)throw Error('Incomplete national catalogue');
+      await writeFile(resolve(dist,'assets/stations-snapshot.json'),text);
+      console.log(`Packaged national catalogue: ${snapshot.stations.length} stations, ${snapshot.connectors.length} connectors; no D1 import.`);
+      failure=null;break;
+    }catch(error){failure=error;console.warn(`Catalogue attempt ${attempt}: ${error.message}`);}
+  }
+  if(failure)throw failure;
+}
 await writeFile(resolve(dist,'android-build.json'),JSON.stringify({interface:'android-only',version:'1.1.0',built_at:new Date().toISOString()}));
 console.log('Android-only bundle built in apps/chargevoy-android/dist; web bundle untouched.');

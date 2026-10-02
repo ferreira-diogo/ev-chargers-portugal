@@ -2190,7 +2190,7 @@
         // The static national catalogue is the primary source. It does not
         // consume D1 rows or Worker requests when served as a matched asset.
         try {
-          const response = await fetchWithTimeout("https://chargevoy.pt/assets/stations-snapshot.json", { cache: "no-cache" }, 30000);
+          const response = await fetchWithTimeout("./assets/stations-snapshot.json", { cache: "no-cache" }, 30000);
           if (!response.ok) throw new Error(`NAP snapshot HTTP ${response.status}`);
           const payload = await response.json();
           if (!Array.isArray(payload.stations) || payload.stations.length < 8000 ||
