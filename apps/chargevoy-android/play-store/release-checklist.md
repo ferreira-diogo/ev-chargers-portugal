@@ -41,3 +41,31 @@ Backup git: `backup/android-20261003`, commit `cc6d720d5fe1edfdf77aa25116b9dad7a
 - https://support.google.com/googleplay/android-developer/answer/13327111 — eliminação de conta.
 - https://support.google.com/googleplay/android-developer/answer/14151465 — testes para novas contas pessoais.
 - https://support.google.com/googleplay/android-developer/answer/9859348 — criar e distribuir releases.
+
+## Configurar os quatro segredos que faltam
+
+Na tentativa de compilação desta tarefa, os quatro segredos de assinatura estavam ausentes. O APK debug compilou; o AAB release assinado não foi produzido.
+
+1. Se já existir uma upload key associada à app na Play Console, recuperar essa chave e o respetivo alias/passwords.
+2. Apenas se esta for uma app nova, sem chave anterior, criar uma upload key localmente (o comando pede os dados e palavras-passe):
+
+```sh
+keytool -genkeypair -v -keystore chargevoy-upload.jks -alias chargevoy-upload -keyalg RSA -keysize 2048 -validity 10000
+```
+
+3. Fazer backup seguro da chave e palavras-passe fora do repositório.
+4. GitHub → repositório → Settings → Secrets and variables → Actions → New repository secret:
+   - `ANDROID_KEYSTORE_BASE64`: ficheiro JKS codificado em base64;
+   - `ANDROID_KEYSTORE_PASSWORD`: palavra-passe do keystore;
+   - `ANDROID_KEY_ALIAS`: alias existente (no exemplo, `chargevoy-upload`);
+   - `ANDROID_KEY_PASSWORD`: palavra-passe dessa chave.
+5. Actions → **Build signed Android bundle** → Run workflow em main. Nome 1.1.0; código superior ao maior já usado.
+6. Descarregar o AAB do artefacto, confirmar certificado e carregar em Play Console → Testing → Internal testing. O bundle debug incluído no artefacto de preview não substitui o release assinado.
+
+Para obter base64 no Windows PowerShell:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\caminho\chargevoy-upload.jks"))
+```
+
+Em Linux/macOS, `base64 chargevoy-upload.jks`; copiar o resultado para o segredo correspondente. Não colocar a chave nem palavras-passe nos ficheiros públicos do projeto.
