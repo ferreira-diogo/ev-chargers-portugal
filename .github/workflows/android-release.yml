@@ -2,7 +2,7 @@ name: Build signed Android bundle
 
 on:
   push:
-    branches: [feat/android-recommendations-20261003]
+    branches: [android-signed-candidate]
     paths: ["apps/chargevoy-android/**", ".github/workflows/android-release.yml"]
   workflow_dispatch:
     inputs:

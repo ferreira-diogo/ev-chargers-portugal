@@ -17,8 +17,8 @@ Texto em `listing-pt-PT.txt`. Ícone e feature graphic em `artwork/`, quando ger
 
 ## Declarações a confirmar pelo titular
 
-- Política de privacidade: o projeto atual disponibiliza `https://chargevoy.pt/?legal=privacy`; confirmar que o link abre diretamente a política e que o contacto está correto.
-- Eliminação de conta: fluxo existente na app e `https://chargevoy.pt/?legal=delete`; confirmar o caminho e funcionamento antes da submissão. Não foi alterado o site para esta release.
+- Política de privacidade: página pública preparada nesta alteração: `https://github.com/ferreira-diogo/ev-chargers-portugal/blob/main/apps/chargevoy-android/play-store/privacy.md`; confirmar a publicação do ficheiro em main e o contacto antes de inserir na Play Console.
+- Eliminação de conta: fluxo existente na app e `https://github.com/ferreira-diogo/ev-chargers-portugal/blob/main/apps/chargevoy-android/play-store/account-deletion.md`; confirmar o caminho e funcionamento antes da submissão. Não foi alterado o site para esta release.
 - Segurança dos dados: declarar o comportamento real do login Google/email, favoritos/histórico/avaliações autenticados, localização quando é enviada para pesquisas/rotas e analytics apenas após consentimento. Não responder “não recolhe dados” genericamente. A bateria/objetivo novos ficam localmente e não são enviados pelo motor de recomendações.
 - Publicidade: não há anúncios visíveis nesta interface; confirmar a declaração com as integrações efetivamente incluídas.
 - Público-alvo, classificação de conteúdo, contactos de suporte e acesso do revisor.
