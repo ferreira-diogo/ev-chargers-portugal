@@ -51,7 +51,6 @@ jobs:
         run: npm run android:sync
       - name: Restore upload key
         env:
-      ANDROID_INCLUDE_CATALOGUE: "1"
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           test -n "$ANDROID_KEYSTORE_BASE64"
