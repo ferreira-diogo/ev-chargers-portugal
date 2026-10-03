@@ -415,8 +415,8 @@ test('automatic location focuses the map without covering it with a popup', asyn
 test('vehicle photos only match the correct model generation', () => {
   const context = vm.createContext({});
   vm.runInContext(`let vehiclePhotoCatalog = new Map([
-    ['tesla|model y', {min_year:2025,max_year:null,image:'./assets/vehicle-images/tesla-model-y.jpg'}],
-    ['hyundai|ioniq 5', {min_year:2021,max_year:2024,image:'./assets/vehicle-images/hyundai-ioniq-5.jpg'}],
+    ['tesla|model y', [{min_year:2025,max_year:null,image:'./assets/vehicle-images/tesla-model-y.jpg'}]],
+    ['hyundai|ioniq 5', [{min_year:2021,max_year:2024,image:'./assets/vehicle-images/hyundai-ioniq-5.jpg'}]],
   ]);`, context);
   vm.runInContext(extract('function vehiclePhotoFor(', 'function renderVehicleImage('), context);
   assert.equal(context.vehiclePhotoFor({make:'Tesla',model:'Model Y',model_year_start:2024}),null);
@@ -424,6 +424,24 @@ test('vehicle photos only match the correct model generation', () => {
   assert.equal(context.vehiclePhotoFor({make:'Hyundai',model:'Ioniq 5',model_year_start:2026}),null);
   assert.equal(context.vehiclePhotoFor({make:'Renault',model:'5 E-Tech'}),null);
   assert.doesNotMatch(web, /en\.wikipedia\.org\/w\/api\.php/);
+});
+
+test('static photos load encoded Commons sources, CC0 and both Model Y generations without D1', async () => {
+  const context = vm.createContext({URL});
+  const photos = JSON.parse(await readFile(new URL('../assets/vehicle-images/credits.json', import.meta.url), 'utf8'));
+  vm.runInContext(extract('function buildVehiclePhotoCatalog(', 'function renderVehicleImage('), context);
+  context.photos = photos;
+  vm.runInContext('let vehiclePhotoCatalog = buildVehiclePhotoCatalog(photos)', context);
+  assert.ok(photos.length > 140);
+  assert.match(context.vehiclePhotoFor({make:'Tesla',model:'Model Y',model_year_start:2024}).image, /model-y-2020/);
+  assert.doesNotMatch(context.vehiclePhotoFor({make:'Tesla',model:'Model Y',model_year_start:2025}).image, /model-y-2020/);
+  assert.ok(context.vehiclePhotoFor({make:'Abarth',model:'500e'}));
+  assert.ok(context.vehiclePhotoFor({make:'Nissan',model:'Leaf (2026)'}));
+  assert.equal(context.vehiclePhotoFor({make:'BMW',model:'iX3',model_year_start:2026}), null);
+  for (const photo of photos) {
+    await readFile(new URL('../'+photo.image.slice(2), import.meta.url));
+    if (photo.original_image) await readFile(new URL('../'+photo.original_image.slice(2), import.meta.url));
+  }
 });
 
 test('restricted mobile storage does not abort the public map script', () => {
