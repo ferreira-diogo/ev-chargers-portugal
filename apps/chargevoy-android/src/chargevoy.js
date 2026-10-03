@@ -868,11 +868,36 @@
         return `<svg viewBox="0 0 94 58" role="img" aria-label="Ilustração ${escapeHtml(vehicle?.make || "")} ${escapeHtml(vehicle?.model || "")}"><defs><linearGradient id="carPaint" x1="0" x2="1"><stop stop-color="${color}"/><stop offset="1" stop-color="#071b31"/></linearGradient></defs><path d="${roof}" fill="#dff4ff" stroke="#123a57" stroke-width="2"/><path d="M10 31 Q13 27 20 27 H75 Q83 27 87 34 L85 42 H8 L7 36 Q7 33 10 31Z" fill="url(#carPaint)"/><path d="M29 18 L40 17 L40 28 H22Z M44 17 L57 18 L70 28 H44Z" fill="#bfe8f5" opacity=".9"/><circle cx="24" cy="42" r="7" fill="#10263d"/><circle cx="24" cy="42" r="3" fill="#cbd5e1"/><circle cx="72" cy="42" r="7" fill="#10263d"/><circle cx="72" cy="42" r="3" fill="#cbd5e1"/><path d="M11 34h7M80 34h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`;
       }
 
+      function buildVehiclePhotoCatalog(photos) {
+        const catalog = new Map();
+        for (const photo of Array.isArray(photos) ? photos : []) {
+          if (!photo || typeof photo.make !== "string" || typeof photo.model !== "string" ||
+              !Number.isInteger(photo.min_year) || photo.min_year < 0 ||
+              (photo.max_year != null && (!Number.isInteger(photo.max_year) || photo.max_year < photo.min_year)) ||
+              !/^\.\/assets\/vehicle-images\/[a-z0-9-]+\.(?:jpg|png|webp)$/.test(photo.image)) continue;
+          try {
+            const source = new URL(photo.source_url);
+            const license = new URL(photo.license_url);
+            if (source.protocol !== "https:" || source.hostname !== "commons.wikimedia.org" ||
+                !decodeURIComponent(source.pathname).startsWith("/wiki/File:")) continue;
+            const cc = license.protocol === "https:" && license.hostname === "creativecommons.org" &&
+              /^\/(?:licenses\/(?:by|by-sa)\/|publicdomain\/(?:zero|mark)\/)/.test(license.pathname);
+            if (!cc && !(photo.license === "Public domain" && photo.license_url === photo.source_url)) continue;
+          } catch { continue; }
+          const key = `${photo.make}|${photo.model}`.toLocaleLowerCase("pt");
+          const rows = catalog.get(key) || [];
+          rows.push(photo);
+          catalog.set(key, rows);
+        }
+        return catalog;
+      }
+
       function vehiclePhotoFor(vehicle) {
         const key = `${vehicle.make}|${vehicle.model}`.toLocaleLowerCase("pt");
-        const photos=vehiclePhotoCatalog.get(key)||[];
-        const year=Number(vehicle.model_year_start);
-        return [...photos].filter(photo=>!year||(year>=photo.min_year&&(!photo.max_year||year<=photo.max_year))).sort((a,b)=>b.min_year-a.min_year)[0]||null;
+        const photos = vehiclePhotoCatalog.get(key) || [];
+        const year = Number(vehicle.model_year_start);
+        return photos.filter(photo => !year || (year >= photo.min_year && (!photo.max_year || year <= photo.max_year)))
+          .sort((a, b) => b.min_year - a.min_year)[0] || null;
       }
 
       function renderVehicleImage(vehicle) {
@@ -889,7 +914,16 @@
         img.src = photo.image;
         img.alt = `${vehicle.make} ${vehicle.model}`;
         img.loading = "lazy";
-        img.onerror = () => { if (target.contains(img)) illustration(); };
+        img.onerror = () => {
+          if (!target.contains(img)) return;
+          if (photo.original_image && img.dataset.original !== "1" &&
+              /^\.\/assets\/vehicle-images\/[a-z0-9-]+\.jpg$/.test(photo.original_image)) {
+            img.dataset.original = "1";
+            img.src = photo.original_image;
+            return;
+          }
+          illustration();
+        };
         target.replaceChildren(img);
         const source = document.createElement("a");
         source.href = photo.source_url;
@@ -2361,21 +2395,16 @@
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
 
-        fetch("./assets/vehicle-images/credits.json?v=1", { cache: "no-cache" })
+        fetch("./assets/vehicle-images/credits.json?v=20261003", { cache: "no-cache" })
           .then((response) => {
             if (!response.ok) throw new Error(`Fotografias HTTP ${response.status}`);
             return response.json();
           })
           .then((photos) => {
             if (!Array.isArray(photos)) throw new Error("Catálogo de fotografias inválido");
-            vehiclePhotoCatalog = new Map();
-            photos.filter((photo) =>
-              photo.make && photo.model && Number.isInteger(photo.min_year) &&
-              /^\.\/assets\/vehicle-images\/[a-z0-9-]+\.jpg$/.test(photo.image) &&
-              photo.source_url.startsWith("https://commons.wikimedia.org/wiki/File:") &&
-              photo.license_url.startsWith("https://creativecommons.org/licenses/"),
-            ).forEach(photo=>{const key=`${photo.make}|${photo.model}`.toLocaleLowerCase("pt");const rows=vehiclePhotoCatalog.get(key)||[];rows.push(photo);vehiclePhotoCatalog.set(key,rows);});
+            vehiclePhotoCatalog = buildVehiclePhotoCatalog(photos);
             if (currentVehicle) renderVehicleImage(currentVehicle);
+            window.dispatchEvent(new Event("chargevoy-vehicle-photos-ready"));
           })
           .catch((error) => console.warn("Fotografias de veículos indisponíveis", error));
 
