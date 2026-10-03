@@ -901,7 +901,7 @@
         license.textContent = photo.license;
         license.target = "_blank";
         license.rel = "noopener";
-        credit.replaceChildren("Imagem representativa; cor e versão podem diferir. Foto: ", source, " · ", license);
+        credit.replaceChildren("Miniatura redimensionada; cor e versão podem diferir. Foto: ", source, " · ", license);
       }
 
       function applyVehicle(vehicleId) {
@@ -1862,6 +1862,7 @@
 
       function calculateCardPrice(card, opc, scenario, period, stationContext = selectedStation) {
         if (!cardIsActive(card)) return null;
+        period = window.ChargeVoyRecommendations?.tariffPeriod(new Date(), Number(stationContext?.longitude) < -24 ? 'Atlantic/Azores' : 'Europe/Lisbon') || period;
         const energy = Number(scenario.energyKwh);
         const isAc = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
         const vehiclePower =
@@ -1989,6 +1990,7 @@
       }
 
       function renderPriceComparison() {
+        document.getElementById("price-period").value = window.ChargeVoyRecommendations?.tariffPeriod(new Date(), Number(selectedStation?.longitude) < -24 ? "Atlantic/Azores" : "Europe/Lisbon") || "fora_vazio";
         const container = document.getElementById("price-comparison");
         const headline = document.getElementById("price");
         if (!selectedStation) {
@@ -2932,6 +2934,7 @@
         const button = document.getElementById(
           options.buttonId || "use-location",
         );
+        const originalButtonMarkup = button?.innerHTML;
         try {
           if (button) {
             button.disabled = true;
@@ -2982,7 +2985,7 @@
         } finally {
           if (button) {
             button.disabled = false;
-            button.textContent = "◎";
+            button.innerHTML = originalButtonMarkup || "◎";
           }
         }
       }

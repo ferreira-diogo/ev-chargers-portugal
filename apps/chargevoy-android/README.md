@@ -46,3 +46,8 @@ A versão preview usa a mesma URI de retorno OAuth do projeto atual; ao coexisti
 - Ponto azul GPS permanece no mapa ao procurar outra zona; botão centrar solicita a localização apenas quando utilizado, sem acompanhamento contínuo.
 - Nove novas fotografias locais e créditos/licenças; seleção por geração/ano preserva as fotografias existentes.
 - Website, API, jobs e schema D1 intactos. Backup anterior: backup/android-prices-location-20261003 (ccf7ffe4697828a6c0ae6afbd5320ee4e4907c54).
+
+### Android test refinements — 2026-10-03
+- Vehicle thumbnails in the map and route selectors use the licensed photo catalogue, with an illustration fallback and credits in the vehicle screen.
+- Map count, zoom and Portugal controls occupy separate areas; map and route GPS actions share the same target icon.
+- Removed the user-selectable tariff period. Existing published bi-hourly rates use the local station clock (22:00–08:00 off-peak), including DST and Azores time. Estimates concern starting the session now; card/network components remain included so the displayed total is not merely an OPC fee. No schema, API or website changes.

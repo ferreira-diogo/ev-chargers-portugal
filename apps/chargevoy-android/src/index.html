@@ -267,7 +267,7 @@
             ⚡ 50 · 150 · 250+ kW
           </div>
         </div>
-<section id="android-recommendations" aria-live="polite"><div class="android-scenario"><button id="android-vehicle">🚗 <span id="android-vehicle-label">Adicionar veículo</span></button><button id="android-soc">🔋 <span id="android-soc-label">Definir bateria</span> ✎</button></div><article id="android-hero" class="android-hero"><h2>A preparar opções próximas…</h2><p>Permite a localização e seleciona o veículo para personalizar.</p></article><div id="android-alternatives" class="android-alternatives"></div><p class="android-note" id="android-note"></p></section><details class="android-filters"><summary>☷ Filtros <span id="android-filter-summary">Personalizar pesquisa</span></summary>        <section class="quick-filters" aria-labelledby="quick-filter-heading">
+<section id="android-recommendations" aria-live="polite"><div class="android-scenario"><button id="android-vehicle"><span id="android-vehicle-label">Adicionar veículo</span></button><button id="android-soc">🔋 <span id="android-soc-label">Definir bateria</span> ✎</button></div><article id="android-hero" class="android-hero"><h2>A preparar opções próximas…</h2><p>Permite a localização e seleciona o veículo para personalizar.</p></article><div id="android-alternatives" class="android-alternatives"></div><p class="android-note" id="android-note"></p></section><details class="android-filters"><summary>☷ Filtros <span id="android-filter-summary">Personalizar pesquisa</span></summary>        <section class="quick-filters" aria-labelledby="quick-filter-heading">
           <div class="quick-filters-heading">
             <h2 id="quick-filter-heading">Filtros rápidos</h2>
             <button id="clear-quick-filters" type="button" aria-label="Limpar filtros rápidos">Limpar</button>
@@ -499,7 +499,7 @@
               <div class="res"><b id="mins">~25 min</b>Tempo estimado</div>
               <div class="price-head">
                 <b>Comparador de cartões e apps</b
-                ><select id="price-period">
+                ><select id="price-period" hidden aria-hidden="true">
                   <option value="fora_vazio">Fora de vazio</option>
                   <option value="vazio">Vazio</option>
                 </select>
@@ -572,5 +572,5 @@
     <script src="./assets/chargevoy.js"></script>
     <script src="./assets/route-corridor.js?v=19"></script>
   
-<dialog id="android-scenario-dialog"><form method="dialog"><button class="android-close" aria-label="Fechar">×</button></form><h2>O teu carregamento</h2><p>Preferências guardadas apenas neste dispositivo.</p><label>Bateria atual (%)<input id="android-start" type="number" min="0" max="99" value="32"></label><label>Objetivo (%)<input id="android-target" type="number" min="1" max="100" value="80"></label><label>Período da tarifa<select id="android-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></label><p id="android-scenario-error" role="alert"></p><button id="android-save-scenario" type="button">Atualizar opções</button></dialog><script src="./assets/recommendations.js"></script><script src="./assets/android-ui.js"></script></body>
+<dialog id="android-scenario-dialog"><form method="dialog"><button class="android-close" aria-label="Fechar">×</button></form><h2>O teu carregamento</h2><p>Preferências guardadas apenas neste dispositivo.</p><label>Bateria atual (%)<input id="android-start" type="number" min="0" max="99" value="32"></label><label>Objetivo (%)<input id="android-target" type="number" min="1" max="100" value="80"></label><p id="android-scenario-error" role="alert"></p><button id="android-save-scenario" type="button">Atualizar opções</button></dialog><script src="./assets/recommendations.js"></script><script src="./assets/android-ui.js"></script></body>
 </html>
