@@ -9,7 +9,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         def envVersionCode = System.getenv("ANDROID_VERSION_CODE")?.trim()
         def envVersionName = System.getenv("ANDROID_VERSION_NAME")?.trim()
-        versionCode envVersionCode ? envVersionCode.toInteger() : 3
+        versionCode envVersionCode ? envVersionCode.toInteger() : 4
         versionName envVersionName ?: "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

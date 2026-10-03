@@ -36,3 +36,13 @@ O contador `window.AndroidChargeVoy.metrics()` regista consultas adicionais de t
 `recommendations.test.mjs` valida energia, elegibilidade, dados ausentes e alternativas. `browser-test.mjs` valida a interface real com fixtures controladas em mobile/tablet e captura imagens QA (não devem ser anunciadas como dados reais). O workflow executa estes testes e compila APK/AAB. Antes da produção, testar GPS, voltar Android, login/callback, navegação externa, offline e acessibilidade em dispositivo real.
 
 A versão preview usa a mesma URI de retorno OAuth do projeto atual; ao coexistir com a versão instalada, o Android pode apresentar escolha de app. Validar login na release pelo teste interno da Play Store. Não se alterou a configuração do fornecedor OAuth.
+
+
+### APK de teste — preços e localização (03/10/2026)
+- Cópia do CSV oficial MOBI.E incluída durante a compilação, sem ler ou escrever D1. Usa o mesmo parser validado do website, apenas em leitura; cópia válida na app por 48 h desde a consulta.
+- Até quatro consultas adicionais de tarifas/minuto apenas para candidatos sem cópia recente; cache de respostas com tarifas 30 min e de respostas vazias 5 min. Detalhes reutilizam a cópia disponível.
+- Preços finais publicados de campanhas elegíveis podem ser estimados sem inventar componentes OPC. Indicar cartão, condições e confirmação de elegibilidade; mensalidades e cashback não reduzem o preço da sessão.
+- Disponibilidade desconhecida permite mostrar uma opção a comparar; não recebe o rótulo de recomendação com disponibilidade recente. Sem tarifa aplicável, o preço permanece desconhecido.
+- Ponto azul GPS permanece no mapa ao procurar outra zona; botão centrar solicita a localização apenas quando utilizado, sem acompanhamento contínuo.
+- Nove novas fotografias locais e créditos/licenças; seleção por geração/ano preserva as fotografias existentes.
+- Website, API, jobs e schema D1 intactos. Backup anterior: backup/android-prices-location-20261003 (ccf7ffe4697828a6c0ae6afbd5320ee4e4907c54).

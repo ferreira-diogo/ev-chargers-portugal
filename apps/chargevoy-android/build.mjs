@@ -1,12 +1,19 @@
 import {cp,readFile,writeFile,mkdir,rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
+import {execFileSync} from 'node:child_process';
 const app=resolve(import.meta.dirname),web=resolve(app,'../../ev-charge-portugal-github-ready'),dist=resolve(app,'dist');
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
 await cp(resolve(web,'assets'),resolve(dist,'assets'),{recursive:true});
 await cp(resolve(web,'icon.svg'),resolve(dist,'icon.svg'));
 await cp(resolve(app,'src/index.html'),resolve(dist,'index.html'));
 for(const name of ['chargevoy.js','android-ui.js','android-ui.css','recommendations.js'])await cp(resolve(app,'src',name),resolve(dist,'assets',name));
+await cp(resolve(app,'src/assets'),resolve(dist,'assets'),{recursive:true});
+// Merge Android-only vehicle credits with the read-only website photo catalogue.
+const basePhotos=JSON.parse(await readFile(resolve(web,'assets/vehicle-images/credits.json'),'utf8'));
+const extraPhotos=JSON.parse(await readFile(resolve(app,'src/assets/vehicle-images/additions.json'),'utf8'));
+await writeFile(resolve(dist,'assets/vehicle-images/credits.json'),JSON.stringify([...basePhotos,...extraPhotos]));
 if(process.env.ANDROID_INCLUDE_CATALOGUE === '1') {
+  execFileSync('python3',[resolve(app,'scripts/package-tariffs.py'),'--out',resolve(dist,'assets/opc-tariffs-snapshot.json')],{stdio:'inherit'});
   let failure;
   for(let attempt=1;attempt<=3;attempt++) {
     try {

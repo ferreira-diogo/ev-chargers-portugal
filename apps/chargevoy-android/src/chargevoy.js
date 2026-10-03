@@ -870,11 +870,9 @@
 
       function vehiclePhotoFor(vehicle) {
         const key = `${vehicle.make}|${vehicle.model}`.toLocaleLowerCase("pt");
-        const photo = vehiclePhotoCatalog.get(key);
-        if (!photo) return null;
-        const year = Number(vehicle.model_year_start);
-        if (year && (year < photo.min_year || (photo.max_year && year > photo.max_year))) return null;
-        return photo;
+        const photos=vehiclePhotoCatalog.get(key)||[];
+        const year=Number(vehicle.model_year_start);
+        return [...photos].filter(photo=>!year||(year>=photo.min_year&&(!photo.max_year||year<=photo.max_year))).sort((a,b)=>b.min_year-a.min_year)[0]||null;
       }
 
       function renderVehicleImage(vehicle) {
@@ -903,7 +901,7 @@
         license.textContent = photo.license;
         license.target = "_blank";
         license.rel = "noopener";
-        credit.replaceChildren("Foto redimensionada: ", source, " · ", license);
+        credit.replaceChildren("Imagem representativa; cor e versão podem diferir. Foto: ", source, " · ", license);
       }
 
       function applyVehicle(vehicleId) {
@@ -2006,6 +2004,9 @@
           return;
         }
         if (!selectedOpcTariffs.length) {
+          const fixed=window.AndroidChargeVoy?.fixedOptions?.(selectedStation,pricingScenario().energyKwh)||[];
+          fixed.sort((a,b)=>a.total-b.total);
+          if(fixed.length){headline.textContent='≈ '+fixed[0].total.toFixed(2).replace('.',',')+' €';container.innerHTML=directPrice+fixed.map(item=>`<div class="price-card"><div class="price-name">${escapeHtml(item.card.name)}<span class="price-breakdown">Preço final publicado · confirme a elegibilidade deste posto na app do cartão. ${escapeHtml(item.card.conditions)} · ${cardSourceLink(item.card)}</span></div><div class="price-total">≈ ${item.total.toFixed(2).replace('.',',')} €<small>${item.effectiveKwh.toFixed(2).replace('.',',')} €/kWh</small></div></div>`).join('');return;}
           headline.textContent = "Preço oficial indisponível";
           container.innerHTML =
             directPrice +
@@ -2071,8 +2072,9 @@
           renderPriceComparison();
           return;
         }
-        container.innerHTML =
-          '<div class="price-empty">A consultar tarifas oficiais…</div>';
+        const cached=(station._location_members||[station]).flatMap(member=>window.AndroidChargeVoy?.tariffRows?.(member.id)||[]);
+        if(cached.length){selectedOpcTariffs=cached;renderPriceComparison();return;}
+        renderPriceComparison();
         try {
           const [rows, adHoc] = await Promise.all([
             getRows(
@@ -2364,12 +2366,13 @@
           })
           .then((photos) => {
             if (!Array.isArray(photos)) throw new Error("Catálogo de fotografias inválido");
-            vehiclePhotoCatalog = new Map(photos.filter((photo) =>
+            vehiclePhotoCatalog = new Map();
+            photos.filter((photo) =>
               photo.make && photo.model && Number.isInteger(photo.min_year) &&
               /^\.\/assets\/vehicle-images\/[a-z0-9-]+\.jpg$/.test(photo.image) &&
               photo.source_url.startsWith("https://commons.wikimedia.org/wiki/File:") &&
               photo.license_url.startsWith("https://creativecommons.org/licenses/"),
-            ).map((photo) => [`${photo.make}|${photo.model}`.toLocaleLowerCase("pt"), photo]));
+            ).forEach(photo=>{const key=`${photo.make}|${photo.model}`.toLocaleLowerCase("pt");const rows=vehiclePhotoCatalog.get(key)||[];rows.push(photo);vehiclePhotoCatalog.set(key,rows);});
             if (currentVehicle) renderVehicleImage(currentVehicle);
           })
           .catch((error) => console.warn("Fotografias de veículos indisponíveis", error));
@@ -2443,6 +2446,7 @@
             return response.json();
           }).then((rows) => {
             cemeCards = rows;
+            renderStations(false);
             if (selectedStation) renderPriceComparison();
           }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));
 
@@ -2935,6 +2939,7 @@
           }
           const place = await browserPosition();
           searchPosition = place;
+          window.AndroidChargeVoy?.locationObserved?.(place);
           document
             .getElementById("map-location-cta")
             ?.classList.add("is-hidden");
@@ -2952,7 +2957,7 @@
             fillColor: "#60a5fa",
             fillOpacity: 0.16,
           }).addTo(searchLayer);
-          const locationMarker = L.marker([place.lat, place.lon])
+          const locationMarker = L.circleMarker([place.lat, place.lon], {radius:7,color:"white",weight:2,fillColor:"#339cff",fillOpacity:1})
             .addTo(searchLayer)
             .bindPopup("<b>A sua localização aproximada</b>");
           document.getElementById("sort-filter").value = "distance-asc";

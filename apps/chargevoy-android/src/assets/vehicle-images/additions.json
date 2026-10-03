@@ -1,0 +1,122 @@
+[
+  {
+    "make": "Tesla",
+    "model": "Model Y",
+    "min_year": 2020,
+    "max_year": 2024,
+    "image": "./assets/vehicle-images/tesla-model-y-2020.jpg",
+    "author": "Kevauto",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2020_Tesla_Model_Y,_front_5.16.21.jpg",
+    "commons_file": "File:2020 Tesla Model Y, front 5.16.21.jpg"
+  },
+  {
+    "make": "Kia",
+    "model": "EV6",
+    "min_year": 2021,
+    "max_year": 2024,
+    "image": "./assets/vehicle-images/kia-ev6-2021.jpg",
+    "author": "DieselFordMondeo",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2022_Kia_EV6_Air_Long_Range_2WD_(Front).jpg",
+    "commons_file": "File:2022 Kia EV6 Air Long Range 2WD (Front).jpg"
+  },
+  {
+    "make": "Peugeot",
+    "model": "e-208",
+    "min_year": 2019,
+    "max_year": null,
+    "image": "./assets/vehicle-images/peugeot-e-208.jpg",
+    "author": "Vauxford",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2020_Peugeot_e-208_GT_Front.jpg",
+    "commons_file": "File:2020 Peugeot e-208 GT Front.jpg"
+  },
+  {
+    "make": "Peugeot",
+    "model": "E-2008",
+    "min_year": 2020,
+    "max_year": null,
+    "image": "./assets/vehicle-images/peugeot-e-2008.jpg",
+    "author": "Tokumeigakarinoaoshima",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Peugeot_e-2008_GT_(ZAA-P24ZK01)_front.jpg",
+    "commons_file": "File:Peugeot e-2008 GT (ZAA-P24ZK01) front.jpg"
+  },
+  {
+    "make": "Hyundai",
+    "model": "Kona Electric",
+    "min_year": 2023,
+    "max_year": null,
+    "image": "./assets/vehicle-images/hyundai-kona-electric.jpg",
+    "author": "Kevauto",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2024_Hyundai_Kona,_front_NYIAS_2023.jpg",
+    "commons_file": "File:2024 Hyundai Kona, front NYIAS 2023.jpg"
+  },
+  {
+    "make": "BMW",
+    "model": "i4",
+    "min_year": 2021,
+    "max_year": null,
+    "image": "./assets/vehicle-images/bmw-i4.jpg",
+    "author": "Alexander-93",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:BMW_i4_M50_1X7A7379.jpg",
+    "commons_file": "File:BMW i4 M50 1X7A7379.jpg"
+  },
+  {
+    "make": "Škoda",
+    "model": "Enyaq",
+    "min_year": 2021,
+    "max_year": null,
+    "image": "./assets/vehicle-images/skoda-enyaq.jpg",
+    "author": "Vauxford",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2021_Skoda_Enyaq_IV_80_Loft_Front.jpg",
+    "commons_file": "File:2021 Skoda Enyaq IV 80 Loft Front.jpg"
+  },
+  {
+    "make": "Nissan",
+    "model": "Ariya",
+    "min_year": 2022,
+    "max_year": null,
+    "image": "./assets/vehicle-images/nissan-ariya.jpg",
+    "author": "User3204",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2022_Dongfeng-Nissan_Ariya_(front).jpg",
+    "commons_file": "File:2022 Dongfeng-Nissan Ariya (front).jpg"
+  },
+  {
+    "make": "Kia",
+    "model": "Niro EV",
+    "min_year": 2022,
+    "max_year": null,
+    "image": "./assets/vehicle-images/kia-niro-ev.jpg",
+    "author": "Harvey Bold",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2023_KIA_Niro_3_EV_-_68kWh_(201PS)_Electric_-_Infra_Red_-_04-2024,_Front.jpg",
+    "commons_file": "File:2023 KIA Niro 3 EV - 68kWh (201PS) Electric - Infra Red - 04-2024, Front.jpg"
+  },
+  {
+    "make": "Škoda",
+    "model": "Enyaq iV",
+    "min_year": 2021,
+    "max_year": 2024,
+    "image": "./assets/vehicle-images/skoda-enyaq.jpg",
+    "author": "Vauxford",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2021_Skoda_Enyaq_IV_80_Loft_Front.jpg",
+    "commons_file": "File:2021 Skoda Enyaq IV 80 Loft Front.jpg"
+  }
+]
