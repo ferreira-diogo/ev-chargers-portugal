@@ -935,7 +935,7 @@
         license.textContent = photo.license;
         license.target = "_blank";
         license.rel = "noopener";
-        credit.replaceChildren("Miniatura redimensionada; cor e versão podem diferir. Foto: ", source, " · ", license);
+        credit.replaceChildren("Cor e versão podem diferir. Foto: ", source, " · ", license, photo.background_removed ? " · Fundo removido" : " · Redimensionada");
       }
 
       function applyVehicle(vehicleId) {

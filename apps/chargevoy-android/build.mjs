@@ -8,7 +8,7 @@ await cp(resolve(web,'icon.svg'),resolve(dist,'icon.svg'));
 await cp(resolve(app,'src/index.html'),resolve(dist,'index.html'));
 for(const name of ['chargevoy.js','android-ui.js','android-ui.css','recommendations.js'])await cp(resolve(app,'src',name),resolve(dist,'assets',name));
 await cp(resolve(app,'src/assets'),resolve(dist,'assets'),{recursive:true,filter:source => !source.startsWith(resolve(app,'src/assets/vehicle-images'))});
-// Merge Android-only vehicle credits with the read-only website photo catalogue.
+// Package only the shared catalogue with verified licences and model mappings.
 const basePhotos=JSON.parse(await readFile(resolve(web,'assets/vehicle-images/credits.json'),'utf8'));
 await writeFile(resolve(dist,'assets/vehicle-images/credits.json'),JSON.stringify(basePhotos));
 if(process.env.ANDROID_INCLUDE_CATALOGUE === '1') {
