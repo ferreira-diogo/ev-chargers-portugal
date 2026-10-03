@@ -42,14 +42,13 @@ jobs:
         run: npm install --no-save --package-lock=false playwright@1.58.2
       - name: Verify mobile and tablet UI
         run: node browser-test.mjs
-      - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug bundleDebug
+      - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
           name: ev-charge-portugal-android-test
           path: |
             apps/chargevoy-android/android/app/build/outputs/apk/debug/app-debug.apk
-            apps/chargevoy-android/android/app/build/outputs/bundle/debug/app-debug.aab
             apps/chargevoy-android/qa/*.png
           if-no-files-found: error
           retention-days: 14

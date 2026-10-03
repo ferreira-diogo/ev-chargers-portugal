@@ -1085,6 +1085,8 @@
         }
       }
       function setNavigationMode(mode) {
+        document.body.dataset.androidPage = mode;
+        window.AndroidChargeVoy?.pageChanged?.(mode);
         document.body.classList.toggle("map-mode", mode === "map");
         document.body.classList.remove("station-mode");
         document
@@ -1379,6 +1381,7 @@
           .setAttribute("aria-hidden", "false");
       }
       function closeModal() {
+        if (["favorites", "account"].includes(document.body.dataset.androidPage)) setNavigationMode("map");
         document.getElementById("app-modal").classList.remove("open");
         document
           .getElementById("app-modal")
@@ -1594,8 +1597,8 @@
         const user = currentSession?.user;
         if (!user) {
           openModal(
-            "Entrar",
-            `<p>Entre para sincronizar favoritos e guardar o histórico das suas rotas em vários dispositivos.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button><button class="secondary" onclick="showEmailAuth('signin')">Entrar com email</button><button class="secondary" onclick="showEmailAuth('signup')">Criar conta com email</button>${installPrompt ? '<button class="secondary" onclick="installPwa()">Instalar aplicação</button>' : ""}`,
+            "A minha conta",
+            `<div class="android-account-avatar">◎</div><h3 class="android-account-title">Perfil ChargeVoy</h3><p>Entre para sincronizar favoritos e guardar o histórico das suas rotas em vários dispositivos.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button><button class="secondary" onclick="showEmailAuth('signin')">Entrar com email</button><button class="secondary" onclick="showEmailAuth('signup')">Criar conta com email</button>${installPrompt ? '<button class="secondary" onclick="installPwa()">Instalar aplicação</button>' : ""}`,
           );
           return;
         }
@@ -1619,11 +1622,12 @@
           ? stations
               .map(
                 (station) =>
-                  `<div class="favorite-row"><div><b>${escapeHtml(station.name || "Posto")}</b><small>${escapeHtml([station.address, station.city].filter(Boolean).join(", ") || "Localização não indicada")} · ${escapeHtml(station.max_power_kw || "—")} kW</small></div><button data-favorite-open="${escapeHtml(station.id)}">Ver</button></div>`,
+                  `<article class="favorite-row"><div><b>♡ ${escapeHtml(station.name || "Posto")}</b><small>${escapeHtml(stationAvailability(stationConnectorRows(station)).label)}</small><small>ϟ ${escapeHtml(station.max_power_kw || "—")} kW · ${escapeHtml([...new Set(stationConnectorRows(station).map(c=>connectorCategory(c.type)))].join(" · "))}</small><small>${escapeHtml([station.address, station.city].filter(Boolean).join(", ") || "Localização não indicada")}</small></div><button data-favorite-open="${escapeHtml(station.id)}">Ver posto ›</button><button data-favorite-map="${escapeHtml(station.id)}">Ver no mapa</button></article>`,
               )
               .join("")
           : "<p>Ainda não adicionou postos aos favoritos. Selecione um posto e toque em “Adicionar aos favoritos”.</p>";
-        openModal("☆ Postos favoritos", html);
+        openModal("Os meus favoritos", `<p class="android-intro">Os seus postos, sempre à mão.</p>${html}`);
+        document.querySelectorAll("[data-favorite-map]").forEach(button=>button.onclick=()=>{const station=allStations.find(s=>s.id===button.dataset.favoriteMap);if(station){closeModal();closeStationPanel();map.setView([station.latitude,station.longitude],15);}});
         document.querySelectorAll("[data-favorite-open]").forEach((button) =>
           button.addEventListener("click", () => {
             const station = allStations.find(
@@ -3826,7 +3830,7 @@
           .getElementById("route-planner")
           .classList.remove("route-visible");
         setNavigationMode("vehicle");
-        openFilterMenu();
+        window.AndroidChargeVoy?.showVehicle?.();
         if (window.innerWidth > 780 && !document.body.classList.contains("mobile-landscape"))
           document.getElementById("vehicle-select").focus();
       });
