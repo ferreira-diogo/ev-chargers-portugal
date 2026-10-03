@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: "13,43 * * * *"
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -13,11 +16,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
-      - name: Install dependencies
+      - name: Verify availability snapshot through authenticated Cloudflare API
         working-directory: ev-charge-portugal-github-ready
-        run: npm ci --ignore-scripts
-      - name: Verify deployed static map and KV publication
-        working-directory: ev-charge-portugal-github-ready
-        run: node scripts/verify-live-snapshot.mjs
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_AVAILABILITY_KV_NAMESPACE_ID: ${{ vars.CLOUDFLARE_AVAILABILITY_KV_NAMESPACE_ID }}
+          CLOUDFLARE_KV_READ_TOKEN: ${{ secrets.CLOUDFLARE_KV_READ_TOKEN }}
+        run: node scripts/verify-kv-publication.mjs
