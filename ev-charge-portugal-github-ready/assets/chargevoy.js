@@ -2385,7 +2385,7 @@
         const badge = document.getElementById("station-count");
         const cards = document.getElementById("station-cards");
 
-        fetch("./assets/vehicle-images/credits.json?v=20261003", { cache: "no-cache" })
+        fetch("./assets/vehicle-images/credits.json?v=20261003-2", { cache: "no-cache" })
           .then((response) => {
             if (!response.ok) throw new Error(`Fotografias HTTP ${response.status}`);
             return response.json();
