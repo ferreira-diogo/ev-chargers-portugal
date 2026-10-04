@@ -340,6 +340,7 @@
             availabilityHtml(info);
           document.getElementById("station-status").innerHTML =
             availabilityHtml(info);
+          updateStationReadingMessage(info);
         }
       }
       // Dynamic map data can contain thousands of elements. Translation is intentionally
@@ -606,6 +607,19 @@
           detail,
           publicationTime: new Date(oldest).toISOString(),
         };
+      }
+
+      function updateStationReadingMessage(info) {
+        const message = document.getElementById("station-refresh-message");
+        const date = info.publicationTime ? new Date(info.publicationTime) : null;
+        const time = date && Number.isFinite(date.getTime())
+          ? date.toLocaleString(currentLanguage === "en" ? "en-GB" : "pt-PT", {
+              day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+              timeZoneName: "short",
+            }) : null;
+        message.textContent = currentLanguage === "en"
+          ? `${time ? `Source reading: ${time}.` : "Source reading time unavailable."} Availability is checked automatically; source updates may be delayed.`
+          : `${time ? `Leitura da fonte: ${time}.` : "Hora da leitura da fonte indisponível."} A disponibilidade é consultada automaticamente; pode haver atraso na fonte.`;
       }
 
       function availabilityHtml(info) {
@@ -1129,7 +1143,6 @@
 
       function closeStationPanel() {
         selectedStation = null;
-        document.getElementById("refresh-station").disabled = true;
         setNavigationMode("map");
         document.querySelector(".main")?.classList.remove("station-selected");
         document.querySelector(".right")?.classList.remove("station-open");
@@ -1205,16 +1218,12 @@
         document.getElementById("station-live").innerHTML =
           availabilityHtml(availability);
         renderConnectorMatrix(stationConnectors, station);
+        updateStationReadingMessage(availability);
       }
 
       function selectStation(station, operatorName) {
         station = resolveStationLocation(station);
         selectedStation = station;
-        const napStation = String(station.source || "").startsWith("nap");
-        document.getElementById("refresh-station").disabled = !napStation;
-        document.getElementById("station-refresh-message").textContent = napStation
-          ? currentLanguage === "en" ? "Requests a new source reading and checks this station." : "Pede uma nova leitura à fonte e confirma se este posto foi atualizado."
-          : currentLanguage === "en" ? "This source does not provide live updates for this station." : "Esta fonte não disponibiliza atualização em tempo real por posto.";
         document
           .getElementById("route-planner")
           ?.classList.remove("route-visible");
@@ -3604,70 +3613,32 @@
       setupAnalyticsConsent();
       loadRealStations();
       let availabilityRefreshBusy = false;
-      function stationPublicationTime(connectors) {
-        return Math.max(0, ...connectors.map((c) => Date.parse(c.availability_updated_at) || 0));
-      }
-      async function refreshAvailability(manual = false) {
+      async function refreshAvailability() {
         if (
-          document.hidden ||
-          availabilityRefreshBusy ||
-          !allStations.length ||
-          !selectedStation ||
-          !String(selectedStation.source || "").startsWith("nap")
-        )
-          return;
+          document.hidden || availabilityRefreshBusy || !allStations.length ||
+          !selectedStation || !String(selectedStation.source || "").startsWith("nap")
+        ) return;
         availabilityRefreshBusy = true;
         const station = selectedStation;
-        const button = document.getElementById("refresh-station");
-        const message = document.getElementById("station-refresh-message");
-        button.disabled = true;
-         button.textContent = t("A consultar…");
-         try {
-           const previous = stationPublicationTime(stationConnectorRows(station));
-           let requested = null;
-           if (manual) {
-             const response = await fetchWithTimeout(
-               `${D1_API_WORKER_URL.replace(/\/api\/stations$/, "")}/api/refresh-station`,
-               { method: "POST", headers: { "Content-Type": "application/json" },
-                 body: JSON.stringify({ station_id: station.id }), cache: "no-store" }, 10000,
-             );
-             requested = await response.json();
-             if (!response.ok) throw new Error(requested.error || "Atualização indisponível");
-             message.textContent = requested.queued || requested.reason === "already_requested"
-               ? currentLanguage === "en" ? "New MOBI.E reading requested. Checking this station…" : "Nova leitura solicitada à MOBI.E. A verificar este posto…"
-               : currentLanguage === "en" ? "The source has a recent reading. Checking this station…" : "A fonte já tem uma leitura recente. A consultar este posto…";
-           }
-           let connectors = await loadLocationConnectors(station, true);
-           const baseline = Math.max(previous, Date.parse(requested?.publication_time) || 0);
-           if (manual && (requested.queued || requested.reason === "already_requested")) {
-             for (let attempt = 0; attempt < 6 && stationPublicationTime(connectors) <= baseline; attempt++) {
-               if (document.hidden || selectedStation?.id !== station.id) break;
-               await new Promise((resolve) => setTimeout(resolve, 20000));
-               connectors = await loadLocationConnectors(station, true);
-             }
-           }
-           if (selectedStation?.id === station.id) {
-             updateStationConnectorPanel(station, connectors);
-             const time = new Date().toLocaleTimeString(currentLanguage === "en" ? "en-GB" : "pt-PT", {hour: "2-digit", minute: "2-digit"});
-             const newer = stationPublicationTime(connectors) > baseline;
-             message.textContent = manual && !newer
-               ? currentLanguage === "en" ? "The source has not published a newer reading for this station. Last reading retained." : "A fonte ainda não publicou uma leitura mais recente para este posto. Última leitura mantida."
-               : currentLanguage === "en" ? `Checked at ${time}. Source time is shown above.` : `Consultado às ${time}. A hora da fonte está indicada acima.`;
-           }
+        try {
+          const connectors = await loadLocationConnectors(station, true);
+          if (selectedStation?.id === station.id) {
+            updateStationConnectorPanel(station, connectors);
+          }
           renderStations(false);
         } catch (error) {
-           console.warn("Não foi possível atualizar a disponibilidade", error);
-           if (selectedStation?.id === station.id) {
-             message.textContent = `${t("Não foi possível atualizar. Última leitura mantida.")} ${error.message || ""}`.trim();
-            if (manual) notifyUser(message.textContent, {kind: "error"});
+          console.warn("Não foi possível consultar a disponibilidade", error);
+          if (selectedStation?.id === station.id) {
+            const message = document.getElementById("station-refresh-message");
+            updateStationReadingMessage(stationAvailability(stationConnectorRows(station)));
+            message.textContent += currentLanguage === "en"
+              ? " Connection unavailable; last reading retained."
+              : " Sem ligação; última leitura mantida.";
           }
         } finally {
           availabilityRefreshBusy = false;
-          button.disabled = !selectedStation || !String(selectedStation.source || "").startsWith("nap");
-          button.textContent = t("↻ Atualizar este posto");
         }
       }
-      document.getElementById("refresh-station").addEventListener("click", () => refreshAvailability(true));
       setInterval(() => {
         if (!document.hidden) renderStations(false);
         refreshAvailability();
