@@ -32,7 +32,7 @@ const checks = [
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA shell caches corridor planner", worker.includes("./assets/route-corridor.js")],
-  ["PWA cache version is current", worker.includes("ev-charge-shell-v35") && worker.includes("chargevoy.css?v=24") && html.includes("chargevoy.css?v=24") && html.includes("chargevoy.js?v=32")],
+  ["PWA cache version is current", worker.includes("ev-charge-shell-v36") && worker.includes("chargevoy.css?v=24") && html.includes("chargevoy.css?v=24") && html.includes("chargevoy.js?v=33")],
   ["Homepage declares its canonical URL", html.includes('<link rel="canonical" href="https://chargevoy.pt/"')],
   ["Homepage has one visible brand heading", (html.match(/<h1\b/g) || []).length === 1 && html.includes("Postos elétricos em Portugal")],
   ["Sitemap lists the public homepage", sitemap.includes("<loc>https://chargevoy.pt/</loc>") && (sitemap.match(/<loc>/g) || []).length === 1],
@@ -65,3 +65,4 @@ const checks = [
 const failed = checks.filter(([, ok]) => !ok);
 for (const [label, ok] of checks) console.log(`${ok ? "PASS" : "FAIL"} ${label}`);
 if (failed.length) process.exitCode = 1;
+

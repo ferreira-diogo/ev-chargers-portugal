@@ -11,7 +11,7 @@
     "android:bundle": "npm run android:sync && cd android && ./gradlew bundleRelease",
     "nap:check": "node scripts/import-nap-datex.mjs --dry-run",
     "nap:stage": "node scripts/import-nap-datex.mjs --stage",
-    "test": "node scripts/verify-web.mjs && node scripts/verify-live-map-contract.mjs && node --test scripts/data-regressions.test.mjs scripts/catalogue-locations.test.mjs"
+    "test": "node scripts/verify-web.mjs && node scripts/verify-live-map-contract.mjs && node --test scripts/data-regressions.test.mjs scripts/catalogue-locations.test.mjs && node --test scripts/geocoding.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",

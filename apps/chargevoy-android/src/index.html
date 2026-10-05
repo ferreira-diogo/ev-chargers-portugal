@@ -35,7 +35,8 @@
     />
     <link rel="stylesheet" href="./assets/chargevoy.css?v=24" />
   <link rel="stylesheet" href="./assets/android-ui.css" />
-</head>
+<link rel="stylesheet" href="./assets/geocoding.css?v=1" />
+  </head>
   <body class="map-mode">
     <header class="top">
       <div class="brand">
@@ -569,8 +570,10 @@
     <div class="app-toast" id="app-toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+    <script src="./assets/geocoding.js?v=1"></script>
     <script src="./assets/chargevoy.js"></script>
     <script src="./assets/route-corridor.js?v=19"></script>
   
 <dialog id="android-scenario-dialog"><form method="dialog"><button class="android-close" aria-label="Fechar">×</button></form><h2>O teu carregamento</h2><p>Preferências guardadas apenas neste dispositivo.</p><label>Bateria atual (%)<input id="android-start" type="number" min="0" max="99" value="32"></label><label>Objetivo (%)<input id="android-target" type="number" min="1" max="100" value="80"></label><label>Período da tarifa<select id="android-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></label><p id="android-scenario-error" role="alert"></p><button id="android-save-scenario" type="button">Atualizar opções</button></dialog><script src="./assets/recommendations.js"></script><script src="./assets/android-ui.js"></script></body>
 </html>
+

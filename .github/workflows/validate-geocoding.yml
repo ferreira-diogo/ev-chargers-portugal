@@ -1,0 +1,23 @@
+name: Validate geographic search
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ev-charge-portugal-github-ready/assets/geocoding.*'
+      - 'ev-charge-portugal-github-ready/scripts/*geocoding*.mjs'
+      - '.github/workflows/validate-geocoding.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Run geographic regression tests
+        run: node --test ev-charge-portugal-github-ready/scripts/geocoding.test.mjs
+      - name: Verify real destinations across mainland and islands
+        run: node ev-charge-portugal-github-ready/scripts/verify-geocoding-live.mjs

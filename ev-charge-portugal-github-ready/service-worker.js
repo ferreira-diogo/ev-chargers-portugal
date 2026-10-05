@@ -1,5 +1,5 @@
-const CACHE_NAME='ev-charge-shell-v35';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=24','./assets/chargevoy.js?v=32','./assets/ceme-cards.json','./assets/vehicle-catalog.json?v=2','./assets/vehicle-images/credits.json?v=20261003-2','./assets/route-corridor.js?v=19'];
+const CACHE_NAME='ev-charge-shell-v36';
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=24','./assets/geocoding.css?v=1','./assets/geocoding.js?v=1','./assets/chargevoy.js?v=33','./assets/ceme-cards.json','./assets/vehicle-catalog.json?v=2','./assets/vehicle-images/credits.json?v=20261003-2','./assets/route-corridor.js?v=19'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -39,3 +39,4 @@ self.addEventListener('fetch',event=>{
     return response;
   })));
 });
+
