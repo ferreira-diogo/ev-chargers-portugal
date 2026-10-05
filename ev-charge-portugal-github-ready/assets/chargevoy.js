@@ -56,7 +56,6 @@
       let markerMap = new Map();
       let selectedPower = "all";
       let searchPosition = null;
-      let lastGeocodeAt = 0;
       const LOCAL_VEHICLE_FALLBACK = [
         ["Tesla", "Model 3", "RWD", 2023, 60, 145, 513, 11, 170, "sedan"],
         ["Tesla", "Model Y", "RWD", 2023, 60, 160, 455, 11, 170, "suv"],
@@ -112,7 +111,6 @@
       let lastPlannedRoute = null;
       let currentSession = null;
       let installPrompt = null;
-      const geocodeCache = new Map();
       // Interface translations: all platforms (web, PWA and Capacitor) share this file.
       const I18N_EN = {
         "Filtros rápidos": "Quick filters",
@@ -2813,34 +2811,7 @@
       }
 
       async function geocodePortugal(query) {
-        const cacheKey = query.toLocaleLowerCase("pt");
-        let place = geocodeCache.get(cacheKey);
-        if (!place) {
-          const wait = Math.max(0, 1000 - (Date.now() - lastGeocodeAt));
-          if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
-          const params = new URLSearchParams({
-            q: `${query}, Portugal`,
-            format: "jsonv2",
-            countrycodes: "pt",
-            limit: "1",
-          });
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?${params}`,
-          );
-          lastGeocodeAt = Date.now();
-          if (!response.ok)
-            throw new Error(`Pesquisa geográfica HTTP ${response.status}`);
-          const results = await response.json();
-          if (!results.length)
-            throw new Error(`Local não encontrado: ${query}`);
-          place = results[0];
-          geocodeCache.set(cacheKey, place);
-        }
-        return {
-          lat: Number(place.lat),
-          lon: Number(place.lon),
-          label: place.display_name,
-        };
+        return window.ChargeVoyGeocoding.resolve(query);
       }
 
       function closeFilterMenu() {
@@ -4117,3 +4088,4 @@
           showHistory();
         }
       });
+
