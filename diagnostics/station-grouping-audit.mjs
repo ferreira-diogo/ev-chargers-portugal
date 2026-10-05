@@ -23,6 +23,25 @@ const likely=pairs.filter(p=>p.same_base_name&&p.distance_m<=80);
 function components(pairs){const nodes=new Map();for(const p of pairs){for(const [a,b]of [[p.a,p.b],[p.b,p.a]]){const list=nodes.get(a)||[];list.push(b);nodes.set(a,list);}}const seen=new Set(),out=[];for(const id of nodes.keys()){if(seen.has(id))continue;const group=[],todo=[id];while(todo.length){const x=todo.pop();if(seen.has(x))continue;seen.add(x);group.push(x);todo.push(...nodes.get(x));}out.push(group);}return out;}
 const clusters=components(likely);const summary={publication_time:data.publication_time,records:data.stations.length,connectors:data.connectors.length,current_locations:api.groupStationLocations(data.stations).length,target:describe(target),candidate_pairs_150m:pairs.length,likely_same_name_pairs_80m:likely.length,likely_split_groups:clusters.length,likely_affected_charger_records:new Set(likely.flatMap(p=>[p.a,p.b])).size,counts_are_candidates_not_verified_physical_sites:true};
 console.log('SUMMARY '+JSON.stringify(summary));console.log('EXAMPLES '+JSON.stringify(likely.slice(0,25)));
-await writeFile('station-grouping-audit.json',JSON.stringify({summary,target_neighbors:neighbors.map(describe),likely_split_groups:clusters,likely_pairs:likely,other_candidate_pairs:pairs.filter(p=>!likely.includes(p))},null,2));
+
+const broader=components(pairs);
+const operatorStats=[...new Set(data.stations.map(s=>s.operator_name))].map(operator=>{
+const opPairs=pairs.filter(p=>p.operator===operator),sameNames=likely.filter(p=>p.operator===operator);
+return {operator,records:data.stations.filter(s=>s.operator_name===operator).length,candidate_groups_150m:components(opPairs).length,candidate_records:new Set(opPairs.flatMap(p=>[p.a,p.b])).size,stronger_groups_80m:components(sameNames).length,example:opPairs[0]};
+}).filter(x=>x.candidate_groups_150m).sort((a,b)=>b.candidate_groups_150m-a.candidate_groups_150m);
+let differentAddressPairs=0,crossOperatorPairs=0;const addressExamples=[];
+for(let i=0;i<data.stations.length;i++)for(let j=i+1;j<data.stations.length;j++){
+const a=data.stations[i],b=data.stations[j];if(Math.abs(a.latitude-b.latitude)>.00032||Math.abs(a.longitude-b.longitude)>.0005)continue;
+const d=distance(a,b);if(d>30)continue;
+if(a.operator_id!==b.operator_id){crossOperatorPairs++;continue;}
+if(normalize(a.address)!==normalize(b.address)||normalize(a.city)!==normalize(b.city)){
+differentAddressPairs++;if(addressExamples.length<15)addressExamples.push({a:describe(a),b:describe(b),distance_m:Math.round(d*10)/10});
+}}
+const expanded={candidate_groups_150m:broader.length,candidate_records:new Set(pairs.flatMap(p=>[p.a,p.b])).size,operatorStats,same_operator_different_address_pairs_30m:differentAddressPairs,cross_operator_pairs_30m:crossOperatorPairs,addressExamples};
+console.log('EXPANDED_SUMMARY '+JSON.stringify({...expanded,addressExamples:undefined,operatorStats:undefined}));
+console.log('OPERATOR_STATS '+JSON.stringify(operatorStats));
+console.log('ADDRESS_EXAMPLES '+JSON.stringify(addressExamples));
+
+await writeFile('station-grouping-audit.json',JSON.stringify({summary,expanded,target_neighbors:neighbors.map(describe),likely_split_groups:clusters,likely_pairs:likely,other_candidate_pairs:pairs.filter(p=>!likely.includes(p))},null,2));
 let n=0;for(const match of xml.matchAll(/<(?:[\w.-]+:)?energyInfrastructureSite\b[\s\S]*?<\/(?:[\w.-]+:)?energyInfrastructureSite>/g)){const fragment=match[0];if(neighbors.some(s=>fragment.includes('id="'+s.external_id+'"'))){console.log('RAW_SITE '+fragment.slice(0,18000));n++;}}
 console.log('RAW_MATCHED_SITES '+n);
