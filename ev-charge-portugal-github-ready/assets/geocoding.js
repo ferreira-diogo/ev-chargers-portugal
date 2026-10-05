@@ -15,7 +15,7 @@
     return (place.category || place.class) === "boundary" || place.type === "administrative";
   }
   function isSettlement(place) {
-    return !isBoundary(place) && settlements.has(place.addresstype || place.type);
+    return settlements.has(place.addresstype || place.type);
   }
   function distance(a, b) {
     const rad = Math.PI / 180, dLat = (Number(b.lat) - Number(a.lat)) * rad;
@@ -49,7 +49,8 @@
     return unique;
   }
   function automaticChoice(places, query) {
-    // A district/municipality must never silently become a town destination.
+    // Broad district/municipality centroids must never become town destinations.
+    // Nominatim also represents settlements as city/town/village boundaries.
     const explicitArea = /^(distrito|concelho|municipio|freguesia|regiao)\b/.test(normalize(query));
     if (explicitArea) return places.length === 1 ? places[0] : null;
     const simple = !query.includes(",") && !/\d/.test(query);
@@ -63,10 +64,11 @@
   function english() { return (root.document?.documentElement.lang || "pt").startsWith("en"); }
   function kind(place) {
     const en = english(), type = place.addresstype || place.type;
-    if (isBoundary(place)) return en ? "Administrative area · approximate point" : "Área administrativa · ponto aproximado";
+    if (isBoundary(place) && !isSettlement(place)) return en ? "Administrative area · approximate point" : "Área administrativa · ponto aproximado";
     const names = en ? {city:"City",town:"Town",village:"Village",hamlet:"Village",suburb:"Neighbourhood",neighbourhood:"Neighbourhood"}
       : {city:"Cidade",town:"Vila",village:"Aldeia",hamlet:"Aldeia",suburb:"Bairro",neighbourhood:"Bairro"};
-    return names[type] || (en ? "Location / address" : "Local / morada");
+    const label = names[type] || (en ? "Location / address" : "Local / morada");
+    return isBoundary(place) ? `${label} · ${en ? "approximate centre" : "centro aproximado"}` : label;
   }
   function choose(places, query) {
     return new Promise((resolve, reject) => {

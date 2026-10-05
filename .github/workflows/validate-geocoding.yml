@@ -19,5 +19,10 @@ jobs:
           node-version: 24
       - name: Run geographic regression tests
         run: node --test ev-charge-portugal-github-ready/scripts/geocoding.test.mjs
+      - name: Install browser test dependency
+        working-directory: ev-charge-portugal-github-ready
+        run: npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.58.2
+      - name: Verify location chooser in mobile and tablet browsers
+        run: node ev-charge-portugal-github-ready/scripts/geocoding-browser.mjs
       - name: Verify real destinations across mainland and islands
         run: node ev-charge-portugal-github-ready/scripts/verify-geocoding-live.mjs

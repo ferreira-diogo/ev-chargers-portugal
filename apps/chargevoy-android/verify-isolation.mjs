@@ -11,10 +11,11 @@ const approved={
   "ev-charge-portugal-github-ready/package.json": "de65ac1bf066e7854801a8304f77abe93b02330a4ef9368a7f36e2bb032f2873",
   "ev-charge-portugal-github-ready/scripts/verify-web.mjs": "62af3844ba9ac6da046a51fd3c32fdcd758c81640b59e9e0cc266ee8bf729389",
   "ev-charge-portugal-github-ready/service-worker.js": "2f58c6b68aac1aae61967abbb6a5ee88cb231ca0e0f02e5ee48c4ec676e529be",
-  "ev-charge-portugal-github-ready/assets/geocoding.js": "2cbaa043e96cffb02cbc89aa453d4068872853f030ecaefa28389f9873210083",
+  "ev-charge-portugal-github-ready/assets/geocoding.js": "ffb7406d22ea224588b3579cc2d8f8304f8727176fec9237046c058eec17b4b4",
   "ev-charge-portugal-github-ready/assets/geocoding.css": "848d49945869a6b107122caf621a55b91e450a427ca05592b693eb613e3f23c4",
-  "ev-charge-portugal-github-ready/scripts/geocoding.test.mjs": "370432b00aa7f9973ba3a8f5c8e68be33df56e0779fa075be7d424e6017e5f90",
-  "ev-charge-portugal-github-ready/scripts/verify-geocoding-live.mjs": "bf2be593301fc66c0c2b4606dac156d3389838ff597fdfb26173eeacd53a1a48"
+  "ev-charge-portugal-github-ready/scripts/geocoding.test.mjs": "fa1efbf6f61a02697c337daba64911c95f9192067f890e459c732671f6e2b4b4",
+  "ev-charge-portugal-github-ready/scripts/verify-geocoding-live.mjs": "05bda1fd7ab1210fe1660f97e4fb28f765a5bb9c153519d53e661dcf9c1a4118",
+  "ev-charge-portugal-github-ready/scripts/geocoding-browser.mjs": "5e275f432f59ff80590649ca18961015dd25cc24cb318de6cdfd51fe3af1ca21"
 };
 const files=execFileSync('git',['ls-tree','-r','--name-only',base,'ev-charge-portugal-github-ready'],{cwd:repo,encoding:'utf8'}).trim().split('\n');
 for(const p of new Set([...files,...Object.keys(approved)])){

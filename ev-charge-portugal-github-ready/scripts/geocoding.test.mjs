@@ -8,14 +8,14 @@ function load(fetch=async()=>({ok:true,json:async()=>[]})) {
   vm.runInContext(source,context);return context.ChargeVoyGeocoding;
 }
 const city=(name,lat=41.806,lon=-6.757,extra={})=>({name,display_name:`${name}, Portugal`,lat:String(lat),lon:String(lon),category:'place',type:'city',addresstype:'city',osm_type:'node',address:{country_code:'pt'},...extra});
-const district={...city('Distrito de Bragança',41.55,-6.8),category:'boundary',type:'administrative',addresstype:'state',osm_type:'relation'};
+const district={...city('Distrito de Bragança',41.55,-6.8),category:'boundary',type:'administrative',addresstype:'county',osm_type:'relation'};
 test('Bragança city wins over the district and municipality centroids',()=>{
   const api=load(),town=city('Bragança'),municipality={...district,name:'Bragança',addresstype:'municipality'};
   const options=api.candidates([district,municipality,town],'Bragança');assert.equal(api.automaticChoice(options,'Bragança'),town);
 });
 test('district-only and municipality-only matches require explicit confirmation',()=>{
   const api=load();assert.equal(api.automaticChoice([district],'Bragança'),null);
-  assert.equal(api.automaticChoice([{...district,name:'Bragança'}],'Bragança'),null);
+  assert.equal(api.automaticChoice([{...district,name:'Bragança',addresstype:'municipality'}],'Bragança'),null);
 });
 test('an explicit district request can use its unique administrative result',()=>{
   assert.equal(load().automaticChoice([district],'Distrito de Bragança'),district);
@@ -65,4 +65,13 @@ test('both platforms load the shared resolver before the controller and use it f
     assert(html.includes('assets/geocoding.css'));assert(js.includes('window.ChargeVoyGeocoding.resolve(query)'));
     assert(js.includes('await geocodePortugal(query)'));assert(js.includes('await geocodePortugal(originText)'));assert(js.includes('await geocodePortugal(destinationText)'));
   }
+});
+
+test('real Portuguese city boundaries use the urban centre rather than the district',()=>{
+  const api=load(),braganca={...district,name:'Bragança',display_name:'Bragança, Distrito de Bragança, Portugal',addresstype:'city',lat:'41.8071182',lon:'-6.7589839'};
+  assert.equal(api.automaticChoice(api.candidates([district,braganca],'Bragança'),'Bragança'),braganca);
+});
+test('same-name settlements represented as boundaries also require a choice',()=>{
+  const api=load(),a={...district,name:'Castelo Branco',addresstype:'city',lat:'39.8266322',lon:'-7.4919318'},b={...district,name:'Castelo Branco',addresstype:'village',lat:'41.2773349',lon:'-6.7558950'};
+  assert.equal(api.automaticChoice(api.candidates([a,b],'Castelo Branco'),'Castelo Branco'),null);
 });

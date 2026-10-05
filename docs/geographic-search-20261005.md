@@ -12,7 +12,9 @@ exact settlement match, and requires a location choice for repeated names and
 administrative-only matches. The choice displays the complete returned address and
 warns that an administrative area has an approximate point. If a simple locality
 name has no exact settlement in the first page, it retries as a structured city
-query. It never silently substitutes a district or municipality centre.
+query. It never silently substitutes a district or a generic municipality centre.
+Portuguese city/town/village boundary results are accepted as settlements: the
+live feed anchors the verified cities at their urban centres.
 
 Village, hotel and street searches remain supported. No mainland bounding box is
 used, so Madeira and the Azores remain searchable. Requests are serialized with
@@ -28,6 +30,7 @@ all other existing website files remain protected against Android changes.
 ## Validation
 
 - `node --test ev-charge-portugal-github-ready/scripts/geocoding.test.mjs`
+- Mobile/tablet chooser tests cover selection, cancellation, Escape and focus.
 - Existing web syntax, live-map contract, location catalogue and Android recommendation tests.
 - `Validate geographic search` workflow checks real destinations in Bragança,
   Leiria, Faro, Castelo Branco, Marinha Grande, Funchal and Ponta Delgada.
