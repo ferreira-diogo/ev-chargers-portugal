@@ -1,8 +1,12 @@
 import {readFile,writeFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
 const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');
 const distance=(a,b)=>{const r=Math.PI/180,dlat=(b.latitude-a.latitude)*r,dlon=(b.longitude-a.longitude)*r;const h=Math.sin(dlat/2)**2+Math.cos(a.latitude*r)*Math.cos(b.latitude*r)*Math.sin(dlon/2)**2;return 6371000*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));};
-const res=await fetch('https://chargevoy.pt/assets/stations-snapshot.json',{signal:AbortSignal.timeout(60000)});if(!res.ok)throw Error('Snapshot '+res.status);
-const data=await res.json();if(data.stations.length<8000)throw Error('Incomplete catalogue');
+const napResponse=await fetch('https://ev-nap.mobie.pt/integration/nap/evChargingInfra',{signal:AbortSignal.timeout(300000)});if(!napResponse.ok)throw Error('NAP '+napResponse.status);
+const xml=await napResponse.text();await writeFile('/tmp/audit-nap.xml',xml);
+execFileSync('npm',['ci','--ignore-scripts'],{cwd:'ev-charge-portugal-github-ready',stdio:'inherit'});
+execFileSync(process.execPath,['scripts/import-nap-datex.mjs','--web-snapshot','--file=/tmp/audit-nap.xml'],{cwd:'ev-charge-portugal-github-ready',env:{...process.env,NAP_WEB_SNAPSHOT:'/tmp/audit-snapshot.json'},stdio:'inherit'});
+const data=JSON.parse(await readFile('/tmp/audit-snapshot.json','utf8'));if(data.stations.length<8000)throw Error('Incomplete catalogue');
 const src=await readFile('ev-charge-portugal-github-ready/assets/chargevoy.js','utf8');
 const helpers=src.slice(src.indexOf('function stationLocationKey('),src.indexOf('function markerColor('));
 const connectorMap=new Map();for(const c of data.connectors){const list=connectorMap.get(c.station_id)||[];list.push(c);connectorMap.set(c.station_id,list);}
@@ -20,6 +24,5 @@ function components(pairs){const nodes=new Map();for(const p of pairs){for(const
 const clusters=components(likely);const summary={publication_time:data.publication_time,records:data.stations.length,connectors:data.connectors.length,current_locations:api.groupStationLocations(data.stations).length,target:describe(target),candidate_pairs_150m:pairs.length,likely_same_name_pairs_80m:likely.length,likely_split_groups:clusters.length,likely_affected_charger_records:new Set(likely.flatMap(p=>[p.a,p.b])).size,counts_are_candidates_not_verified_physical_sites:true};
 console.log('SUMMARY '+JSON.stringify(summary));console.log('EXAMPLES '+JSON.stringify(likely.slice(0,25)));
 await writeFile('station-grouping-audit.json',JSON.stringify({summary,target_neighbors:neighbors.map(describe),likely_split_groups:clusters,likely_pairs:likely,other_candidate_pairs:pairs.filter(p=>!likely.includes(p))},null,2));
-const raw=await fetch('https://ev-nap.mobie.pt/integration/nap/evChargingInfra',{headers:{Accept:'application/xml','User-Agent':'ChargeVoy read-only catalogue audit'},signal:AbortSignal.timeout(300000)});if(!raw.ok)throw Error('NAP '+raw.status);
-const xml=await raw.text();let n=0;for(const match of xml.matchAll(/<(?:[\w.-]+:)?energyInfrastructureSite\b[\s\S]*?<\/(?:[\w.-]+:)?energyInfrastructureSite>/g)){const fragment=match[0];if(neighbors.some(s=>fragment.includes('id="'+s.external_id+'"'))){console.log('RAW_SITE '+fragment.slice(0,18000));n++;}}
+let n=0;for(const match of xml.matchAll(/<(?:[\w.-]+:)?energyInfrastructureSite\b[\s\S]*?<\/(?:[\w.-]+:)?energyInfrastructureSite>/g)){const fragment=match[0];if(neighbors.some(s=>fragment.includes('id="'+s.external_id+'"'))){console.log('RAW_SITE '+fragment.slice(0,18000));n++;}}
 console.log('RAW_MATCHED_SITES '+n);
