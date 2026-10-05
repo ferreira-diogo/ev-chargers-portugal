@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test recommendations.test.mjs ../../ev-charge-portugal-github-ready/scripts/geocoding.test.mjs && node verify-isolation.mjs",
+    "test": "node --test recommendations.test.mjs ../../ev-charge-portugal-github-ready/scripts/station-grouping.test.mjs ../../ev-charge-portugal-github-ready/scripts/geocoding.test.mjs && node verify-isolation.mjs",
     "android:sync": "npm run build && npx cap sync android",
     "android:bundle": "npm run android:sync && cd android && ./gradlew bundleRelease"
   },
