@@ -1,0 +1,31 @@
+name: Validate station grouping
+on:
+  push:
+    branches: [fix/station-location-grouping-20261005]
+  pull_request:
+    paths:
+      - 'ev-charge-portugal-github-ready/assets/chargevoy.js'
+      - 'apps/chargevoy-android/src/chargevoy.js'
+      - 'ev-charge-portugal-github-ready/scripts/*grouping*.mjs'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Web and Android grouping regressions
+        run: node --test ev-charge-portugal-github-ready/scripts/catalogue-locations.test.mjs ev-charge-portugal-github-ready/scripts/station-grouping.test.mjs
+      - name: Validate national source without database writes
+        run: node diagnostics/station-grouping-validation.mjs
+      - name: Web contract and regression suite
+        working-directory: ev-charge-portugal-github-ready
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: station-grouping-national-validation
+          path: station-grouping-audit.json

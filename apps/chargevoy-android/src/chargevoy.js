@@ -433,34 +433,92 @@
         const lat = Number(station.latitude), lon = Number(station.longitude);
         const operator = normalize(station.operator_id || station.operator_name);
         const address = normalize(station.address);
-        // Only combine official records that name the same operator and address
-        // at the same coordinates. Nearby operators and opposite road sides stay separate.
         if (station.source !== "nap-mobie" || !operator || !address ||
             station.latitude == null || station.longitude == null || !Number.isFinite(lat) || !Number.isFinite(lon))
           return `station:${station.id}`;
         return [station.source, operator, address, normalize(station.city), lat.toFixed(5), lon.toFixed(5)].join("|");
       }
       function groupStationLocations(stations) {
-        const locations = new Map();
+        // Cache only membership; live connector rows remain in connectorMap.
+        const cache = groupStationLocations.cache ||= new WeakMap();
+        const cached = cache.get(stations);
+        if (cached?.length === stations.length) return cached.locations;
+        const normalize = value => String(value || "").normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        const baseName = station => normalize(String(station.name || "").replace(/\s*(?:#\s*)?\d+\s*$/, ""));
+        const direction = station => {
+          const text = normalize(`${station.name || ""} ${station.address || ""}`);
+          const tags = [];
+          for (const [tag, pattern] of [
+            ["sn", /\b(?:sul norte|sur norte|s n|sn)\b/],
+            ["ns", /\b(?:norte sul|norte sur|n s|ns)\b/],
+            ["lo", /\b(?:leste oeste|nascente poente|l o|lo)\b/],
+            ["ol", /\b(?:oeste leste|poente nascente|o l|ol)\b/],
+          ]) if (pattern.test(text)) tags.push(tag);
+          if (tags.length) return [...new Set(tags)].sort().join("|");
+          return [...new Set(text.match(/\b(?:norte|sul|sur|south|north|nascente|poente|leste|oeste|east|west)\b/g) || [])]
+            .map(tag => ({sur:"sul",south:"sul",north:"norte",east:"leste",west:"oeste"}[tag] || tag)).sort().join("|");
+        };
+        const address = station => {
+          let text = normalize(station.address);
+          // Some motorway records append a charger number to the address.
+          // Preserve ordinary street numbers, postal codes and km markers.
+          if (/\b(?:sentido|sul norte|norte sul|s n|n s|sn|ns)\b/.test(text))
+            text = text.replace(/\s+\d+$/, "");
+          return text;
+        };
+        const metres = (a, b) => {
+          const radians = Math.PI / 180;
+          const dlat = (Number(b.latitude) - Number(a.latitude)) * radians;
+          const dlon = (Number(b.longitude) - Number(a.longitude)) * radians;
+          const h = Math.sin(dlat / 2) ** 2 + Math.cos(Number(a.latitude) * radians) *
+            Math.cos(Number(b.latitude) * radians) * Math.sin(dlon / 2) ** 2;
+          return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(Math.max(0, 1 - h)));
+        };
+        const buckets = new Map();
         for (const station of stations) {
-          const key = stationLocationKey(station);
-          const members = locations.get(key) || [];
-          members.push(station);
-          locations.set(key, members);
+          const valid = station.source === "nap-mobie" && (station.operator_id || station.operator_name) &&
+            address(station) && station.latitude != null && station.longitude != null &&
+            Number.isFinite(Number(station.latitude)) && Number.isFinite(Number(station.longitude));
+          const key = valid ? [normalize(station.operator_id || station.operator_name),
+            address(station), normalize(station.city)].join("|") : `station:${station.id}`;
+          const bucket = buckets.get(key) || [];
+          bucket.push(station);
+          buckets.set(key, bucket);
         }
-        return [...locations.values()].map((members) => {
-          if (members.length === 1) return members[0];
-          members.sort((a, b) => String(a.id).localeCompare(String(b.id)));
-          const first = members[0];
-          return {...first, name: String(first.name || "Posto de carregamento").replace(/\s*#\d+\s*$/, ""),
-            max_power_kw: Math.max(...members.map(member => Number(member.max_power_kw) || 0)),
-            _location_members: members};
-        });
+        const compatible = (a, b) => {
+          const da = direction(a), db = direction(b);
+          if (da && db && da !== db) return false;
+          const distance = metres(a, b);
+          // Different names are accepted only within a small physical footprint.
+          // Wider sites need the same name. Never join through a chain of neighbours.
+          return distance <= (baseName(a) && baseName(a) === baseName(b) ? 80 : 25);
+        };
+        const locations = [];
+        for (const bucket of buckets.values()) {
+          const clusters = [];
+          for (const station of [...bucket].sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const cluster = clusters.find(members => members.every(member => compatible(member, station)));
+            if (cluster) cluster.push(station);
+            else clusters.push([station]);
+          }
+          for (const members of clusters) {
+            if (members.length === 1) { locations.push(members[0]); continue; }
+            const first = members[0];
+            // Prefer a name that identifies the side of the road.
+            const label = members.find(member => direction(member)) || first;
+            locations.push({...first, name: String(label.name || "Posto de carregamento").replace(/\s*(?:#\s*)?\d+\s*$/, ""),
+              max_power_kw: Math.max(...members.map(member => Number(member.max_power_kw) || 0)),
+              _location_members: members});
+          }
+        }
+        cache.set(stations, {length: stations.length, locations});
+        return locations;
       }
       function resolveStationLocation(station) {
         if (station._location_members) return station;
-        const key = stationLocationKey(station);
-        const location = groupStationLocations(allStations.filter(member => stationLocationKey(member) === key))[0];
+        const location = groupStationLocations(allStations).find(location =>
+          location.id === station.id || location._location_members?.some(member => member.id === station.id));
         return location ? {...location, id: station.id} : station;
       }
       function stationConnectorRows(station) {
