@@ -14,7 +14,7 @@ const approved={
   "ev-charge-portugal-github-ready/assets/geocoding.js": "2cbaa043e96cffb02cbc89aa453d4068872853f030ecaefa28389f9873210083",
   "ev-charge-portugal-github-ready/assets/geocoding.css": "848d49945869a6b107122caf621a55b91e450a427ca05592b693eb613e3f23c4",
   "ev-charge-portugal-github-ready/scripts/geocoding.test.mjs": "370432b00aa7f9973ba3a8f5c8e68be33df56e0779fa075be7d424e6017e5f90",
-  "ev-charge-portugal-github-ready/scripts/verify-geocoding-live.mjs": "e9842e214aca9f6447a4e53096ed53bde7c449f315fd712d72fc9505b0ef4dbd"
+  "ev-charge-portugal-github-ready/scripts/verify-geocoding-live.mjs": "bf2be593301fc66c0c2b4606dac156d3389838ff597fdfb26173eeacd53a1a48"
 };
 const files=execFileSync('git',['ls-tree','-r','--name-only',base,'ev-charge-portugal-github-ready'],{cwd:repo,encoding:'utf8'}).trim().split('\n');
 for(const p of new Set([...files,...Object.keys(approved)])){
