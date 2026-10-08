@@ -1,0 +1,55 @@
+name: Deploy Android accounts staging
+on:
+  push:
+    branches: [fix/android-store-20261008]
+    paths:
+      - apps/chargevoy-android/account-worker/**
+      - .github/workflows/android-accounts-staging.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: chargevoy-android-accounts-staging
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chargevoy-android/account-worker
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+      - run: npm install --global wrangler@4
+      - name: Validate deployment
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          wrangler deploy --dry-run
+      - name: Backup staging D1
+        run: wrangler d1 export chargevoy-accounts-staging --remote --output /tmp/android-accounts-before.sql
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-accounts-staging-backup-${{ github.run_id }}
+          path: /tmp/android-accounts-before.sql
+          retention-days: 7
+      - name: Apply staging schema
+        run: wrangler d1 migrations apply chargevoy-accounts-staging --remote
+      - name: Deploy staging Worker
+        id: deploy
+        run: wrangler deploy
+      - name: Verify anonymous gate and challenge
+        run: |
+          test "$(curl --silent --show-error --max-time 20 -o /tmp/me.json -w '%{http_code}' https://chargevoy-android-accounts-staging.zombid.workers.dev/me)" = 401
+          curl --fail --silent --show-error --max-time 20 -X POST https://chargevoy-android-accounts-staging.zombid.workers.dev/challenge > /tmp/challenge.json
+          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/challenge.json","utf8"));if(!/^[A-Za-z0-9_-]{43}$/.test(x.nonce))process.exit(1)'
+      - name: Roll back Worker after failed verification
+        if: ${{ failure() && steps.deploy.outcome == 'success' }}
+        run: wrangler rollback --message "Android staging smoke test failed"

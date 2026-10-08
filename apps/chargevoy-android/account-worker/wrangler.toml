@@ -1,6 +1,21 @@
-name = "chargevoy-android-accounts"
+name = "chargevoy-android-accounts-staging"
 main = "index.mjs"
 compatibility_date = "2026-10-08"
+workers_dev = true
+
+[vars]
+GOOGLE_CLIENT_ID = "1094158912679-4vs9a9t3lrv54uv4h9lmmmb1aq2h9roo.apps.googleusercontent.com"
+
+[[d1_databases]]
+binding = "ACCOUNTS_DB"
+database_name = "chargevoy-accounts-staging"
+database_id = "b1d95980-44a5-475e-8fff-f4299a01f8b7"
+migrations_dir = "migrations"
+
+[[ratelimits]]
+name = "AUTH_LIMITER"
+namespace_id = "1094158912"
+simple = { limit = 10, period = 60 }
 # Bind a NEW staging D1 as ACCOUNTS_DB; never reuse the charging catalogue DB.
 # Set GOOGLE_CLIENT_ID to the Google WEB OAuth client accepted by native sign-in.
 # Configure an AUTH_LIMITER rate-limit binding before deploying (required by worker).
