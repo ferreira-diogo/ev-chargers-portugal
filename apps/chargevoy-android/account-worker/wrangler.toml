@@ -2,6 +2,7 @@ name = "chargevoy-android-accounts-staging"
 main = "index.mjs"
 compatibility_date = "2026-10-08"
 workers_dev = true
+preview_urls = false
 
 [vars]
 GOOGLE_CLIENT_ID = "1094158912679-4vs9a9t3lrv54uv4h9lmmmb1aq2h9roo.apps.googleusercontent.com"

@@ -47,9 +47,18 @@ jobs:
         run: wrangler deploy
       - name: Verify anonymous gate and challenge
         run: |
-          test "$(curl --silent --show-error --max-time 20 -o /tmp/me.json -w '%{http_code}' https://chargevoy-android-accounts-staging.zombid.workers.dev/me)" = 401
-          curl --fail --silent --show-error --max-time 20 -X POST https://chargevoy-android-accounts-staging.zombid.workers.dev/challenge > /tmp/challenge.json
-          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/challenge.json","utf8"));if(!/^[A-Za-z0-9_-]{43}$/.test(x.nonce))process.exit(1)'
+          for attempt in $(seq 1 12); do
+            code=$(curl --silent --show-error --max-time 15 -o /tmp/me.json -w '%{http_code}' https://chargevoy-android-accounts-staging.zombid.workers.dev/me || true)
+            echo "Account gate attempt $attempt: HTTP $code"
+            if [ "$code" = 401 ]; then
+              challenge_code=$(curl --silent --show-error --max-time 15 -o /tmp/challenge.json -w '%{http_code}' -X POST https://chargevoy-android-accounts-staging.zombid.workers.dev/challenge || true)
+              echo "Challenge HTTP $challenge_code"
+              if [ "$challenge_code" = 200 ] && node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("/tmp/challenge.json","utf8"));if(!/^[A-Za-z0-9_-]{43}$/.test(x.nonce))process.exit(1)'; then exit 0; fi
+            fi
+            sleep 5
+          done
+          cat /tmp/me.json
+          exit 1
       - name: Roll back Worker after failed verification
         if: ${{ failure() && steps.deploy.outcome == 'success' }}
         run: wrangler rollback --message "Android staging smoke test failed"
