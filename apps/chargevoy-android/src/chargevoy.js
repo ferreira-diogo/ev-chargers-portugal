@@ -1161,7 +1161,7 @@
       function closeStationPanel() {
         selectedStation = null;
         document.getElementById("refresh-station").disabled = true;
-        setRouteMapMode(false);
+        if (!routeMapActive) setRouteMapMode(false);
         setNavigationMode("map");
         document.querySelector(".main")?.classList.remove("station-selected");
         document.querySelector(".right")?.classList.remove("station-open");
@@ -1486,7 +1486,7 @@
         if (!user) {
           openModal(
             "Entrar",
-            `<p>Entre com Google para guardar os seus favoritos. O histórico de rotas fica apenas neste dispositivo.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button>${installPrompt ? '<button class="secondary" onclick="installPwa()">Instalar aplicação</button>' : ""}`,
+            `<p>Entre com Google para guardar os seus favoritos. O histórico de rotas fica apenas neste dispositivo.</p><button class="google-sign-in" onclick="signInWithGoogle()"><img src="https://developers.google.com/identity/images/g-logo.png" alt="" width="20" height="20">Entrar com Google</button>${installPrompt ? '<button class="secondary" onclick="installPwa()">Instalar aplicação</button>' : ""}`,
           );
           return;
         }
@@ -1543,7 +1543,7 @@
         if (!currentSession?.user) {
           openModal(
             "📊 Histórico",
-            `${stationHtml}<p>Entre com Google para guardar e consultar o histórico das suas rotas.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button>`,
+            `${stationHtml}<p>Entre com Google para guardar e consultar o histórico das suas rotas.</p><button class="google-sign-in" onclick="signInWithGoogle()"><img src="https://developers.google.com/identity/images/g-logo.png" alt="" width="20" height="20">Entrar com Google</button>`,
           );
           return;
         }
@@ -3608,7 +3608,7 @@
         document
           .getElementById("route-planner")
           .classList.remove("route-visible");
-        setRouteMapMode(false);
+        if (!routeMapActive) setRouteMapMode(false);
         setNavigationMode("map");
         document
           .getElementById("map-section")

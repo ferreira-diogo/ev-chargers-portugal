@@ -144,16 +144,30 @@
       const routeFeasible = batteryEnergy - finalLegKm * consumption >= reserveEnergy;
       const finalEnergy = Math.max(0, batteryEnergy - finalLegKm * consumption), finalSoc = (finalEnergy / capacity) * 100;
       lastPlannedRoute = { origin, destination, stops: suggested.map((station) => ({ latitude: station.latitude, longitude: station.longitude, name: station.name })), distanceKm: distance, driveMinutes: duration, chargingMinutes };
+      // Draw the actual road detour to every selected charging stop.
+      let displayGeometry = route.geometry;
+      if (suggested.length) {
+        const waypoints = [origin, ...suggested.map(s => ({lat: s.latitude, lon: s.longitude})), destination];
+        const viaUrl = `https://router.project-osrm.org/route/v1/driving/${waypoints.map(p => `${p.lon},${p.lat}`).join(';')}?overview=full&geometries=geojson&steps=false`;
+        const viaResponse = await fetchWithTimeout(viaUrl, {}, 15000);
+        if (!viaResponse.ok) throw new Error('Não foi possível calcular o percurso pelas paragens. Tente novamente.');
+        const viaData = await viaResponse.json();
+        if (viaData.code !== 'Ok' || !viaData.routes?.[0]?.geometry) throw new Error('Percurso pelas paragens indisponível.');
+        displayGeometry = viaData.routes[0].geometry;
+      }
+      routeLayer.addTo(map);
       setRouteMapMode(true);
       routeLayer.clearLayers();
-      const routeLine = L.geoJSON(route.geometry, { style: { color: "#1464c2", weight: 5, opacity: 0.85 } }).addTo(routeLayer);
+      const routeLine = L.geoJSON(displayGeometry, { style: { color: "#1464c2", weight: 5, opacity: 0.85 } }).addTo(routeLayer);
       L.marker([origin.lat, origin.lon]).addTo(routeLayer).bindPopup(`<b>Origem</b><br>${escapeHtml(origin.label)}`);
       L.marker([destination.lat, destination.lon]).addTo(routeLayer).bindPopup(`<b>Destino</b><br>${escapeHtml(destination.label)}`);
       suggested.forEach((station, index) => {
         L.circleMarker([station.latitude, station.longitude], { radius: 10, color: "#fff", weight: 3, fillColor: isOfficialTeslaStation(station) ? "#e82127" : "#f59e0b", fillOpacity: 1 }).addTo(routeLayer).bindPopup(`<b>Paragem ${index + 1}${isOfficialTeslaStation(station) ? " · Supercharger Tesla" : ""}</b><br>${escapeHtml(station.name)}<br>Chegada: ${station.arrival_soc.toFixed(0)}% · carregar ${station.energy_to_charge.toFixed(1).replace(".", ",")} kWh<br>~${station.charge_minutes} min a ${station.effective_power} kW`);
         if (station.fallback) L.circleMarker([station.fallback.latitude, station.fallback.longitude], { radius: 7, color: "#475569", weight: 2, fillColor: "#fff", fillOpacity: 1 }).addTo(routeLayer).bindPopup(`<b>Plano B da paragem ${index + 1}</b><br>${escapeHtml(station.fallback.name || "Posto alternativo")}<br>${station.fallback.distance_from_primary.toFixed(1).replace(".", ",")} km do posto principal · ${escapeHtml(station.fallback.max_power_kw || "—")} kW`);
       });
+      map.invalidateSize();
       map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+      requestAnimationFrame(() => { map.invalidateSize(); map.fitBounds(routeLine.getBounds(), {padding: [30, 30]}); });
       const detourMinutes = detourKm, totalMinutes = duration + detourMinutes + chargingMinutes;
       const stopsHtml = chargeNeeded <= 0
         ? `<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`
