@@ -2,6 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),core=window.ChargeVoyRecommendations;
 let scenario={start:32,target:80,period:'fora_vazio'},records=[],timer,busy=false,pending=false,mode='recommended';const cache=new Map(),pins=L.layerGroup().addTo(map);let requestCount=0;
+window.addEventListener('chargevoy-route-map', event => { if(event.detail.active)map.removeLayer(pins);else pins.addTo(map); });
 try{const saved=JSON.parse(localStorage.getItem('chargevoy-android-scenario')||'null');if(saved&&core.energyFor({battery_capacity_kwh:60},Number(saved.start),Number(saved.target))!==null)scenario={start:Number(saved.start),target:Number(saved.target),period:saved.period==='vazio'?'vazio':'fora_vazio'};}catch{}
 const euro=v=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(v);
 function summary(){const values=selectedValues('.connector-filter');$('android-filter-summary').textContent=[selectedPower==='all'?'':selectedPower+' kW',...values].filter(Boolean).join(' · ')||'Personalizar pesquisa';$('android-vehicle-label').textContent=currentVehicle?[currentVehicle.make,currentVehicle.model].filter(Boolean).join(' '):'Adicionar veículo';$('android-soc-label').textContent=`${scenario.start}% → ${scenario.target}%`;}

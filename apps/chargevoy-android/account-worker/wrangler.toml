@@ -1,0 +1,7 @@
+name = "chargevoy-android-accounts"
+main = "index.mjs"
+compatibility_date = "2026-10-08"
+# Bind a NEW staging D1 as ACCOUNTS_DB; never reuse the charging catalogue DB.
+# Set GOOGLE_CLIENT_ID to the Google WEB OAuth client accepted by native sign-in.
+# Configure an AUTH_LIMITER rate-limit binding before deploying (required by worker).
+# Production is intentionally not configured in this repository.
