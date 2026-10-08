@@ -23,3 +23,21 @@ test('anonymous favourites open login without mutating station state or issuing 
 test('no account SDK or provider fallback remains in Android source/build inputs',()=>{
  const html=readFileSync(new URL('./src/index.html',import.meta.url),'utf8');assert(!/supabase|showEmailAuth|signInWithPassword/i.test(source+html));
 });
+
+test('Android photo overrides match reviewed lossless cutouts and preserve source attribution', async () => {
+  const {createHash}=await import('node:crypto');
+  const {readFile}=await import('node:fs/promises');
+  const {resolve}=await import('node:path');
+  const dir=resolve(import.meta.dirname,'vehicle-images');
+  const credits=JSON.parse(await readFile(resolve(dir,'credits.json'),'utf8'));
+  const report=JSON.parse(await readFile(resolve(dir,'segmentation-report.json'),'utf8'));
+  assert.equal(report.length,47);
+  for(const entry of report){
+    assert.equal(entry.approved,true);
+    const hash=createHash('sha256').update(await readFile(resolve(dir,entry.output))).digest('hex');
+    assert.equal(hash,entry.output_sha256);
+    const photo=credits.find(photo=>photo.image.endsWith('/'+entry.output));
+    assert.ok(photo?.background_removed && photo.android_segmented);
+    assert.ok(photo.original_image.endsWith('/'+entry.source));
+  }
+});

@@ -1,51 +1,11 @@
-# Vehicle background audit — Android only
+# Android vehicle background audit — 2026-10-08
 
-47 catalogue entries still require approved background extraction. Existing photos and credits remain unchanged. First AI cutout test on Renault 5 changed details (including markings) and was rejected; not included in app. Accurate original-preserving extraction remains pending.
+47 catalogue entries previously had `background_removed: false`. All now have Android-only transparent WebP overrides in `../vehicle-images/`; the website catalogue and photographs remain unchanged.
 
-- Renault 5 E-Tech — ./assets/vehicle-images/renault-5-e-tech.jpg
-- Kia EV6 — ./assets/vehicle-images/kia-ev6.jpg
-- Kia EV6 — ./assets/vehicle-images/kia-ev6-2021.jpg
-- Peugeot E-2008 — ./assets/vehicle-images/peugeot-e-2008.jpg
-- Kia Niro EV — ./assets/vehicle-images/kia-niro-ev.jpg
-- Audi A6 Avant e-tron — ./assets/vehicle-images/audi-a6-avant-e-tron-thumb.jpg
-- Audi A6 Sportback e-tron — ./assets/vehicle-images/audi-a6-sportback-e-tron-thumb.jpg
-- Abarth 500e — ./assets/vehicle-images/abarth-500e-thumb.jpg
-- Audi Q4 e-tron — ./assets/vehicle-images/audi-q4-e-tron-thumb.jpg
-- Audi e-tron GT — ./assets/vehicle-images/audi-e-tron-gt-thumb.jpg
-- BMW iX2 — ./assets/vehicle-images/bmw-ix2-thumb.jpg
-- BYD Tang — ./assets/vehicle-images/byd-tang-thumb.jpg
-- Citroën ë-C3 Aircross — ./assets/vehicle-images/citroen-e-c3-aircross-thumb.jpg
-- Cupra Tavascan — ./assets/vehicle-images/cupra-tavascan-thumb.jpg
-- Ford Explorer — ./assets/vehicle-images/ford-explorer-thumb.jpg
-- Ford Puma Gen-E — ./assets/vehicle-images/ford-puma-gen-e-thumb.jpg
-- Genesis Electrified G80 — ./assets/vehicle-images/genesis-electrified-g80-thumb.jpg
-- Jaguar I-PACE — ./assets/vehicle-images/jaguar-i-pace-thumb.jpg
-- Kia EV5 — ./assets/vehicle-images/kia-ev5-thumb.jpg
-- Lotus Emeya — ./assets/vehicle-images/lotus-emeya-thumb.jpg
-- Lexus RZ — ./assets/vehicle-images/lexus-rz-thumb.jpg
-- Maserati Grecale Folgore — ./assets/vehicle-images/maserati-grecale-folgore-thumb.jpg
-- Mazda MX-30 — ./assets/vehicle-images/mazda-mx-30-thumb.jpg
-- Mercedes-Benz EQB — ./assets/vehicle-images/mercedes-benz-eqb-thumb.jpg
-- Mercedes-Benz EQE SUV — ./assets/vehicle-images/mercedes-benz-eqe-suv-thumb.jpg
-- Mini Aceman — ./assets/vehicle-images/mini-aceman-thumb.jpg
-- NIO ET5 — ./assets/vehicle-images/nio-et5-thumb.jpg
-- Peugeot E-3008 — ./assets/vehicle-images/peugeot-e-3008-thumb.jpg
-- NIO ET7 — ./assets/vehicle-images/nio-et7-thumb.jpg
-- Porsche Taycan — ./assets/vehicle-images/porsche-taycan-thumb.jpg
-- Polestar 5 — ./assets/vehicle-images/polestar-5-thumb.jpg
-- Polestar 3 — ./assets/vehicle-images/polestar-3-thumb.jpg
-- Renault Scenic E-Tech — ./assets/vehicle-images/renault-scenic-e-tech-thumb.jpg
-- Renault Scenic E-Tech Electric — ./assets/vehicle-images/renault-scenic-e-tech-electric-thumb.jpg
-- Smart #1 — ./assets/vehicle-images/smart-1-thumb.jpg
-- Tesla Model S — ./assets/vehicle-images/tesla-model-s-thumb.jpg
-- VinFast VF9 — ./assets/vehicle-images/vinfast-vf9-thumb.jpg
-- Tesla Model X — ./assets/vehicle-images/tesla-model-x-thumb.jpg
-- Toyota bZ4X — ./assets/vehicle-images/toyota-bz4x-thumb.jpg
-- Volkswagen ID.7 — ./assets/vehicle-images/volkswagen-id-7-thumb.jpg
-- Volvo EX40 — ./assets/vehicle-images/volvo-ex40-thumb.jpg
-- Volvo EX90 — ./assets/vehicle-images/volvo-ex90-thumb.jpg
-- BYD Seal — ./assets/vehicle-images/byd-seal-thumb.jpg
-- Mini Cooper Electric — ./assets/vehicle-images/mini-cooper-electric-thumb.jpg
-- NIO EL8 — ./assets/vehicle-images/nio-el8-thumb.jpg
-- Kia EV4 Fastback — ./assets/vehicle-images/kia-ev4-fastback.jpg
-- Opel Frontera Electric — ./assets/vehicle-images/opel-frontera-electric.jpg
+The pipeline changes alpha only. `scripts/finalize-vehicle-backgrounds.py` verifies decoded RGB equals the original JPG pixel for pixel, keeps the original dimensions, and writes SHA-256 evidence for both files. Lossless WebP uses `exact=True` so even transparent RGB is retained. Original author, source URL and licence fields are retained in the Android credits catalogue.
+
+Initial segmentation used rembg[cpu] 2.0.85 with U2NetP and quantized SAM. Reviewed silhouettes in `manual-masks.json` refine difficult neighbouring-car/reflection cases without synthesizing pixels. Mask coordinates use a 600×400 review canvas. Regeneration: run `scripts/segment-vehicle-backgrounds.py`, then `scripts/finalize-vehicle-backgrounds.py`; inspect the three generated review sheets before approving a change. Install Pillow, NumPy, SciPy and rembg[cpu]==2.0.85 for regeneration. Model files are not shipped with the app.
+
+Some source photos are partial views or contain occluding signs/glass/reflections. Their original framing and visible details remain; missing bodywork is not reconstructed. Segmentation does not grant new image rights; attribution/licence review remains part of release readiness.
+
+The Android build copies only catalogue entries and approved image overrides. Review sheets and model files are not bundled. Node regression tests verify each bundled override against the reviewed SHA-256 and its original attribution mapping.
