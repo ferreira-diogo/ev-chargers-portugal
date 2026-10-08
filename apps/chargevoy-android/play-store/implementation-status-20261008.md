@@ -19,9 +19,9 @@ Estado: código aplicado numa branch Android; não publicado em produção ou Pl
 
 - Google Cloud: cliente web/Android e certificados da Play, teste login/cancelamento/troca/reinício no dispositivo.
 - Cloudflare: credenciais não disponíveis nesta sessão; criar DB/bindings de staging, configurar rate limiter, aplicar schema e deploy do Worker exclusivo Android. Medir quotas antes de produção.
-- Compilação Android e teste visual/dispositivo; SDK/Java 21 indisponíveis localmente. Verificar CI e artefacto antes de distribuir.
+- Compilação APK/AAB e UI mobile/tablet passaram na execução CI 37753552144. Os novos testes visuais também passaram na execução 37753790858, cuja recompilação está em curso. Testes físicos Google/atualização continuam pendentes.
 - Reconciliar última APK enviada com versionCode/assinatura; preservar package de produção e aumentar versionCode quando publicar.
-- Auditoria dos postos reais de várias operadoras: regressão de IDs corrigida não prova completude dos dados fonte.
+- Auditoria dos postos reais de várias operadoras: regressão de IDs corrigida não prova completude. Validação nacional na CI identificou 43 registos com coordenadas inválidas/fora de Portugal e bloqueou a importação. Não foi alterado o importador partilhado.
 - Fotos: tratamento/licenças/cobertura de todo o catálogo ainda pendentes; nenhuma alteração às fotos nesta etapa.
 - Migração de contas/favoritos antigos não executada. Caches antigas preservadas sem associar automaticamente a Google.
 - Recurso web público de eliminação, declarações Data Safety finais, licenças e aprovação jurídica dos pontos em dúvida.
@@ -31,3 +31,7 @@ Estado: código aplicado numa branch Android; não publicado em produção ou Pl
 ## Recuperação
 
 Baseline `1298734bd32b7a2ace641e4929454e272b6ba8cf`; snapshot e worktree de recuperação verificados. Sem alteração de produção/dados, reversão é por código/artefacto. Depois de novas contas, preservar dados no novo serviço e reconciliar; não regressar cegamente ao fornecedor antigo. Website e workflows partilhados intactos.
+
+## Evidência de validação
+
+33 testes app/geocodificação/agrupamento e 6 testes contas/segurança passaram localmente. CI Android inicial concluída com sucesso, incluindo compilação nativa do plugin Google e APK/AAB. Snapshot Git e worktree de recuperação verificados; website e workflows partilhados intactos. APK preview: package app.chargevoy.mobile.preview, configuração Google/contas ainda pendente, não é release de produção.
