@@ -1,0 +1,566 @@
+[
+  {
+    "source": "renault-5-e-tech.jpg",
+    "output": "renault-5-e-tech-segmented.webp",
+    "source_sha256": "d60c67dd3982a074794fd8434342b6d07a42d1b95f7d1ef981421a7e5cda0274",
+    "output_sha256": "76cf43f9e30520d533d1fd8fe47e6f1ea221e5e64121192adb7f0b0f2c25ab81",
+    "size": [
+      960,
+      817
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "kia-ev6.jpg",
+    "output": "kia-ev6-segmented.webp",
+    "source_sha256": "727ea44a5be9eda686cb5e5c4de7d1a4a3d2a3371b2501e128603652c01989fa",
+    "output_sha256": "db332c8f11be62b6c1b3a45e5913c51167bc34c68dbca63c89d2e8099b833105",
+    "size": [
+      960,
+      564
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "kia-ev6-2021.jpg",
+    "output": "kia-ev6-2021-segmented.webp",
+    "source_sha256": "bc81236ae0475d2eee9c4af97f67d564fbdbe1588d80be68b52eb0f0b261ec44",
+    "output_sha256": "e2570f298546b6c6d54a16a0c68750d729ed877c7462ad8abff32872c1f6d0af",
+    "size": [
+      640,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "peugeot-e-2008.jpg",
+    "output": "peugeot-e-2008-segmented.webp",
+    "source_sha256": "a58f0a2b0ab709f36fae23c64e746917081e40f969f47ec6474c8fabf6934dfb",
+    "output_sha256": "40609dba367934a96a697492f1896f3399c2dd5d88fb7448c6cd7dc73769ffae",
+    "size": [
+      640,
+      480
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "kia-niro-ev.jpg",
+    "output": "kia-niro-ev-segmented.webp",
+    "source_sha256": "f0244938fcc636a0ccb4e3afcf133582fd333840cc975da3d69b44774637ecf5",
+    "output_sha256": "754853bc5caf01f03df93e1cdc187b66ab6857fab4a48d7ca453234619c3aaa0",
+    "size": [
+      640,
+      371
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "audi-a6-avant-e-tron-thumb.jpg",
+    "output": "audi-a6-avant-e-tron-thumb-segmented.webp",
+    "source_sha256": "2ea2583344a375ee4ff2252618e65fcebbf9ef0bf59a3519ea0477172d0b8777",
+    "output_sha256": "070cdb4150b091bf4a75e828cff0cc625340bfa5bfd192b692e633740b8f6160",
+    "size": [
+      480,
+      296
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "audi-a6-sportback-e-tron-thumb.jpg",
+    "output": "audi-a6-sportback-e-tron-thumb-segmented.webp",
+    "source_sha256": "4bf078d0f3e846976da0837472f1df85be75c051d1a0dfc3cf53e15a322c0f0d",
+    "output_sha256": "95698d7ffa6dc8407f997c17e432e79a88586c2a0d95ca2794233de60beb1caf",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "abarth-500e-thumb.jpg",
+    "output": "abarth-500e-thumb-segmented.webp",
+    "source_sha256": "b57955787ec79876549162809436c7d3797b1c05f8890e9e2c7c1d63fc3fe9a8",
+    "output_sha256": "eb6e473d104443bf0aeb120161e02f6ae19fdc25749dba2733b5c0e084293bc7",
+    "size": [
+      480,
+      300
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "audi-q4-e-tron-thumb.jpg",
+    "output": "audi-q4-e-tron-thumb-segmented.webp",
+    "source_sha256": "4c708aec4ae5894c6636c1333abb2400469d2c09a7192fc182f0d7e2d28ae79b",
+    "output_sha256": "d8cfd8a93ac19eed22d24e094fab0b00be082a8f8cf2918a7445e9d0939437c3",
+    "size": [
+      480,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "audi-e-tron-gt-thumb.jpg",
+    "output": "audi-e-tron-gt-thumb-segmented.webp",
+    "source_sha256": "98e5c18749d019a7eb11be9b84e8003274ec6f8c0ec11ca8fbbfc7d47a5a1458",
+    "output_sha256": "df96f9f2c109d57dc82831f2b48e4d08051e59c1056ad0410705e51b57274d70",
+    "size": [
+      412,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "bmw-ix2-thumb.jpg",
+    "output": "bmw-ix2-thumb-segmented.webp",
+    "source_sha256": "260e78f4adcaebedcfc7fce954d1dea1db57a9bf51222cb52d14e7db31f837b5",
+    "output_sha256": "d5221783412f5aa50a7ca7a82c213c250b3b4a951dbb86fb6fec75109eebefc0",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "byd-tang-thumb.jpg",
+    "output": "byd-tang-thumb-segmented.webp",
+    "source_sha256": "e3550725c65b3ecfc41c6de66b417ff9cd464995bbcd73bc1e8c90a96e57018a",
+    "output_sha256": "5f687077cd59aaec027d0b74c4d88003c66435ed9df6cc84925618181a97b16e",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "citroen-e-c3-aircross-thumb.jpg",
+    "output": "citroen-e-c3-aircross-thumb-segmented.webp",
+    "source_sha256": "a63398531395e9fe94847999f7c1262ca3877f455ca66388c339e9df4c44b9fb",
+    "output_sha256": "b3f8ec852f71519873670cc01ff5a39b50ac471713902cb8d9696cee7e622780",
+    "size": [
+      480,
+      290
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "cupra-tavascan-thumb.jpg",
+    "output": "cupra-tavascan-thumb-segmented.webp",
+    "source_sha256": "4ffcaf211334355b0e71d93274b878ce8f9db612932219376b9cb3a470b81984",
+    "output_sha256": "f9ce0c0d6a25747861d55d5675d2fca0f628548b4df2aefb0db74f7b6d514e37",
+    "size": [
+      480,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "ford-explorer-thumb.jpg",
+    "output": "ford-explorer-thumb-segmented.webp",
+    "source_sha256": "6dd14491880e973b5dbdc81268a690f5f14ddf1c7280bd6cab5410a071b1dfbd",
+    "output_sha256": "1966cef3e3c9246ea6a92e346ff597da3d1e27f012f6d816124dd3b4e5054502",
+    "size": [
+      480,
+      270
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "ford-puma-gen-e-thumb.jpg",
+    "output": "ford-puma-gen-e-thumb-segmented.webp",
+    "source_sha256": "e72d5ecf448fd8cd44ce77226a800898b48e0438e2010a8f9a36ec8815aaf139",
+    "output_sha256": "ea3327cd8765c9f3437f37dc935e147458bb31868d946302706020b199c873db",
+    "size": [
+      480,
+      270
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "genesis-electrified-g80-thumb.jpg",
+    "output": "genesis-electrified-g80-thumb-segmented.webp",
+    "source_sha256": "3d01782db76f592bd1c02d93c78b155c3e5a7cf527d617d2d26b7056e7cdcbf6",
+    "output_sha256": "270f8bb045b1c198219a6c02fc23a1d8f54b036a653513ffa4647d0849be9084",
+    "size": [
+      480,
+      266
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "jaguar-i-pace-thumb.jpg",
+    "output": "jaguar-i-pace-thumb-segmented.webp",
+    "source_sha256": "5b2eb5557f47b16385a398364e0a8d5b25456dab01710140a3272aeb2bb6fcab",
+    "output_sha256": "104c721fec171ec89d28144088fa9ce9ef2da0f29bce0b930a6293dbe1999a13",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "kia-ev5-thumb.jpg",
+    "output": "kia-ev5-thumb-segmented.webp",
+    "source_sha256": "5a01d81e3ce51b67f1ceba9e689ef41177ab39a6c8b3d4baea864a61f97ef0c2",
+    "output_sha256": "f5a72521c3f54b1bf8f627a23a60a6b7dbad7b5ad34f05f6720ebda8a41be9c6",
+    "size": [
+      480,
+      309
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "lotus-emeya-thumb.jpg",
+    "output": "lotus-emeya-thumb-segmented.webp",
+    "source_sha256": "a311e96312cd2a85558616497fb0286c6f1e3267bf5fa7ca7f7fa2365456b78e",
+    "output_sha256": "b277d4d74f461365ca98acd2536be531ac9ffad58ef04782879b57c5ddebe9d4",
+    "size": [
+      480,
+      269
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "lexus-rz-thumb.jpg",
+    "output": "lexus-rz-thumb-segmented.webp",
+    "source_sha256": "2395a1afebf6ee90ac45a3bfeeb3294529914a72ad395c7834fd452e91d748ae",
+    "output_sha256": "febc7501c464856f6e3398a4e0a5aa6249968df7b370974a6096e6496a8d1afe",
+    "size": [
+      465,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "maserati-grecale-folgore-thumb.jpg",
+    "output": "maserati-grecale-folgore-thumb-segmented.webp",
+    "source_sha256": "c0f84c71edb68a99d1686316ba06c0ad4225fafd539694b5ed88c852aff1f863",
+    "output_sha256": "e5a010da4bf0727a7f07916d33c37e0c61fbbbac86658baea63066c602e71310",
+    "size": [
+      480,
+      316
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "mazda-mx-30-thumb.jpg",
+    "output": "mazda-mx-30-thumb-segmented.webp",
+    "source_sha256": "78592272d33980046ffe7d9e2d0a14d46e94449963a4891f9668ee71efa24258",
+    "output_sha256": "8613447a1ba0f447265d8f04d57c1e9bf2d8e8f4eb5ba3ecfcdd35a650077eab",
+    "size": [
+      480,
+      249
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "mercedes-benz-eqb-thumb.jpg",
+    "output": "mercedes-benz-eqb-thumb-segmented.webp",
+    "source_sha256": "fc22e414dce5a4633e377e67d5c7e40c8c5c12f147dab33e3ff65058eb6cc9a6",
+    "output_sha256": "b48e2373269d4dc5c8c08033e16462526a4f9beedc9c4fd129a267031ec6264e",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "mercedes-benz-eqe-suv-thumb.jpg",
+    "output": "mercedes-benz-eqe-suv-thumb-segmented.webp",
+    "source_sha256": "970597b3832cb6d6945a0a0a02ad05563ff67ee45ca4f2616971041b5621f489",
+    "output_sha256": "15be82fff52d0468fb50816dae60fdb953c182b104ae949c5d71672ccbcf9c50",
+    "size": [
+      480,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "mini-aceman-thumb.jpg",
+    "output": "mini-aceman-thumb-segmented.webp",
+    "source_sha256": "ba372583d6a9f6dba6039b227e52679e93e8c633ccfdcbed0fd9552e34d70587",
+    "output_sha256": "3866803d68cbd7aa63fb9f3ac9fe2ffe0accfebbab8df100f7c0ce10a44c6b6f",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "nio-et5-thumb.jpg",
+    "output": "nio-et5-thumb-segmented.webp",
+    "source_sha256": "8b106d12d9b9569aeffe94fb93ba572f2846c71d6e0a98420a90947f211b064c",
+    "output_sha256": "89b5015b4393e85abcf022c1052dd7ad2a9f3151b0b17955c1c339cffa5c1fc4",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "peugeot-e-3008-thumb.jpg",
+    "output": "peugeot-e-3008-thumb-segmented.webp",
+    "source_sha256": "279bf3195850fefc7634aad3f5f8cfb8a0459cc81528d6b5d12bdb1b5224efdc",
+    "output_sha256": "14a56ff5497ca1a7e220350e41dfcfdf7629ead4b3d1ceeae7e8cf23712f890d",
+    "size": [
+      480,
+      273
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "nio-et7-thumb.jpg",
+    "output": "nio-et7-thumb-segmented.webp",
+    "source_sha256": "1e564734393c7a3d274edc8f05143adf69da9c87cd66b7ca77096f3e7133cd0a",
+    "output_sha256": "ac8d7e30ee68ad7adf4c50ad64662a5aed9d4a2cf34543df996372542bb68ae8",
+    "size": [
+      480,
+      270
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "porsche-taycan-thumb.jpg",
+    "output": "porsche-taycan-thumb-segmented.webp",
+    "source_sha256": "f1944d19f78f265bd04d0323f911e99b8373cf93aec8d3c5f5e3919045b1c9e0",
+    "output_sha256": "536fca14c4cfcb6936913d745e51870c0331af884328c955e8f30c1d7f77d1ec",
+    "size": [
+      480,
+      273
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "polestar-5-thumb.jpg",
+    "output": "polestar-5-thumb-segmented.webp",
+    "source_sha256": "05cff8e29471c18fd8df587e00692c0a84283b4e529ea034f8b4b284f6abd8a2",
+    "output_sha256": "87b23cc18aa241edd8315874cd70242a0840f785fd503ad6657517b8105a7714",
+    "size": [
+      469,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "polestar-3-thumb.jpg",
+    "output": "polestar-3-thumb-segmented.webp",
+    "source_sha256": "9136f6421930ea1a3ab3dec46cf637d85bcde24fb31fe0cbbca82719ee8b3510",
+    "output_sha256": "ef800200f880f502509cbbbc00ea9f3cdbbbbbc23895c3bb01169e2e102f442d",
+    "size": [
+      425,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "renault-scenic-e-tech-thumb.jpg",
+    "output": "renault-scenic-e-tech-thumb-segmented.webp",
+    "source_sha256": "ec5821a5470071a1bdcae33f2eadcfa713d2b8ab7efafd0ef9b9d59734652530",
+    "output_sha256": "34c182033173584f75d05d3454b336db2fcf0465dab6af96552c7b1bfdca9ea4",
+    "size": [
+      443,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "renault-scenic-e-tech-electric-thumb.jpg",
+    "output": "renault-scenic-e-tech-electric-thumb-segmented.webp",
+    "source_sha256": "ec5821a5470071a1bdcae33f2eadcfa713d2b8ab7efafd0ef9b9d59734652530",
+    "output_sha256": "34c182033173584f75d05d3454b336db2fcf0465dab6af96552c7b1bfdca9ea4",
+    "size": [
+      443,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "smart-1-thumb.jpg",
+    "output": "smart-1-thumb-segmented.webp",
+    "source_sha256": "5ec78b4661b8edd81713f9bb3d99e0d36efe4b353df64a9ad87ed92f10206c3f",
+    "output_sha256": "d3bf894eb73cc4299604d9a18f03ccdd1076134f738fe7f71199912ffb1a7f99",
+    "size": [
+      469,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "tesla-model-s-thumb.jpg",
+    "output": "tesla-model-s-thumb-segmented.webp",
+    "source_sha256": "842a7913d0093eeff195e344af5e211fd23efc009338fa6516491a95d312d45c",
+    "output_sha256": "f20515551a78d5cd3452712077c09a4a2532c9da969b968b57199c77b8664a48",
+    "size": [
+      480,
+      270
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "vinfast-vf9-thumb.jpg",
+    "output": "vinfast-vf9-thumb-segmented.webp",
+    "source_sha256": "998d00256223ff05134af9800f7ea33cbf0ecbe1a8adc14fececb9d6d54c3ca4",
+    "output_sha256": "353a934c3a7a81b76c7391489c2d57408d6cfe87e3d8b983b635eea1da5bdf63",
+    "size": [
+      465,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "tesla-model-x-thumb.jpg",
+    "output": "tesla-model-x-thumb-segmented.webp",
+    "source_sha256": "7dbf4609ed53a50b7d38cd30fc5245252b348c6201ef901bce23b3a90c189856",
+    "output_sha256": "6f3af8c84b90fd994fd1e04df674b72915882fb30b1f2526c9f23797bca59298",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "toyota-bz4x-thumb.jpg",
+    "output": "toyota-bz4x-thumb-segmented.webp",
+    "source_sha256": "f5bc0bb6af0a673aca8d66e5c9cd3b4b319e4e4d89233c41efd3022588691cf0",
+    "output_sha256": "f376bd5c5a4c9ee48b1a96ce85336799d629fcbad798e3f20d0d99561ab1a7f1",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "volkswagen-id-7-thumb.jpg",
+    "output": "volkswagen-id-7-thumb-segmented.webp",
+    "source_sha256": "bbcafb2263bb1ba40a1711b01447a5d9545592b104bc6c1fe64975831e04f7b7",
+    "output_sha256": "bcfd47d2de862abc0a281de0c0ed6677c099553af72029a054358f39a01ce3bf",
+    "size": [
+      480,
+      270
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "volvo-ex40-thumb.jpg",
+    "output": "volvo-ex40-thumb-segmented.webp",
+    "source_sha256": "4d696aa0d7d27cb939e6816a941347cb175e467d9c5eecb217d542d8c4b86d44",
+    "output_sha256": "53841f9b3de9b96029aa5e1593dc62d1fcd6d5a64d82dd8f40d723a084c2c3b7",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "volvo-ex90-thumb.jpg",
+    "output": "volvo-ex90-thumb-segmented.webp",
+    "source_sha256": "63da2401c769caaf5e7c2c73a3715d1c04ad3b4da4f0a35780e89326033f4ecf",
+    "output_sha256": "8a370757850824d7997ed61125369d40dab9dd47d2eda9fb83a034bab416dc7e",
+    "size": [
+      480,
+      270
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "byd-seal-thumb.jpg",
+    "output": "byd-seal-thumb-segmented.webp",
+    "source_sha256": "1d14d388abbd7f0c114807dd43a821feaea25161c21068b199a485870f6f8cfc",
+    "output_sha256": "d078cbdcdf85cbbc0f4ae8f2c398542317c76d5ca17e56b5c3c39c71a60970e6",
+    "size": [
+      480,
+      309
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "mini-cooper-electric-thumb.jpg",
+    "output": "mini-cooper-electric-thumb-segmented.webp",
+    "source_sha256": "e61f194e9585a71e10058983c1c0425c7b1030060c270d963420aeced1952f3e",
+    "output_sha256": "246e9eb7c43ba34af6c6a36779a92b1316226a5f03f3303d70711c62146d8fb1",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "nio-el8-thumb.jpg",
+    "output": "nio-el8-thumb-segmented.webp",
+    "source_sha256": "90f834ee0f3251e478d22a8984cc0cc4c3a0bfb04e8ffef8637a9f728b6f281d",
+    "output_sha256": "6ea69fb7bc0c8d32cdbd5aa80a76284954e153d67dfd87f6baf0497e4684a57d",
+    "size": [
+      427,
+      320
+    ],
+    "approved": true,
+    "method": "reviewed silhouette"
+  },
+  {
+    "source": "kia-ev4-fastback.jpg",
+    "output": "kia-ev4-fastback-segmented.webp",
+    "source_sha256": "ed5d76c4292aa9b427baacc4b98e0490c0d1ec7e795b5b9450392b03e5de1827",
+    "output_sha256": "25de6141006dea389652aac156381923e954cbbbfe56819ddbfab2247157d7cb",
+    "size": [
+      960,
+      572
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  },
+  {
+    "source": "opel-frontera-electric.jpg",
+    "output": "opel-frontera-electric-segmented.webp",
+    "source_sha256": "6b56f5c6464253b0851105278e03589be8149f9b0f7b1fc8d4af6c6a776a992e",
+    "output_sha256": "12e8fb71ee6f4f16535f9f3cf61f7b4b437f355ccd54bfd743cd8cd445941911",
+    "size": [
+      960,
+      590
+    ],
+    "approved": true,
+    "method": "reviewed segmentation"
+  }
+]

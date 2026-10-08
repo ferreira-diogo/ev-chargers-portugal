@@ -1,22 +1,5 @@
-      const SUPABASE_URL = "https://ftnmdgiftdgaycotjixr.supabase.co";
       const D1_FALLBACK_URL = "https://chargevoy-api.zombid.workers.dev/api/stations";
       const D1_API_WORKER_URL = "https://chargevoy-api.zombid.workers.dev/api/stations";
-      const SUPABASE_KEY = "sb_publishable_krF5y8hef028bneF7yL1oA_L8YjXcj_";
-      const API_HEADERS = {
-        apikey: SUPABASE_KEY,
-        Authorization: "Bearer " + SUPABASE_KEY,
-      };
-      const authClient = window.supabase?.createClient?.(
-        SUPABASE_URL,
-        SUPABASE_KEY,
-        {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-          },
-        },
-      );
       const map = L.map("map", {
         preferCanvas: true,
         zoomSnap: 0.5,
@@ -103,12 +86,14 @@
       let selectedAdHocPriceComponents = [];
       let pricingRequest = 0;
       let favoriteStationIds = new Set();
-      try {
-        favoriteStationIds = new Set(
-          JSON.parse(localStorage.getItem("ev-charge-favorites") || "[]"),
-        );
-      } catch (error) { console.warn("Favoritos locais indisponíveis", error); }
       let lastPlannedRoute = null;
+      let routeMapActive = false;
+      function setRouteMapMode(active) {
+        routeMapActive = active;
+        window.dispatchEvent(new CustomEvent("chargevoy-route-map", {detail: {active}}));
+        if (active) { map.removeLayer(stationLayer); map.removeLayer(searchLayer); }
+        else { stationLayer.addTo(map); searchLayer.addTo(map); routeLayer.clearLayers(); }
+      }
       let currentSession = null;
       let installPrompt = null;
       // Interface translations: all platforms (web, PWA and Capacitor) share this file.
@@ -144,7 +129,7 @@
         "🚗 O meu veículo": "🚗 My vehicle",
         "Todas as marcas": "All makes",
         "A carregar veículos…": "Loading vehicles…",
-        "A obter dados da Supabase…": "Fetching data from Supabase…",
+        "A obter catálogo de postos…": "Fetching station catalogue…",
         "Onde quer carregar?": "Where do you want to charge?",
         Potência: "Power",
         Todos: "All",
@@ -389,7 +374,7 @@
         if (D1_PUBLIC_TABLES.has(table)) {
           try {
             // Os catálogos públicos funcionam exclusivamente através da D1.
-            // Não fazemos fallback silencioso para a Supabase, para evitar
+            // Não fazemos fallback para outro serviço, para evitar
             // que uma indisponibilidade daquele projeto volte a bloquear o site.
             return await getD1Rows(table, query);
           } catch (error) {
@@ -397,16 +382,7 @@
             return [];
           }
         }
-        const response = await fetchWithTimeout(
-          `${SUPABASE_URL}/rest/v1/${table}?${query}`,
-          { headers: API_HEADERS },
-          15000,
-        );
-        if (!response.ok)
-          throw new Error(
-            `${table}: HTTP ${response.status} - ${await response.text()}`,
-          );
-        return response.json();
+        throw new Error(`Catálogo não suportado: ${table}`);
       }
 
       async function getAllRows(table, query, pageSize = 1000) {
@@ -525,8 +501,9 @@
         const members = station?._location_members || [station];
         const seen = new Set();
         return members.flatMap(member => (connectorMap.get(member?.id) || []).filter(connector => {
-          if (seen.has(connector.id)) return false;
-          seen.add(connector.id);
+          const identity = `${member?.id}:${connector.id || connector.connector_uid || connector.external_id || JSON.stringify(connector)}`;
+          if (seen.has(identity)) return false;
+          seen.add(identity);
           return true;
         }));
       }
@@ -1184,6 +1161,7 @@
       function closeStationPanel() {
         selectedStation = null;
         document.getElementById("refresh-station").disabled = true;
+        if (!routeMapActive) setRouteMapMode(false);
         setNavigationMode("map");
         document.querySelector(".main")?.classList.remove("station-selected");
         document.querySelector(".right")?.classList.remove("station-open");
@@ -1272,6 +1250,7 @@
         document
           .getElementById("route-planner")
           ?.classList.remove("route-visible");
+        setRouteMapMode(false);
         setNavigationMode("map");
         document.body.classList.add("station-mode");
         document.querySelector(".main")?.classList.add("station-selected");
@@ -1376,7 +1355,7 @@
             (rows ||
               "<small>As primeiras avaliações ajudarão a criar o histórico de fiabilidade.</small>") +
             (currentSession?.user
-              ? '<button class="secondary" id="write-review">Avaliar este posto</button>'
+              ? '<small>Publicação de avaliações em preparação.</small>'
               : "<small>Entre para deixar uma avaliação.</small>");
           document
             .getElementById("write-review")
@@ -1386,43 +1365,10 @@
             "<small>Não foi possível carregar as avaliações.</small>";
         }
       }
-      function showReviewForm(stationId) {
-        openModal(
-          "Avaliar posto",
-          '<form id="review-form" class="auth-form"><label>Classificação<select id="review-rating"><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select></label><label>Comentário<textarea id="review-comment" maxlength="1000" rows="4" placeholder="Como estava o posto?"></textarea></label><p id="review-message" class="auth-message"></p><button class="primary">Guardar avaliação</button></form>',
-        );
-        document
-          .getElementById("review-form")
-          .addEventListener("submit", async (event) => {
-            event.preventDefault();
-            const message = document.getElementById("review-message");
-            message.textContent = "A guardar…";
-            const { error } = await authClient.from("station_reviews").upsert(
-              {
-                station_id: stationId,
-                user_id: currentSession.user.id,
-                rating: Number(document.getElementById("review-rating").value),
-                comment:
-                  document.getElementById("review-comment").value.trim() ||
-                  null,
-              },
-              { onConflict: "station_id,user_id" },
-            );
-            if (error) {
-              message.textContent = error.message;
-              return;
-            }
-            closeModal();
-            await loadStationReviews(stationId);
-          });
+      function showReviewForm() {
+        openModal("Avaliações", "<p>A publicação de avaliações está temporariamente indisponível nesta versão.</p>");
       }
-
-      function saveFavorites() {
-        localStorage.setItem(
-          "ev-charge-favorites",
-          JSON.stringify([...favoriteStationIds]),
-        );
-      }
+      function saveFavorites() {} // No anonymous/shared account cache.
       function updateFavoriteButton() {
         const button = document.getElementById("station-favorite");
         if (!button) return;
@@ -1436,27 +1382,17 @@
       }
       async function toggleSelectedFavorite() {
         if (!selectedStation) return;
-        const removing = favoriteStationIds.has(selectedStation.id);
-        if (removing) favoriteStationIds.delete(selectedStation.id);
-        else favoriteStationIds.add(selectedStation.id);
-        saveFavorites();
-        updateFavoriteButton();
-        if (currentSession?.user) {
-          const query = removing
-            ? authClient
-                .from("user_favorites")
-                .delete()
-                .eq("station_id", selectedStation.id)
-            : authClient.from("user_favorites").upsert(
-                {
-                  user_id: currentSession.user.id,
-                  station_id: selectedStation.id,
-                },
-                { onConflict: "user_id,station_id" },
-              );
-          const { error } = await query;
-          if (error) console.error("Sincronização do favorito:", error);
-        }
+        if (!currentSession?.user) return showAccount();
+        const id = selectedStation.id, userId = currentSession.user.id;
+        const removing = favoriteStationIds.has(id);
+        const button = document.getElementById("station-favorite");
+        button.disabled = true;
+        try {
+          await window.ChargeVoyAccount.request(`/favorites/${encodeURIComponent(id)}`, {method: removing ? "DELETE" : "PUT"});
+          if (currentSession?.user?.id !== userId) return;
+          if (removing) favoriteStationIds.delete(id); else favoriteStationIds.add(id);
+        } catch (error) { notifyUser(error.message, {kind: "error"}); }
+        finally { updateFavoriteButton(); }
       }
       function openModal(title, html) {
         document.getElementById("modal-title").textContent = title;
@@ -1475,149 +1411,28 @@
       function isNativeApp() {
         return Boolean(window.Capacitor?.isNativePlatform?.());
       }
-      async function handleNativeAuthCallback(url) {
-        if (!url?.startsWith("chargevoy://auth/callback")) return;
-        const callbackUrl = new URL(url);
-        const values = new URLSearchParams(callbackUrl.hash.replace(/^#/, ""));
-        const errorDescription =
-          values.get("error_description") || values.get("error");
-        if (errorDescription) {
-          openModal(
-            "Não foi possível entrar",
-            `<p>${escapeHtml(errorDescription)}</p>`,
-          );
-          return;
-        }
-        const access_token = values.get("access_token"),
-          refresh_token = values.get("refresh_token");
-        if (!access_token || !refresh_token) {
-          openModal(
-            "Não foi possível entrar",
-            "<p>O retorno de autenticação não continha uma sessão válida.</p>",
-          );
-          return;
-        }
-        const { error } = await authClient.auth.setSession({
-          access_token,
-          refresh_token,
-        });
-        if (error) {
-          openModal(
-            "Não foi possível entrar",
-            `<p>${escapeHtml(error.message)}</p>`,
-          );
-          return;
-        }
-        try {
-          await window.Capacitor?.Plugins?.Browser?.close();
-        } catch (_) {}
-        await initAuth();
-        closeModal();
-      }
-      function setupNativeAuth() {
-        if (!isNativeApp()) return;
-        window.Capacitor?.Plugins?.App?.addListener("appUrlOpen", (event) =>
-          handleNativeAuthCallback(event.url),
-        );
-      }
+      function setupNativeAuth() {}
       async function signInWithGoogle() {
-        const native = isNativeApp();
-        const redirectTo = native
-          ? "chargevoy://auth/callback"
-          : window.location.origin + window.location.pathname;
-        const { data, error } = await authClient.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo, skipBrowserRedirect: native },
-        });
-        if (error) {
-          openModal(
-            "Não foi possível entrar",
-            `<p>${escapeHtml(error.message)}</p><p>Confirme se o fornecedor Google está ativo na Supabase e se este endereço está autorizado.</p>`,
-          );
-          return;
-        }
-        if (native && data?.url) {
-          const browser = window.Capacitor?.Plugins?.Browser;
-          if (browser?.open) await browser.open({ url: data.url });
-          else window.location.assign(data.url);
-        }
-      }
-      function showEmailAuth(mode = "signin") {
-        const signup = mode === "signup";
-        openModal(
-          signup ? "Criar conta" : "Entrar com email",
-          `<form id="email-auth-form" class="auth-form"><label>Email<input id="auth-email" type="email" autocomplete="email" required></label><label>Palavra-passe<input id="auth-password" type="password" minlength="8" autocomplete="${signup ? "new-password" : "current-password"}" required></label><button class="primary" type="submit">${signup ? "Criar conta" : "Entrar"}</button><button class="secondary" type="button" id="auth-switch">${signup ? "Já tenho conta" : "Criar nova conta"}</button><button class="text-button" type="button" id="auth-forgot">Esqueci-me da palavra-passe</button><p class="auth-message" id="auth-message"></p></form>`,
-        );
-        document
-          .getElementById("email-auth-form")
-          .addEventListener("submit", async (event) => {
-            event.preventDefault();
-            const email = document.getElementById("auth-email").value.trim();
-            const password = document.getElementById("auth-password").value;
-            const message = document.getElementById("auth-message");
-            message.textContent = "A processar…";
-            const result = signup
-              ? await authClient.auth.signUp({
-                  email,
-                  password,
-                  options: {
-                    emailRedirectTo:
-                      window.location.origin + window.location.pathname,
-                  },
-                })
-              : await authClient.auth.signInWithPassword({ email, password });
-            if (result.error) {
-              const code = result.error.code || "";
-              message.textContent =
-                code === "email_address_not_authorized" ||
-                /not authorized|not authorised/i.test(
-                  result.error.message || "",
-                )
-                  ? "A Supabase ainda não está autorizada a enviar email para este endereço. Adicione-o à equipa do projeto para testes ou configure SMTP personalizado."
-                  : result.error.message;
-              return;
-            }
-            if (signup && !result.data.session) {
-              message.textContent =
-                "Conta criada. Confirme o email antes de entrar e verifique também as pastas Spam e Promoções.";
-              return;
-            }
-            closeModal();
-            await initAuth();
-          });
-        document
-          .getElementById("auth-switch")
-          .addEventListener("click", () =>
-            showEmailAuth(signup ? "signin" : "signup"),
-          );
-        document
-          .getElementById("auth-forgot")
-          .addEventListener("click", async () => {
-            const email = document.getElementById("auth-email").value.trim();
-            const message = document.getElementById("auth-message");
-            if (!email) {
-              message.textContent = "Indique primeiro o seu email.";
-              return;
-            }
-            const result = await authClient.auth.resetPasswordForEmail(email, {
-              redirectTo: window.location.origin + window.location.pathname,
-            });
-            message.textContent = result.error
-              ? result.error.message
-              : "Verifique o email para redefinir a palavra-passe. Se não aparecer, veja Spam e Promoções.";
-          });
+        try {
+          await window.ChargeVoyAccount.signIn();
+          await initAuth();
+          closeModal();
+        } catch (error) { openModal("Não foi possível entrar", `<p>${escapeHtml(error.message)}</p>`); }
       }
       async function signOutUser() {
-        await authClient.auth.signOut();
-        closeModal();
+        try { await window.ChargeVoyAccount.signOut(); }
+        catch (error) { notifyUser(error.message, {kind: "error"}); }
+        currentSession = null;
+        favoriteStationIds = new Set();
+        updateAuthUI(); updateFavoriteButton(); closeModal();
       }
       async function deleteMyAccount() {
         const user = currentSession?.user;
         if (!user) return;
         const label =
           currentLanguage === "en"
-            ? "Delete your account permanently? Favorites, route history, preferences and reviews will be removed immediately."
-            : "Eliminar a conta de forma permanente? Os favoritos, histórico de rotas, preferências e avaliações serão removidos imediatamente.";
+            ? "Delete your account permanently? The profile and favourites will be removed from the server, and local history on this device."
+            : "Eliminar a conta de forma permanente? O perfil e favoritos serão eliminados no servidor; o histórico local será removido neste dispositivo.";
         if (!window.confirm(label)) return;
         openModal(
           currentLanguage === "en" ? "Deleting account" : "A eliminar conta",
@@ -1625,8 +1440,8 @@
             ? "<p>Please wait…</p>"
             : "<p>Por favor aguarde…</p>",
         );
-        const { error } =
-          await authClient.functions.invoke("delete-my-account");
+        let error;
+        try { await window.ChargeVoyAccount.request("/me", {method: "DELETE"}); } catch (failure) { error = failure; }
         if (error) {
           openModal(
             currentLanguage === "en"
@@ -1636,7 +1451,8 @@
           );
           return;
         }
-        await authClient.auth.signOut();
+        try { localStorage.removeItem(`chargevoy-history:${user.id}`); } catch {}
+        await window.ChargeVoyAccount.clear();
         currentSession = null;
         favoriteStationIds = new Set();
         saveFavorites();
@@ -1651,26 +1467,13 @@
       }
       async function syncUserFavorites() {
         if (!currentSession?.user) return;
-        const userId = currentSession.user.id;
-        const { data, error } = await authClient
-          .from("user_favorites")
-          .select("station_id");
-        if (error) {
-          console.error("Favoritos:", error);
-          return;
-        }
-        const remoteIds = (data || []).map((item) => item.station_id);
-        const merged = new Set([...favoriteStationIds, ...remoteIds]);
-        favoriteStationIds = merged;
-        saveFavorites();
-        const missing = [...merged]
-          .filter((id) => !remoteIds.includes(id))
-          .map((station_id) => ({ user_id: userId, station_id }));
-        if (missing.length)
-          await authClient
-            .from("user_favorites")
-            .upsert(missing, { onConflict: "user_id,station_id" });
-        updateFavoriteButton();
+        const owner = currentSession.user.id;
+        try {
+          const data = await window.ChargeVoyAccount.request("/favorites");
+          if (currentSession?.user?.id !== owner) return;
+          favoriteStationIds = new Set(data.favorites);
+          updateFavoriteButton();
+        } catch (error) { notifyUser(error.message, {kind: "error"}); }
       }
       function updateAuthUI() {
         const user = currentSession?.user;
@@ -1683,13 +1486,13 @@
         if (!user) {
           openModal(
             "Entrar",
-            `<p>Entre para sincronizar favoritos e guardar o histórico das suas rotas em vários dispositivos.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button><button class="secondary" onclick="showEmailAuth('signin')">Entrar com email</button><button class="secondary" onclick="showEmailAuth('signup')">Criar conta com email</button>${installPrompt ? '<button class="secondary" onclick="installPwa()">Instalar aplicação</button>' : ""}`,
+            `<p>Entre com Google para guardar os seus favoritos. O histórico de rotas fica apenas neste dispositivo.</p><button class="google-sign-in" onclick="signInWithGoogle()"><img src="https://developers.google.com/identity/images/g-logo.png" alt="" width="20" height="20">Entrar com Google</button>${installPrompt ? '<button class="secondary" onclick="installPwa()">Instalar aplicação</button>' : ""}`,
           );
           return;
         }
         openModal(
           t("A minha conta"),
-          `<p><b>${escapeHtml(user.user_metadata?.full_name || user.user_metadata?.name || "Utilizador")}</b><br><small>${escapeHtml(user.email || "")}</small></p><p>${t("Os favoritos e as novas rotas ficam associados a esta conta.")}</p>${installPrompt ? '<button class="primary" onclick="installPwa()">Instalar aplicação</button>' : ""}<button class="secondary" onclick="signOutUser()">${t("Terminar sessão")}</button><hr style="border:0;border-top:1px solid #e4eaf0;margin:18px 0"><p><b>${t("Eliminar conta")}</b><br><small>${t("Elimina imediatamente favoritos, histórico, preferências e avaliações associados à conta. Esta ação não pode ser desfeita.")}</small></p><button class="secondary" style="color:#a51c30;border-color:#efb8c0" onclick="deleteMyAccount()">${t("Eliminar a minha conta")}</button>`,
+          `<p><b>${escapeHtml(user.user_metadata?.full_name || user.user_metadata?.name || "Utilizador")}</b><br><small>${escapeHtml(user.email || "")}</small></p><p>${t("Os favoritos ficam associados a esta conta. O histórico de rotas fica apenas neste dispositivo.")}</p>${installPrompt ? '<button class="primary" onclick="installPwa()">Instalar aplicação</button>' : ""}<button class="secondary" onclick="signOutUser()">${t("Terminar sessão")}</button><hr style="border:0;border-top:1px solid #e4eaf0;margin:18px 0"><p><b>${t("Eliminar conta")}</b><br><small>${t("Elimina o perfil e os favoritos no servidor e o histórico desta conta neste dispositivo. Revoga todas as sessões. Esta ação não pode ser desfeita.")}</small></p><button class="secondary" style="color:#a51c30;border-color:#efb8c0" onclick="deleteMyAccount()">${t("Eliminar a minha conta")}</button>`,
         );
       }
       async function installPwa() {
@@ -1700,6 +1503,7 @@
         closeModal();
       }
       function showFavorites() {
+        if (!currentSession?.user) return showAccount();
         const stations = [...favoriteStationIds]
           .map((id) => allStations.find((station) => station.id === id))
           .filter(Boolean);
@@ -1739,25 +1543,13 @@
         if (!currentSession?.user) {
           openModal(
             "📊 Histórico",
-            `${stationHtml}<p>Entre com Google para guardar e consultar o histórico das suas rotas.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button>`,
+            `${stationHtml}<p>Entre com Google para guardar e consultar o histórico das suas rotas.</p><button class="google-sign-in" onclick="signInWithGoogle()"><img src="https://developers.google.com/identity/images/g-logo.png" alt="" width="20" height="20">Entrar com Google</button>`,
           );
           return;
         }
         openModal("📊 Histórico", "<p>A carregar as suas rotas…</p>");
-        const { data, error } = await authClient
-          .from("user_route_history")
-          .select(
-            "id,origin_label,destination_label,distance_km,charging_minutes,created_at",
-          )
-          .order("created_at", { ascending: false })
-          .limit(20);
-        if (error) {
-          openModal(
-            "📊 Histórico",
-            `${stationHtml}<p>Não foi possível consultar o histórico.</p>`,
-          );
-          return;
-        }
+        let data = [];
+        try { data = JSON.parse(localStorage.getItem(`chargevoy-history:${currentSession.user.id}`) || "[]"); } catch {}
         const routes = (data || [])
           .map(
             (route) =>
@@ -2904,7 +2696,7 @@
         try {
           button.disabled = true;
           button.textContent = "A pesquisar…";
-          const place = await geocodePortugal(query);
+          const place = searchPosition?.input === query ? searchPosition : await geocodePortugal(query);
           searchPosition = place;
           searchLayer.clearLayers();
           L.marker([searchPosition.lat, searchPosition.lon])
@@ -3290,22 +3082,14 @@
       }
       async function saveRouteToUserHistory() {
         if (!currentSession?.user || !lastPlannedRoute) return;
-        const route = lastPlannedRoute;
-        const { error } = await authClient.from("user_route_history").insert({
-          user_id: currentSession.user.id,
-          origin_label: route.origin.label,
-          origin_lat: route.origin.lat,
-          origin_lon: route.origin.lon,
-          destination_label: route.destination.label,
-          destination_lat: route.destination.lat,
-          destination_lon: route.destination.lon,
-          vehicle_id: currentVehicle?.id || null,
-          stops: route.stops,
-          distance_km: route.distanceKm,
-          drive_minutes: Math.round(route.driveMinutes),
-          charging_minutes: Math.round(route.chargingMinutes),
-        });
-        if (error) console.error("Histórico da rota:", error);
+        const key = `chargevoy-history:${currentSession.user.id}`;
+        try {
+          const previous = JSON.parse(localStorage.getItem(key) || "[]");
+          const route = lastPlannedRoute;
+          const row = {origin_label: route.origin.label, destination_label: route.destination.label,
+            distance_km: route.distanceKm, charging_minutes: route.chargingMinutes, created_at: new Date().toISOString()};
+          localStorage.setItem(key, JSON.stringify([row, ...previous].slice(0, 20)));
+        } catch { notifyUser("Não foi possível guardar o histórico local.", {kind: "error"}); }
       }
 
       async function planRoute() {
@@ -3489,6 +3273,7 @@
             driveMinutes: duration,
             chargingMinutes,
           };
+          setRouteMapMode(true);
           routeLayer.clearLayers();
           const routeLine = L.geoJSON(route.geometry, {
             style: { color: "#1464c2", weight: 5, opacity: 0.85 },
@@ -3540,7 +3325,7 @@
                 : suggested.length
                   ? `<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`
                   : "<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>";
-          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${vehicleUsesGenericRouteProfile(currentVehicle) ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa valores genéricos nos dados em falta (60 kWh, 170 Wh/km ou 50 kW DC); confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, com margem de consumo de 15%. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
+          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${vehicleUsesGenericRouteProfile(currentVehicle) ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa valores genéricos nos dados em falta (60 kWh, 170 Wh/km ou 50 kW DC); confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, consumo de referência de ${((Number(currentVehicle?.consumption_wh_km) || 170) / 10).toFixed(1).replace(".", ",")} kWh/100 km e margem de planeamento de 15% (${(consumption * 100).toFixed(1).replace(".", ",")} kWh/100 km). Valores estimados por modelo/versão; velocidade, temperatura, vento, relevo e estado da bateria alteram o resultado. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
           result.classList.add("show");
           saveRouteToUserHistory();
         } catch (error) {
@@ -3589,21 +3374,17 @@
           });
       }
       async function initAuth() {
-        if (!authClient) {
-          console.warn("Autenticação indisponível; mapa público continua disponível");
+        currentSession = null; favoriteStationIds = new Set(); updateAuthUI();
+        try {
+          currentSession = await window.ChargeVoyAccount.restore();
           updateAuthUI();
-          return;
-        }
-        const { data } = await authClient.auth.getSession();
-        currentSession = data.session;
-        updateAuthUI();
-        if (currentSession) syncUserFavorites();
-        authClient.auth.onAuthStateChange((event, session) => {
-          currentSession = session;
-          updateAuthUI();
-          if (session) syncUserFavorites();
-        });
+          if (currentSession) await syncUserFavorites();
+        } catch (error) { console.warn("Conta indisponível; mapa público disponível"); }
+        updateFavoriteButton();
       }
+      window.addEventListener("chargevoy-account-cleared", () => {
+        currentSession = null; favoriteStationIds = new Set(); updateAuthUI(); updateFavoriteButton();
+      });
       window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         installPrompt = event;
@@ -3827,6 +3608,7 @@
         document
           .getElementById("route-planner")
           .classList.remove("route-visible");
+        if (!routeMapActive) setRouteMapMode(false);
         setNavigationMode("map");
         document
           .getElementById("map-section")
@@ -4111,7 +3893,7 @@
             currentLanguage === "en"
               ? "Privacy policy"
               : "Política de privacidade",
-          html: `<div class="legal-demo"><h3>${currentLanguage === "en" ? "Controller and contact" : "Responsável e contacto"}</h3><p>Diogo Ferreira — ChargeVoy<br><a href="mailto:evchargeportugal@gmail.com">evchargeportugal@gmail.com</a></p><h3>${currentLanguage === "en" ? "Data we process" : "Dados que tratamos"}</h3><p>${currentLanguage === "en" ? "Account email and Google sign-in identity (when chosen), favourites, route history, vehicle and preferences, reviews/comments, and location only when permission is granted." : "Email da conta e identidade Google (quando escolhida), favoritos, histórico de rotas, veículo e preferências, avaliações/comentários e localização apenas quando a autorização é concedida."}</p><h3>${currentLanguage === "en" ? "Why and how long" : "Finalidades e conservação"}</h3><p>${currentLanguage === "en" ? "We use this data to authenticate you, synchronise your account, plan routes and provide requested features. Account data is retained while the account exists and is deleted when you delete the account." : "Usamos estes dados para autenticação, sincronização da conta, planeamento de rotas e funcionalidades pedidas. Os dados da conta são conservados enquanto a conta existir e eliminados quando elimina a conta."}</p><h3>${currentLanguage === "en" ? "Providers and analytics" : "Fornecedores e analítica"}</h3><p>${currentLanguage === "en" ? "Supabase (accounts and database), Cloudflare (hosting), Google (optional sign-in and Analytics only after consent), and public mapping/data providers used by features. No advertising is shown at launch." : "Supabase (contas e base de dados), Cloudflare (alojamento), Google (login opcional e Analytics apenas após consentimento) e fornecedores públicos de mapas/dados usados pelas funcionalidades. Não é apresentada publicidade no lançamento."}</p><h3>${currentLanguage === "en" ? "Your rights" : "Os seus direitos"}</h3><p>${currentLanguage === "en" ? "You may request access, correction or deletion at the contact above. You can delete your account in the app/site; signed-out users may email us." : "Pode pedir acesso, retificação ou eliminação através do contacto acima. Pode eliminar a conta no site/app; se não conseguir entrar, envie-nos um email."}</p></div>`,
+          html: `<div class="legal-demo"><h3>${currentLanguage === "en" ? "Controller and contact" : "Responsável e contacto"}</h3><p>Diogo Ferreira — ChargeVoy<br><a href="mailto:evchargeportugal@gmail.com">evchargeportugal@gmail.com</a></p><h3>${currentLanguage === "en" ? "Data we process" : "Dados que tratamos"}</h3><p>${currentLanguage === "en" ? "Account email and Google sign-in identity (when chosen), favourites, route history, vehicle and preferences, reviews/comments, and location only when permission is granted." : "Email da conta e identidade Google (quando escolhida), favoritos, histórico de rotas, veículo e preferências, avaliações/comentários e localização apenas quando a autorização é concedida."}</p><h3>${currentLanguage === "en" ? "Why and how long" : "Finalidades e conservação"}</h3><p>${currentLanguage === "en" ? "We use this data to authenticate you, save account favourites, plan routes and provide requested features. Account data is retained while the account exists and is deleted when you delete the account." : "Usamos estes dados para autenticação, favoritos associados à conta, planeamento de rotas e funcionalidades pedidas. Os dados da conta são conservados enquanto a conta existir e eliminados quando elimina a conta."}</p><h3>${currentLanguage === "en" ? "Providers and analytics" : "Fornecedores e analítica"}</h3><p>${currentLanguage === "en" ? "Cloudflare (hosting and account service), Google (optional sign-in and Analytics only after consent), and public mapping/data providers used by features. No advertising is shown at launch." : "Cloudflare (alojamento e serviço de contas), Google (login opcional e Analytics apenas após consentimento) e fornecedores públicos de mapas/dados usados pelas funcionalidades. Não é apresentada publicidade no lançamento."}</p><h3>${currentLanguage === "en" ? "Your rights" : "Os seus direitos"}</h3><p>${currentLanguage === "en" ? "You may request access, correction or deletion at the contact above. You can delete your account in the app/site; signed-out users may email us." : "Pode pedir acesso, retificação ou eliminação através do contacto acima. Pode eliminar a conta no site/app; se não conseguir entrar, envie-nos um email."}</p></div>`,
         },
         cookies: {
           title:

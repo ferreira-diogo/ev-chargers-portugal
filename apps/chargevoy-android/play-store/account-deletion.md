@@ -8,7 +8,7 @@ Responsável: Diogo Ferreira. Apoio: **evchargeportugal@gmail.com**.
 2. Entre na conta que pretende eliminar.
 3. Selecione **Eliminar a minha conta** e confirme a ação.
 
-A eliminação é permanente e abrange a conta e os favoritos, histórico, preferências e avaliações associados.
+A eliminação é permanente e abrange a perfil e favoritos associados no novo serviço de contas; todas as sessões são revogadas. O histórico local dessa conta é removido no dispositivo que executa a eliminação. Dados locais noutros dispositivos e preferências gerais podem ser apagados nas definições Android. Esta candidata não publica novas avaliações.
 
 ## Sem acesso à conta
 
