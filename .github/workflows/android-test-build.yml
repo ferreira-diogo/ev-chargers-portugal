@@ -44,6 +44,11 @@ jobs:
         run: node browser-test.mjs
       - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug bundleDebug
 
+      - name: Export test signing fingerprint
+        run: |
+          keytool -printcert -jarfile android/app/build/outputs/bundle/debug/app-debug.aab > qa/signing-certificate.txt
+          cat qa/signing-certificate.txt
+
       - uses: actions/upload-artifact@v4
         with:
           name: ev-charge-portugal-android-test
@@ -51,5 +56,6 @@ jobs:
             apps/chargevoy-android/android/app/build/outputs/apk/debug/app-debug.apk
             apps/chargevoy-android/android/app/build/outputs/bundle/debug/app-debug.aab
             apps/chargevoy-android/qa/*.png
+            apps/chargevoy-android/qa/signing-certificate.txt
           if-no-files-found: error
           retention-days: 14

@@ -10,3 +10,5 @@
 .android-search-suggestions{position:relative;z-index:1000;background:#fff;border:1px solid #cbd5e1;border-radius:10px;color:#17314d;max-height:220px;overflow:auto;padding:8px;font-size:14px}.android-search-suggestions[hidden]{display:none}.android-search-suggestions button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:10px;color:#17314d}.android-search-suggestions button:hover,.android-search-suggestions button[aria-selected=true]{background:#e7f2fd}
 
 .android-station-actions,.android-actions{flex-wrap:wrap}.android-station-actions [data-android-favorite],.android-actions [data-android-favorite]{flex-basis:100%;min-height:44px}
+
+:root{--android-nav-space:110px}body{padding-bottom:calc(var(--android-nav-space) + env(safe-area-inset-bottom))!important}.right{padding-bottom:calc(var(--android-nav-space) + env(safe-area-inset-bottom))!important;scroll-padding-bottom:var(--android-nav-space)}#station-favorite{scroll-margin-bottom:var(--android-nav-space)}
