@@ -46,7 +46,7 @@ jobs:
       - name: Install Android interface dependencies
         run: npm ci
       - name: Validate Android interface and web isolation
-        run: node --test recommendations.test.mjs && node verify-isolation.mjs
+        run: npm test
       - name: Sync Capacitor Android project
         run: npm run android:sync
       - name: Restore upload key
