@@ -1,6 +1,6 @@
 # ChargeVoy — Política de privacidade
 
-Atualizada em 8 outubro 2026 — candidata Android, publicação pendente. Responsável: Diogo Ferreira, projeto ChargeVoy. Contacto: **evchargeportugal@gmail.com**.
+Atualizada em 8 outubro 2026 — candidata Android, publicação pendente. Responsável: Diogo Ferreira, projeto ChargeVoy. Contacto: **chargevoy@chargevoy.pt**.
 
 A ChargeVoy permite consultar postos de carregamento, disponibilidade, estimativas de custo e rotas. A utilização do mapa público não exige conta.
 
@@ -26,6 +26,6 @@ Pode retirar a permissão de localização nas definições Android, recusar ana
 
 ## Eliminar conta
 
-Entre na aplicação, abra a área de conta e selecione **Eliminar a minha conta**. Se não conseguir entrar, envie um pedido a partir do email associado à conta para **evchargeportugal@gmail.com**, com assunto **Pedido de eliminação de conta**. A eliminação abrange conta e dados associados, incluindo perfil e favoritos no servidor; o histórico local da conta é removido neste dispositivo. Preferências gerais do dispositivo podem ser limpas nas definições Android. Consulte [as instruções de eliminação](account-deletion.md).
+Entre na aplicação, abra a área de conta e selecione **Eliminar a minha conta**. Se não conseguir entrar, envie um pedido a partir do email associado à conta para **chargevoy@chargevoy.pt**, com assunto **Pedido de eliminação de conta**. A eliminação abrange conta e dados associados, incluindo perfil e favoritos no servidor; o histórico local da conta é removido neste dispositivo. Preferências gerais do dispositivo podem ser limpas nas definições Android. Consulte [as instruções de eliminação](account-deletion.md).
 
 Pode apresentar reclamação à autoridade de proteção de dados competente, incluindo a CNPD em Portugal. Alterações relevantes a esta política serão publicadas nesta página.

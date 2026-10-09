@@ -1,6 +1,6 @@
 # ChargeVoy — Eliminar conta e dados
 
-Responsável: Diogo Ferreira. Apoio: **evchargeportugal@gmail.com**.
+Responsável: Diogo Ferreira. Apoio: **chargevoy@chargevoy.pt**.
 
 ## Na aplicação
 
@@ -12,6 +12,6 @@ A eliminação é permanente e abrange a perfil e favoritos associados no novo s
 
 ## Sem acesso à conta
 
-Envie um email para **evchargeportugal@gmail.com** a partir do endereço associado à conta, com o assunto **Pedido de eliminação de conta**. Indique que pretende eliminar a conta ChargeVoy e os dados associados. Poderá ser necessário confirmar a titularidade para evitar eliminar a conta de outra pessoa.
+Envie um email para **chargevoy@chargevoy.pt** a partir do endereço associado à conta, com o assunto **Pedido de eliminação de conta**. Indique que pretende eliminar a conta ChargeVoy e os dados associados. Poderá ser necessário confirmar a titularidade para evitar eliminar a conta de outra pessoa.
 
 Preferências guardadas exclusivamente no dispositivo, incluindo o cenário de bateria do comparador Android, podem ser removidas nas definições Android em Aplicações → ChargeVoy → Armazenamento → Limpar dados. Esta operação local não substitui a eliminação da conta.

@@ -20,3 +20,16 @@ body .mapbox .legend{top:auto!important;left:auto!important;right:8px!important;
 body .mapbox .legend .dot{width:7px;height:7px;margin-right:5px}
 
 #android-vehicle{display:flex;align-items:center;justify-content:center;gap:7px}#android-vehicle-label{min-width:0;text-align:left}#android-vehicle-thumbnail{display:flex;flex:0 0 52px;align-items:center;justify-content:center;height:34px}#android-vehicle-thumbnail:empty{display:none}#android-vehicle-thumbnail img,#android-vehicle-thumbnail svg{width:100%;height:100%;object-fit:contain}.android-power{display:inline-flex;align-items:center;gap:6px}.android-power strong{font-weight:750}.android-power-bolts{display:inline-flex;gap:1px;flex-shrink:0}.android-power-bolts svg{width:10px;height:15px}.power-1{color:#24e3a5}.power-2{color:#ffe377}.power-3{color:#a489ff}.google-sign-in{min-height:44px}.google-sign-in:focus-visible{outline:2px solid #24e3a5;outline-offset:3px}
+
+/* Keep the vehicle drawer and route controls clear of bottom navigation. */
+#android-save-vehicle{display:none}
+body.vehicle-mode #android-save-vehicle{display:block;position:sticky;bottom:0;width:100%;min-height:48px;padding:13px;margin:14px 0;border:1px solid #24e3a5;border-radius:10px;background:#24e3a5;color:#042d22;font-weight:800;z-index:2}
+body.vehicle-mode #apply-filters{display:none}
+#route-planner .route-origin-control{display:flex;align-items:center;gap:8px}
+#route-planner .route-origin-control input{flex:1;min-width:0;border-radius:9px}
+#route-planner #route-use-location{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 44px!important;width:44px!important;min-width:44px!important;max-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;border:1px solid #29485d;border-radius:10px;background:#10273b;color:#24e3a5}
+#route-use-location svg{width:22px;height:22px;flex:none}
+#route-use-location:disabled{opacity:.6}
+#clear-route{border-color:#526d81;background:#10273b;color:#eef6f9}
+@media(max-width:780px){#filter-menu.side.mobile-open{bottom:var(--android-nav-height,80px)!important;padding-bottom:20px;scroll-padding-bottom:20px}#route-planner.route-visible{bottom:var(--android-nav-height,80px)!important}}
+body.mobile-landscape #filter-menu.side.mobile-open{bottom:var(--android-nav-height,80px)!important;padding-bottom:20px}

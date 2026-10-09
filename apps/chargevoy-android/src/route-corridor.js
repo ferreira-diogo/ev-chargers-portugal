@@ -75,14 +75,17 @@
     const reserve = Math.min(40, Math.max(5, Number(document.getElementById("route-reserve").value) || 15));
     if (!originText || !destinationText) { notifyUser("Indique a origem e o destino.", { kind: "error" }); return; }
     if (reserve >= startBattery) { notifyUser("A bateria inicial deve ser superior à reserva de chegada.", { kind: "error" }); return; }
+    const generation = ++routePlanGeneration;
     try {
       button.disabled = true; button.textContent = "A calcular…"; result.classList.remove("show");
       const origin = routeOriginOverride && originText === routeOriginOverride.input ? routeOriginOverride : await geocodePortugal(originText);
       const destination = routeDestinationOverride && destinationText === routeDestinationOverride.input ? routeDestinationOverride : await geocodePortugal(destinationText);
+      if (generation !== routePlanGeneration) return;
       const routeUrl = `https://router.project-osrm.org/route/v1/driving/${origin.lon},${origin.lat};${destination.lon},${destination.lat}?overview=full&geometries=geojson&steps=false`;
       const response = await fetchWithTimeout(routeUrl, {}, 15000);
       if (!response.ok) throw new Error(`Serviço de rotas HTTP ${response.status}`);
       const data = await response.json();
+      if (generation !== routePlanGeneration) return;
       if (data.code !== "Ok" || !data.routes?.length) throw new Error("Não foi possível calcular uma rota rodoviária.");
       const route = data.routes[0], coordinates = route.geometry.coordinates;
       const distance = route.distance / 1000, duration = route.duration / 60;
@@ -102,6 +105,7 @@
         console.warn("Route corridor fallback:", error);
       }
 
+      if (generation !== routePlanGeneration) return;
       let candidates = groupStationLocations(routeStations)
         .filter((station) => {
           if (!(Number(station.max_power_kw) > 0)) return false;
@@ -155,6 +159,7 @@
         if (viaData.code !== 'Ok' || !viaData.routes?.[0]?.geometry) throw new Error('Percurso pelas paragens indisponível.');
         displayGeometry = viaData.routes[0].geometry;
       }
+      if (generation !== routePlanGeneration) return;
       routeLayer.addTo(map);
       setRouteMapMode(true);
       routeLayer.clearLayers();
@@ -176,11 +181,12 @@
           : suggested.length
             ? `<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`
             : `<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b><br><small>Foram analisados ${routeStations.length} postos (${corridorSource === "route-corridor" ? "corredor completo da rota" : "fallback local"}) e ${candidates.length} ficaram até 15 km do percurso.</small>`;
-      result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${vehicleUsesGenericRouteProfile(currentVehicle) ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa valores genéricos nos dados em falta (60 kWh, 170 Wh/km ou 50 kW DC); confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, consumo de referência de ${((Number(currentVehicle?.consumption_wh_km) || 170) / 10).toFixed(1).replace(".", ",")} kWh/100 km e margem de planeamento de 15% (${(consumption * 100).toFixed(1).replace(".", ",")} kWh/100 km). Valores estimados por modelo/versão; velocidade, temperatura, vento, relevo e estado da bateria alteram o resultado. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
+      result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${vehicleUsesGenericRouteProfile(currentVehicle) ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa valores genéricos nos dados em falta (60 kWh, 170 Wh/km ou 50 kW DC); confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, consumo de referência de ${((Number(currentVehicle?.consumption_wh_km) || 170) / 10).toFixed(1).replace(".", ",")} kWh/100 km e margem de planeamento de 15% (${(consumption * 100).toFixed(1).replace(".", ",")} kWh/100 km). Valores estimados por modelo/versão; velocidade, temperatura, vento, relevo e estado da bateria alteram o resultado. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button><button type="button" onclick="clearPlannedRoute()" id="clear-route">✕ Limpar rota</button></div>`;
       result.classList.add("show"); saveRouteToUserHistory();
     } catch (error) {
+      if (generation !== routePlanGeneration) return;
       console.error(error); result.innerHTML = `<b>Não foi possível calcular a rota.</b><br>${escapeHtml(error.message)}`; result.classList.add("show");
-    } finally { button.disabled = false; button.textContent = "🧭 Calcular rota"; }
+    } finally { if (generation === routePlanGeneration) { button.disabled = false; button.textContent = "🧭 Calcular rota"; } }
   }
 
   // Direct callers (route-to-station/recalculate) use the corrected implementation.

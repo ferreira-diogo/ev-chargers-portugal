@@ -88,6 +88,28 @@
       let favoriteStationIds = new Set();
       let lastPlannedRoute = null;
       let routeMapActive = false;
+      let routePlanGeneration = 0;
+      function clearPlannedRoute() {
+        routePlanGeneration++;
+        lastPlannedRoute = null;
+        routeOriginOverride = null;
+        routeDestinationOverride = null;
+        document.getElementById("route-origin").value = "";
+        document.getElementById("route-destination").value = "";
+        for (const id of ["route-origin-suggestions", "route-destination-suggestions"]) {
+          document.getElementById(id)?.replaceChildren();
+        }
+        const result = document.getElementById("route-result");
+        result.replaceChildren();
+        result.classList.remove("show");
+        const button = document.getElementById("plan-route");
+        button.disabled = false;
+        button.textContent = "🧭 Calcular rota";
+        setRouteMapMode(false);
+        document.getElementById("nav-map").click();
+        renderStations(false);
+        if (allStations.length) map.fitBounds(L.latLngBounds(allStations.map(s => [s.latitude, s.longitude])), {padding: [35, 35], maxZoom: 7});
+      }
       function setRouteMapMode(active) {
         routeMapActive = active;
         window.dispatchEvent(new CustomEvent("chargevoy-route-map", {detail: {active}}));
@@ -1150,6 +1172,7 @@
         }
       }
       function setNavigationMode(mode) {
+        document.body.classList.toggle("vehicle-mode", mode === "vehicle");
         document.body.classList.toggle("map-mode", mode === "map");
         document.body.classList.remove("station-mode");
         document
@@ -1447,7 +1470,7 @@
             currentLanguage === "en"
               ? "Unable to delete account"
               : "Não foi possível eliminar a conta",
-            `<p>${escapeHtml(error.message || "Tente novamente ou contacte evchargeportugal@gmail.com.")}</p><p><a href="mailto:evchargeportugal@gmail.com?subject=Pedido%20de%20elimina%C3%A7%C3%A3o%20de%20conta">evchargeportugal@gmail.com</a></p>`,
+            `<p>${escapeHtml(error.message || "Tente novamente ou contacte chargevoy@chargevoy.pt.")}</p><p><a href="mailto:chargevoy@chargevoy.pt?subject=Pedido%20de%20elimina%C3%A7%C3%A3o%20de%20conta">chargevoy@chargevoy.pt</a></p>`,
           );
           return;
         }
@@ -2773,6 +2796,7 @@
         const button = document.getElementById(
           options.buttonId || "use-location",
         );
+        const originalContent = button?.innerHTML;
         try {
           if (button) {
             button.disabled = true;
@@ -2822,7 +2846,7 @@
         } finally {
           if (button) {
             button.disabled = false;
-            button.textContent = "◎";
+            button.innerHTML = originalContent;
           }
         }
       }
@@ -3325,7 +3349,7 @@
                 : suggested.length
                   ? `<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`
                   : "<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b>";
-          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${vehicleUsesGenericRouteProfile(currentVehicle) ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa valores genéricos nos dados em falta (60 kWh, 170 Wh/km ou 50 kW DC); confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, consumo de referência de ${((Number(currentVehicle?.consumption_wh_km) || 170) / 10).toFixed(1).replace(".", ",")} kWh/100 km e margem de planeamento de 15% (${(consumption * 100).toFixed(1).replace(".", ",")} kWh/100 km). Valores estimados por modelo/versão; velocidade, temperatura, vento, relevo e estado da bateria alteram o resultado. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button></div>`;
+          result.innerHTML = `<div class="route-summary"><span><b>${distance.toFixed(0)} km</b> de rota</span><span><b>${formatDuration(duration)}</b> a conduzir</span><span><b>${formatDuration(chargingMinutes)}</b> a carregar</span><span><b>${formatDuration(totalMinutes)}</b> total</span><span><b>${requiredEnergy.toFixed(1).replace(".", ",")} kWh</b> estimados</span></div>${stopsHtml}${vehicleUsesGenericRouteProfile(currentVehicle) ? `<p><b>⚠ Dados técnicos desta versão por confirmar.</b> A rota usa valores genéricos nos dados em falta (60 kWh, 170 Wh/km ou 50 kW DC); confirma a autonomia e a potência de carga do teu carro antes de viajar.</p>` : ""}<br><small>Estimativa para ${escapeHtml(currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} ${currentVehicle.variant || ""}`.trim() : "o veículo selecionado")}, consumo de referência de ${((Number(currentVehicle?.consumption_wh_km) || 170) / 10).toFixed(1).replace(".", ",")} kWh/100 km e margem de planeamento de 15% (${(consumption * 100).toFixed(1).replace(".", ",")} kWh/100 km). Valores estimados por modelo/versão; velocidade, temperatura, vento, relevo e estado da bateria alteram o resultado. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ${detourKm.toFixed(1).replace(".", ",")} km de desvios.</small><div class="route-actions"><button onclick="recalculateRoute()" id="recalculate-route">↻ Atualizar rota</button><button onclick="openRouteInGoogleMaps()">🧭 Navegar até ao destino</button><button onclick="sharePlannedRoute()">↗ Partilhar rota</button><button type="button" onclick="clearPlannedRoute()" id="clear-route">✕ Limpar rota</button></div>`;
           result.classList.add("show");
           saveRouteToUserHistory();
         } catch (error) {
@@ -3886,14 +3910,14 @@
       const legalPages = {
         legal: {
           title: "Aviso legal",
-          html: `<div class="legal-demo"><h3>${currentLanguage === "en" ? "Service identification" : "Identificação do serviço"}</h3><p><b>ChargeVoy</b> — ${currentLanguage === "en" ? "personal project operated by Diogo Ferreira" : "projeto pessoal explorado por Diogo Ferreira"}.</p><p>${currentLanguage === "en" ? "Contact for support, privacy and legal matters:" : "Contacto para apoio, privacidade e questões legais:"}<br><a href="mailto:evchargeportugal@gmail.com">evchargeportugal@gmail.com</a></p><h3>${currentLanguage === "en" ? "Purpose" : "Objeto"}</h3><p>${currentLanguage === "en" ? "This service aggregates public information on electric-vehicle charging stations, estimated prices, availability and route planning. It does not sell electricity or represent station operators." : "Este serviço agrega informação pública sobre postos de carregamento, preços estimados, disponibilidade e planeamento de rotas. Não vende eletricidade nem representa os operadores dos postos."}</p><h3>${currentLanguage === "en" ? "Important notice" : "Aviso importante"}</h3><p>${currentLanguage === "en" ? "Availability, prices, power and route recommendations are informative estimates. Confirm information at the station and with the operator before charging." : "A disponibilidade, os preços, a potência e as recomendações de rota são estimativas informativas. Confirme sempre a informação no posto e junto do operador antes de carregar."}</p></div>`,
+          html: `<div class="legal-demo"><h3>${currentLanguage === "en" ? "Service identification" : "Identificação do serviço"}</h3><p><b>ChargeVoy</b> — ${currentLanguage === "en" ? "personal project operated by Diogo Ferreira" : "projeto pessoal explorado por Diogo Ferreira"}.</p><p>${currentLanguage === "en" ? "Contact for support, privacy and legal matters:" : "Contacto para apoio, privacidade e questões legais:"}<br><a href="mailto:chargevoy@chargevoy.pt">chargevoy@chargevoy.pt</a></p><h3>${currentLanguage === "en" ? "Purpose" : "Objeto"}</h3><p>${currentLanguage === "en" ? "This service aggregates public information on electric-vehicle charging stations, estimated prices, availability and route planning. It does not sell electricity or represent station operators." : "Este serviço agrega informação pública sobre postos de carregamento, preços estimados, disponibilidade e planeamento de rotas. Não vende eletricidade nem representa os operadores dos postos."}</p><h3>${currentLanguage === "en" ? "Important notice" : "Aviso importante"}</h3><p>${currentLanguage === "en" ? "Availability, prices, power and route recommendations are informative estimates. Confirm information at the station and with the operator before charging." : "A disponibilidade, os preços, a potência e as recomendações de rota são estimativas informativas. Confirme sempre a informação no posto e junto do operador antes de carregar."}</p></div>`,
         },
         privacy: {
           title:
             currentLanguage === "en"
               ? "Privacy policy"
               : "Política de privacidade",
-          html: `<div class="legal-demo"><h3>${currentLanguage === "en" ? "Controller and contact" : "Responsável e contacto"}</h3><p>Diogo Ferreira — ChargeVoy<br><a href="mailto:evchargeportugal@gmail.com">evchargeportugal@gmail.com</a></p><h3>${currentLanguage === "en" ? "Data we process" : "Dados que tratamos"}</h3><p>${currentLanguage === "en" ? "Account email and Google sign-in identity (when chosen), favourites, route history, vehicle and preferences, reviews/comments, and location only when permission is granted." : "Email da conta e identidade Google (quando escolhida), favoritos, histórico de rotas, veículo e preferências, avaliações/comentários e localização apenas quando a autorização é concedida."}</p><h3>${currentLanguage === "en" ? "Why and how long" : "Finalidades e conservação"}</h3><p>${currentLanguage === "en" ? "We use this data to authenticate you, save account favourites, plan routes and provide requested features. Account data is retained while the account exists and is deleted when you delete the account." : "Usamos estes dados para autenticação, favoritos associados à conta, planeamento de rotas e funcionalidades pedidas. Os dados da conta são conservados enquanto a conta existir e eliminados quando elimina a conta."}</p><h3>${currentLanguage === "en" ? "Providers and analytics" : "Fornecedores e analítica"}</h3><p>${currentLanguage === "en" ? "Cloudflare (hosting and account service), Google (optional sign-in and Analytics only after consent), and public mapping/data providers used by features. No advertising is shown at launch." : "Cloudflare (alojamento e serviço de contas), Google (login opcional e Analytics apenas após consentimento) e fornecedores públicos de mapas/dados usados pelas funcionalidades. Não é apresentada publicidade no lançamento."}</p><h3>${currentLanguage === "en" ? "Your rights" : "Os seus direitos"}</h3><p>${currentLanguage === "en" ? "You may request access, correction or deletion at the contact above. You can delete your account in the app/site; signed-out users may email us." : "Pode pedir acesso, retificação ou eliminação através do contacto acima. Pode eliminar a conta no site/app; se não conseguir entrar, envie-nos um email."}</p></div>`,
+          html: `<div class="legal-demo"><h3>${currentLanguage === "en" ? "Controller and contact" : "Responsável e contacto"}</h3><p>Diogo Ferreira — ChargeVoy<br><a href="mailto:chargevoy@chargevoy.pt">chargevoy@chargevoy.pt</a></p><h3>${currentLanguage === "en" ? "Data we process" : "Dados que tratamos"}</h3><p>${currentLanguage === "en" ? "Account email and Google sign-in identity (when chosen), favourites, route history, vehicle and preferences, reviews/comments, and location only when permission is granted." : "Email da conta e identidade Google (quando escolhida), favoritos, histórico de rotas, veículo e preferências, avaliações/comentários e localização apenas quando a autorização é concedida."}</p><h3>${currentLanguage === "en" ? "Why and how long" : "Finalidades e conservação"}</h3><p>${currentLanguage === "en" ? "We use this data to authenticate you, save account favourites, plan routes and provide requested features. Account data is retained while the account exists and is deleted when you delete the account." : "Usamos estes dados para autenticação, favoritos associados à conta, planeamento de rotas e funcionalidades pedidas. Os dados da conta são conservados enquanto a conta existir e eliminados quando elimina a conta."}</p><h3>${currentLanguage === "en" ? "Providers and analytics" : "Fornecedores e analítica"}</h3><p>${currentLanguage === "en" ? "Cloudflare (hosting and account service), Google (optional sign-in and Analytics only after consent), and public mapping/data providers used by features. No advertising is shown at launch." : "Cloudflare (alojamento e serviço de contas), Google (login opcional e Analytics apenas após consentimento) e fornecedores públicos de mapas/dados usados pelas funcionalidades. Não é apresentada publicidade no lançamento."}</p><h3>${currentLanguage === "en" ? "Your rights" : "Os seus direitos"}</h3><p>${currentLanguage === "en" ? "You may request access, correction or deletion at the contact above. You can delete your account in the app/site; signed-out users may email us." : "Pode pedir acesso, retificação ou eliminação através do contacto acima. Pode eliminar a conta no site/app; se não conseguir entrar, envie-nos um email."}</p></div>`,
         },
         cookies: {
           title:
@@ -3907,7 +3931,7 @@
         },
         deletion: {
           title: currentLanguage === "en" ? "Delete account" : "Eliminar conta",
-          html: `<div class="legal-demo"><h3>${currentLanguage === "en" ? "Delete from the app/site" : "Eliminar no site/app"}</h3><p>${currentLanguage === "en" ? "Sign in, open “My account” and select “Delete my account”. This permanently deletes the account and its associated favourites, route history, preferences and reviews." : "Entre na conta, abra “A minha conta” e escolha “Eliminar a minha conta”. Esta ação elimina permanentemente a conta e os favoritos, histórico de rotas, preferências e avaliações associados."}</p><h3>${currentLanguage === "en" ? "Cannot sign in?" : "Não consegue entrar?"}</h3><p>${currentLanguage === "en" ? "Email" : "Envie um email para"} <a href="mailto:evchargeportugal@gmail.com?subject=Pedido%20de%20elimina%C3%A7%C3%A3o%20de%20conta">evchargeportugal@gmail.com</a> ${currentLanguage === "en" ? "from the email address of your account, with subject “Account deletion request”." : "a partir do endereço associado à conta, com o assunto “Pedido de eliminação de conta”."}</p></div>`,
+          html: `<div class="legal-demo"><h3>${currentLanguage === "en" ? "Delete from the app/site" : "Eliminar no site/app"}</h3><p>${currentLanguage === "en" ? "Sign in, open “My account” and select “Delete my account”. This permanently deletes the account and its associated favourites, route history, preferences and reviews." : "Entre na conta, abra “A minha conta” e escolha “Eliminar a minha conta”. Esta ação elimina permanentemente a conta e os favoritos, histórico de rotas, preferências e avaliações associados."}</p><h3>${currentLanguage === "en" ? "Cannot sign in?" : "Não consegue entrar?"}</h3><p>${currentLanguage === "en" ? "Email" : "Envie um email para"} <a href="mailto:chargevoy@chargevoy.pt?subject=Pedido%20de%20elimina%C3%A7%C3%A3o%20de%20conta">chargevoy@chargevoy.pt</a> ${currentLanguage === "en" ? "from the email address of your account, with subject “Account deletion request”." : "a partir do endereço associado à conta, com o assunto “Pedido de eliminação de conta”."}</p></div>`,
         },
       };
       function showLegalPage(type) {
