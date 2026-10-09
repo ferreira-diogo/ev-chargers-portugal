@@ -13,8 +13,10 @@
 
 :root{--android-nav-space:110px}body{padding-bottom:calc(var(--android-nav-space) + env(safe-area-inset-bottom))!important}.right{padding-bottom:calc(var(--android-nav-space) + env(safe-area-inset-bottom))!important;scroll-padding-bottom:var(--android-nav-space)}#station-favorite{scroll-margin-bottom:var(--android-nav-space)}
 
-.google-sign-in{display:inline-flex;align-items:center;gap:10px;padding:12px;border:1px solid #747775;border-radius:4px;background:#fff;color:#1f1f1f;font-size:14px;font-weight:500}.google-sign-in img{flex:none;object-fit:contain}
+.google-sign-in{display:inline-flex;align-items:center;gap:10px;padding:12px;border:1px solid #8e918f;border-radius:20px;background:#131314;color:#e3e3e3;font-size:14px;font-weight:500}.google-sign-in img{flex:none;object-fit:contain}
 
 /* Android map watermark: above attribution, never over map controls. */
 body .mapbox .legend{top:auto!important;left:auto!important;right:8px!important;bottom:26px!important;max-width:160px;padding:5px 7px!important;background:rgba(7,27,49,.38)!important;color:#fff!important;border:0!important;box-shadow:none!important;border-radius:6px;font-size:10px;line-height:1.5;pointer-events:none;text-shadow:0 1px 3px #071b31}
 body .mapbox .legend .dot{width:7px;height:7px;margin-right:5px}
+
+#android-vehicle{display:flex;align-items:center;justify-content:center;gap:7px}#android-vehicle-label{min-width:0;text-align:left}#android-vehicle-thumbnail{display:flex;flex:0 0 52px;align-items:center;justify-content:center;height:34px}#android-vehicle-thumbnail:empty{display:none}#android-vehicle-thumbnail img,#android-vehicle-thumbnail svg{width:100%;height:100%;object-fit:contain}.android-power{display:inline-flex;align-items:center;gap:6px}.android-power strong{font-weight:750}.android-power-bolts{display:inline-flex;gap:1px;flex-shrink:0}.android-power-bolts svg{width:10px;height:15px}.power-1{color:#24e3a5}.power-2{color:#ffe377}.power-3{color:#a489ff}.google-sign-in{min-height:44px}.google-sign-in:focus-visible{outline:2px solid #24e3a5;outline-offset:3px}
