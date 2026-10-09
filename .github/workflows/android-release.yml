@@ -51,6 +51,13 @@ jobs:
         run: npm run android:sync
       - name: Validate mobile and tablet interface
         run: npm install --no-save --package-lock=false playwright@1.58.2 && node browser-test.mjs
+      - name: Upload interface evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-ui-evidence
+          path: apps/chargevoy-android/qa/*.png
+          if-no-files-found: ignore
       - name: Restore upload key
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
