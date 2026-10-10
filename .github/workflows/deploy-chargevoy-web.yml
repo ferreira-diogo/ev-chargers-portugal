@@ -35,6 +35,8 @@ jobs:
       D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -43,12 +45,33 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
           test -n "$D1_DATABASE_NAME" || test -n "$D1_DATABASE_ID" || { echo "::error::Missing D1 database configuration"; exit 1; }
+      - name: Identify legal page publication
+        id: scope
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          node - <<'NODE' >> "$GITHUB_OUTPUT"
+          const {execFileSync}=require('node:child_process');
+          let legalOnly=false;
+          if(process.env.GITHUB_EVENT_NAME==='push' && /^[a-f0-9]{40}$/.test(process.env.BEFORE_SHA||'') && !/^0+$/.test(process.env.BEFORE_SHA)){
+            const files=execFileSync('git',['diff','--name-only',process.env.BEFORE_SHA,process.env.GITHUB_SHA,'--','ev-charge-portugal-github-ready'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+            const allowed=new Set(['ev-charge-portugal-github-ready/privacy.html','ev-charge-portugal-github-ready/account-deletion.html','ev-charge-portugal-github-ready/scripts/build-web.mjs']);
+            legalOnly=files.length>0 && files.every(file=>allowed.has(file));
+          }
+          console.log('legal_only='+legalOnly);
+          NODE
       - name: Build web bundle
         working-directory: ev-charge-portugal-github-ready
+        env:
+          LEGAL_ONLY_DEPLOY: ${{ steps.scope.outputs.legal_only }}
         run: |
           npm install --no-audit --no-fund
           npm test
-          node scripts/import-nap-datex.mjs --web-snapshot
+          if [ "$LEGAL_ONLY_DEPLOY" = true ]; then
+            curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > assets/stations-snapshot.json
+          else
+            node scripts/import-nap-datex.mjs --web-snapshot
+          fi
           node scripts/verify-static-snapshot.mjs
           npm run build:web
       - name: Install Wrangler
@@ -117,7 +140,11 @@ jobs:
             page="$(curl --silent --show-error --max-time 20 'https://broken-mud-373e.zombid.workers.dev/' || true)"
             code="$(curl --silent --show-error --max-time 30 -o /tmp/site-snapshot.json -w '%{http_code}' 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' || true)"
             if [ "$code" = 200 ] && echo "$page" | grep -Fq "$expected" && node -e 'const fs=require("fs"),crypto=require("crypto");const bytes=fs.readFileSync("/tmp/site-snapshot.json");const expected=require("./ev-charge-portugal-github-ready/assets/stations-manifest.json");if(bytes.length!==expected.bytes||crypto.createHash("sha256").update(bytes).digest("hex")!==expected.sha256)process.exit(1)'; then
-              echo "Static site and national catalogue available without a D1 query"
+              for legal_page in privacy.html account-deletion.html; do
+                curl --fail --silent --show-error --max-time 20 "https://broken-mud-373e.zombid.workers.dev/$legal_page" > "/tmp/$legal_page"
+                cmp "ev-charge-portugal-github-ready/$legal_page" "/tmp/$legal_page"
+              done
+              echo "Static site, legal pages and national catalogue verified"
               exit 0
             fi
             echo "Attempt $attempt: static asset HTTP $code; waiting for deployment propagation"
