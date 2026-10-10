@@ -877,10 +877,10 @@
           vehicleModels.find((vehicle) => vehicle.make === "Tesla" && vehicle.model === "Model 3" && vehicle.variant === "RWD") ||
           vehicleModels[0];
         if (defaultVehicle) brandSelect.value = defaultVehicle.make;
-        renderVehicleOptions(brandSelect.value, defaultVehicle?.id);
+        renderVehicleOptions(brandSelect.value, defaultVehicle?.id, !saved || Boolean(savedVehicle));
       }
 
-      function renderVehicleOptions(brand = "all", preferredId = null) {
+      function renderVehicleOptions(brand = "all", preferredId = null, persistSelection = true) {
         const select = document.getElementById("vehicle-select");
         const filtered = vehicleModels.filter(
           (vehicle) => brand === "all" || vehicle.make === brand,
@@ -896,7 +896,7 @@
           filtered.some((vehicle) => vehicle.id === preferredId)
         )
           select.value = preferredId;
-        applyVehicle(select.value);
+        applyVehicle(select.value, persistSelection);
       }
 
       function vehicleIllustration(vehicle) {
@@ -993,14 +993,14 @@
         credit.replaceChildren(photo.representative ? "Foto representativa: " : "Foto: ", source, " · ", license, photo.background_removed ? " · Fundo removido" : " · Redimensionada");
       }
 
-      function applyVehicle(vehicleId) {
+      function applyVehicle(vehicleId, persistSelection = true) {
         const selectedVehicle =
           vehicleModels.find((vehicle) => vehicle.id === vehicleId) ||
           vehicleModels[0] ||
           null;
         currentVehicle = vehicleWithPersonalSpecs(selectedVehicle);
         if (!currentVehicle) return;
-        try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
+        if (persistSelection) { try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {} }
         for (const [elementId, [field]] of Object.entries(VEHICLE_SPEC_FIELDS)) {
           let saved = {};
           try { saved = JSON.parse(localStorage.getItem(`chargevoy-vehicle-specs:${currentVehicle.id}`) || "{}"); } catch {}
@@ -3504,7 +3504,7 @@
       });
 
       document.getElementById("map-use-location").addEventListener("click", () => {
-        useMyLocation({buttonId: "map-use-location"});
+        void useMyLocation({buttonId: "map-use-location"}).catch(() => {});
       });
       document.getElementById("retry-national").addEventListener("click", () => loadRemainingNationalStations(nationalLoadGeneration));
 
