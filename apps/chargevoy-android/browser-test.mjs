@@ -38,7 +38,7 @@ await page.locator('#nav-vehicle').click();await page.locator('#android-save-opt
 const landscapeSave=await page.locator('#android-save-options').boundingBox(),landscapeNav=await page.locator('.android-bottom-nav').boundingBox();assert(landscapeSave.y+landscapeSave.height<=landscapeNav.y,'Vehicle save remains above navigation in landscape');
 await page.locator('#android-save-options').click();await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>!document.body.classList.contains('mobile-landscape'));
 await page.evaluate(()=>showLegalPage('privacy'));
-assert((await page.locator('#modal-body').textContent()).includes('chargevoy@chargevoy.pt'));
+assert((await page.locator('#modal-body').textContent()).includes('chargevoy@chargevoy.pt'));assert(await page.locator('#modal-body a[href="https://chargevoy.pt/privacy.html"]').count()>0);assert(await page.locator('#modal-body a[href="https://chargevoy.pt/account-deletion.html"]').count()>0);assert((await page.locator('#modal-body').textContent()).includes('HTTPS'));
 assert(!(await page.locator('#modal-body').textContent()).includes('evchargeportugal@gmail.com'));
 await page.locator('#modal-close').click();assert.equal(errors.length,0,errors.join('\n'));
 console.log('Route clear, pending-route cancellation, vehicle save, compact GPS and contact validated.');
