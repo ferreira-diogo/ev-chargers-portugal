@@ -9,11 +9,11 @@ on:
       version_name:
         description: Release version name
         required: true
-        default: "1.1.1"
+        default: "1.1.2"
       version_code:
         description: Positive integer version code
         required: true
-        default: "3"
+        default: "4"
 
 jobs:
   bundle:
@@ -24,8 +24,8 @@ jobs:
         working-directory: apps/chargevoy-android
     env:
       ANDROID_INCLUDE_CATALOGUE: "1"
-      ANDROID_VERSION_NAME: ${{ inputs.version_name || '1.1.1' }}
-      ANDROID_VERSION_CODE: ${{ inputs.version_code || '3' }}
+      ANDROID_VERSION_NAME: ${{ inputs.version_name || '1.1.2' }}
+      ANDROID_VERSION_CODE: ${{ inputs.version_code || '4' }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -74,7 +74,7 @@ jobs:
         run: keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab > qa/release-certificate.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: chargevoy-${{ inputs.version_name || '1.1.1' }}.aab
+          name: chargevoy-${{ inputs.version_name || '1.1.2' }}.aab
           path: |
             apps/chargevoy-android/android/app/build/outputs/bundle/release/app-release.aab
             apps/chargevoy-android/qa/*.png

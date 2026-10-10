@@ -3503,14 +3503,8 @@
         }
       });
 
-      document.getElementById("show-portugal").addEventListener("click", () => {
-        searchPosition = null;
-        searchLayer.clearLayers();
-        document.getElementById("global-search").value = "";
-        document.getElementById("location-search").value = "";
-        closeStationPanel();
-        renderStations(false);
-        if (allStations.length) map.fitBounds(L.latLngBounds(allStations.map((s) => [s.latitude, s.longitude])), {padding: [35,35], maxZoom: 7});
+      document.getElementById("map-use-location").addEventListener("click", () => {
+        useMyLocation({buttonId: "map-use-location"});
       });
       document.getElementById("retry-national").addEventListener("click", () => loadRemainingNationalStations(nationalLoadGeneration));
 
