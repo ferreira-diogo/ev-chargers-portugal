@@ -140,12 +140,17 @@ jobs:
             page="$(curl --silent --show-error --max-time 20 'https://broken-mud-373e.zombid.workers.dev/' || true)"
             code="$(curl --silent --show-error --max-time 30 -o /tmp/site-snapshot.json -w '%{http_code}' 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' || true)"
             if [ "$code" = 200 ] && echo "$page" | grep -Fq "$expected" && node -e 'const fs=require("fs"),crypto=require("crypto");const bytes=fs.readFileSync("/tmp/site-snapshot.json");const expected=require("./ev-charge-portugal-github-ready/assets/stations-manifest.json");if(bytes.length!==expected.bytes||crypto.createHash("sha256").update(bytes).digest("hex")!==expected.sha256)process.exit(1)'; then
+              legal_ok=true
               for legal_page in privacy.html account-deletion.html; do
-                curl --fail --silent --show-error --max-time 20 "https://broken-mud-373e.zombid.workers.dev/$legal_page" > "/tmp/$legal_page"
-                cmp "ev-charge-portugal-github-ready/$legal_page" "/tmp/$legal_page"
+                if ! curl --fail --location --silent --show-error --retry 2 --max-time 20 "https://broken-mud-373e.zombid.workers.dev/$legal_page" > "/tmp/$legal_page" || ! cmp "ev-charge-portugal-github-ready/$legal_page" "/tmp/$legal_page"; then
+                  legal_ok=false
+                  break
+                fi
               done
-              echo "Static site, legal pages and national catalogue verified"
-              exit 0
+              if [ "$legal_ok" = true ]; then
+                echo "Static site, legal pages and national catalogue verified"
+                exit 0
+              fi
             fi
             echo "Attempt $attempt: static asset HTTP $code; waiting for deployment propagation"
             sleep 10
