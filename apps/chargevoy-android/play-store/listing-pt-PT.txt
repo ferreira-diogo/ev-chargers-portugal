@@ -4,20 +4,27 @@ ChargeVoy
 DESCRIÇÃO CURTA (até 80 caracteres)
 Encontre postos, compare custos e planeie a próxima carga em Portugal.
 
-DESCRIÇÃO COMPLETA
+DESCRIÇÃO COMPLETA (até 4000 caracteres)
 Encontre. Compare. Siga viagem.
 
-A ChargeVoy ajuda-o a encontrar postos de carregamento elétrico em Portugal e a escolher uma opção adequada ao seu veículo.
+A ChargeVoy ajuda-te a encontrar postos de carregamento para veículos elétricos em Portugal, comparar opções e planear as tuas viagens.
 
-• Explore os postos no mapa e consulte os detalhes dos conectores.
-• Configure o veículo e o objetivo de bateria para obter estimativas de carregamento.
-• Compare opções por proximidade, tempo de carga estimado e custo, quando existem tarifas verificadas.
-• Consulte disponibilidade comunicada pela fonte, com indicação da atualidade dos dados.
-• Use filtros de potência, conector, operador e disponibilidade.
-• Planeie viagens com paragens e alternativas.
-• Guarde favoritos e abra a navegação até ao posto escolhido.
+ENCONTRA POSTOS NO MAPA
+Pesquisa uma zona ou usa a tua localização para explorar postos próximos. Consulta os detalhes e filtra por potência, tipo de conector, operador e disponibilidade.
 
-As recomendações dependem dos dados disponíveis, da compatibilidade do veículo e dos filtros selecionados. Preços e tempos são estimativas; confirme as condições aplicáveis no operador ou cartão antes de carregar. A disponibilidade comunicada pode mudar antes da chegada.
+COMPARA AS OPÇÕES
+Consulta opções por proximidade, tempo de carregamento estimado e custo, quando existem dados de preço disponíveis. A disponibilidade apresentada inclui a informação comunicada pelas fontes e a atualidade dos dados.
 
-NOTAS DA VERSÃO 1.1.0
-Nova experiência Android com opções recomendadas, alternativas, filtros compactos e navegação inferior. Personalização da bateria e objetivo de carga guardada no dispositivo. O website mantém a apresentação atual.
+PERSONALIZA O TEU CARREGAMENTO
+Seleciona o teu veículo e define a bateria atual e o objetivo de carga. Guarda as tuas opções no dispositivo para adaptar as estimativas e a pesquisa às tuas necessidades.
+
+PLANEIA A VIAGEM
+Define a origem, o destino e a reserva de bateria para planear uma rota com sugestões de paragens compatíveis. Partilha a rota ou limpa o percurso para voltar a explorar os postos.
+
+GUARDA OS TEUS FAVORITOS
+Entra com Google para guardar postos favoritos. Abre a navegação até ao posto escolhido e continua a viagem.
+
+As recomendações dependem dos dados disponíveis, da compatibilidade do veículo e dos filtros selecionados. Os preços e tempos são estimativas: confirma as condições aplicáveis no operador ou fornecedor antes de carregar. A disponibilidade dos postos pode mudar antes da tua chegada.
+
+Contacto: chargevoy@chargevoy.pt
+Política de privacidade: https://chargevoy.pt/privacy.html

@@ -1,0 +1,30 @@
+name: Prepare Play Store assets
+on:
+  push:
+    branches: [assets/play-store-20261010]
+    paths: ["apps/chargevoy-android/play-store/**", ".github/workflows/play-store-assets.yml"]
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chargevoy-android
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/chargevoy-android/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        env:
+          ANDROID_INCLUDE_CATALOGUE: "1"
+      - run: npm install --no-save --package-lock=false playwright@1.58.2
+      - run: node play-store/capture-store.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chargevoy-play-store
+          path: apps/chargevoy-android/play-store/export/*
+          if-no-files-found: error
