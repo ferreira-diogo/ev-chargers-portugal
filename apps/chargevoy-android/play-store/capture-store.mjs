@@ -20,6 +20,9 @@ try{
   await page.waitForFunction(()=>!document.querySelector('#map-use-location').disabled,{timeout:45000});
   await page.waitForFunction(()=>document.querySelector('#android-vehicle-thumbnail img, #android-vehicle-thumbnail svg'),{timeout:45000});
   await page.waitForTimeout(8000);
+  await page.locator('[data-choice="fast"]:not([disabled])').waitFor({timeout:45000});
+  await page.locator('[data-choice="fast"]').click();
+  await page.evaluate(()=>map.closePopup());
   console.log('Real catalogue:',await page.evaluate(()=>({stations:allStations.length,hero:document.querySelector('#android-hero').innerText})));
   const capture=async name=>{await page.waitForTimeout(1000);await page.screenshot({path:resolve(out,name+'.jpg'),type:'jpeg',quality:96,fullPage:false});};
   await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
@@ -34,6 +37,10 @@ try{
   await page.locator('#route-origin').fill('Leiria');
   await page.locator('#route-destination').fill('Lisboa');
   await page.evaluate(()=>{routeOriginOverride={input:'Leiria',label:'Leiria',lat:39.743,lon:-8.807};routeDestinationOverride={input:'Lisboa',label:'Lisboa',lat:38.7223,lon:-9.1393};});
+  await page.locator('#plan-route').click();
+  await page.locator('#clear-route').waitFor({timeout:60000});
+  await page.waitForTimeout(1500);
+  await page.evaluate(()=>document.activeElement?.blur());
   await page.evaluate(()=>window.scrollTo({top:Math.max(0,document.querySelector('#route-planner').getBoundingClientRect().top+window.scrollY-10),behavior:'instant'}));
   await capture('04-planeador-de-rotas');
   await context.close();
