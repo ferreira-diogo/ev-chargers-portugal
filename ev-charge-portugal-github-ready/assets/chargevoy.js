@@ -113,6 +113,8 @@
       let installPrompt = null;
       // Interface translations: all platforms (web, PWA and Capacitor) share this file.
       const I18N_EN = {
+        "A consultar tarifas recentes…": "Checking recent tariffs…",
+        "Não existem tarifas recentes verificadas suficientes para comparar nesta zona.": "There are not enough recent verified tariffs to compare in this area.",
         "Encontre. Compare. Siga viagem.": "Find. Compare. Keep travelling.",
         "ENCONTRE A SUA OPÇÃO": "FIND YOUR OPTION",
         "★ RECOMENDADO PARA SI": "★ RECOMMENDED FOR YOU",
