@@ -60,14 +60,20 @@ jobs:
           }
           console.log('legal_only='+legalOnly);
           NODE
+      - name: Preserve published catalogue for presentation changes
+        id: catalogue_scope
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: echo "preserve=$(node ev-charge-portugal-github-ready/scripts/is-presentation-only.mjs "$BEFORE_SHA")" >> "$GITHUB_OUTPUT"
       - name: Build web bundle
         working-directory: ev-charge-portugal-github-ready
         env:
           LEGAL_ONLY_DEPLOY: ${{ steps.scope.outputs.legal_only }}
+          PRESERVE_CATALOGUE: ${{ steps.catalogue_scope.outputs.preserve }}
         run: |
           npm install --no-audit --no-fund
           npm test
-          if [ "$LEGAL_ONLY_DEPLOY" = true ]; then
+          if [ "$LEGAL_ONLY_DEPLOY" = true ] || [ "$PRESERVE_CATALOGUE" = true ]; then
             curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > assets/stations-snapshot.json
           else
             node scripts/import-nap-datex.mjs --web-snapshot

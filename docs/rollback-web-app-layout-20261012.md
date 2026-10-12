@@ -21,3 +21,6 @@ Website com navegação lateral no desktop e os quatro menus da app no mobile. C
 - Teste de navegador com dados controlados: menus, filtros, recomendações, bateria e ausência de overflow horizontal em mobile/desktop.
 - Inspeção dos screenshots da execução do navegador.
 - Verificação após publicação pelo workflow, incluindo integridade do catálogo nacional e páginas legais.
+
+## Catálogo na publicação visual
+Em alterações exclusivamente de apresentação, os workflows reutilizam o catálogo publicado, validam-no e geram o manifesto. A atualização diária ou qualquer alteração fora da whitelist continua a exigir a importação MOBI.E. O feed de 12/10/2026 foi rejeitado por 38 coordenadas inválidas: este lançamento não modifica nem aceita essas coordenadas.

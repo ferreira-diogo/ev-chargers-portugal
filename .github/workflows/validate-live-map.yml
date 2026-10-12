@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -32,8 +34,14 @@ jobs:
         run: npm test
       - name: Build and validate national snapshot and Cloudflare bundle
         working-directory: ev-charge-portugal-github-ready
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          node scripts/import-nap-datex.mjs --web-snapshot
+          if [ "$(node scripts/is-presentation-only.mjs "$BASE_SHA")" = true ]; then
+            curl --fail --silent --show-error --retry 3 --max-time 45 https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json > assets/stations-snapshot.json
+          else
+            node scripts/import-nap-datex.mjs --web-snapshot
+          fi
           node scripts/verify-static-snapshot.mjs
           npm run build:web
           npx --yes wrangler@4 deploy --dry-run --outdir /tmp/chargevoy-wrangler-dry-run --config wrangler.toml
