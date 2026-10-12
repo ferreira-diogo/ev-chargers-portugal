@@ -11,3 +11,5 @@ Rollback do website: restaurar a versão anterior do Worker guardada pelo workfl
 Rollback das tarifas: interromper uma importação ainda ativa, obter official_opc_tariffs.sql do artefacto de backup da execução, confirmar o alvo D1 e validar o SQL exportado. Restaurar apenas a tabela de tarifas a partir desse backup num período sem importações concorrentes. Se a falha for apenas de interface/tradução, não restaurar tarifas válidas. Reverter o importador em conjunto se necessário; não alterar estações, disponibilidade, utilizadores ou favoritos.
 
 Validação: testes de dados e preços, troca PT→EN→PT incluindo atualizações dinâmicas e diálogo, garantia de ausência de consultas por mudança de idioma, importação oficial em modo preparação sem escritas, build e validação de publicação. A app Android não é alterada.
+
+A ação Mais barato verifica candidatos ainda sem consulta, com limite de quatro novas consultas por atualização e cache de 30 minutos para tarifas devolvidas e um minuto para respostas vazias. Um resultado sem tarifa recente apresenta uma mensagem explícita; não inventa ou considera zero o preço. A validação do CSV encontrou 13 576 tarifas em 6 440 postos.

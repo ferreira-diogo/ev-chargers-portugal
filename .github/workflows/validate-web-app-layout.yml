@@ -24,6 +24,7 @@ jobs:
       - name: Validate current official tariff CSV without database writes
         run: python3 scripts/import-mobie-tariffs.py --out tmp/tariff-validation
       - run: npm test
+      - run: node --test scripts/pricing-context.test.mjs
       - run: npm run build:web
       - run: npm install --no-save --package-lock=false playwright@1.58.2
       - run: npx playwright install --with-deps chromium
