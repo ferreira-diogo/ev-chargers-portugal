@@ -341,7 +341,7 @@
         while ((node = walker.nextNode())) {
           if (
             !node.nodeValue.trim() ||
-            node.parentElement?.closest("script,style")
+            node.parentElement?.closest("script,style,[data-i18n-managed]")
           )
             continue;
           if (!i18nOriginalText.has(node))
