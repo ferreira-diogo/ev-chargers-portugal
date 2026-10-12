@@ -15,13 +15,24 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Web and Android grouping regressions
         run: node --test ev-charge-portugal-github-ready/scripts/catalogue-locations.test.mjs ev-charge-portugal-github-ready/scripts/station-grouping.test.mjs
       - name: Validate national source without database writes
-        run: node diagnostics/station-grouping-validation.mjs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$(node ev-charge-portugal-github-ready/scripts/is-presentation-only.mjs "$BASE_SHA")" = true ]; then
+            curl --fail --silent --show-error --retry 3 --max-time 45 https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json > ev-charge-portugal-github-ready/assets/stations-snapshot.json
+            node ev-charge-portugal-github-ready/scripts/verify-static-snapshot.mjs
+            node diagnostics/station-grouping-validation.mjs --snapshot=ev-charge-portugal-github-ready/assets/stations-snapshot.json
+          else
+            node diagnostics/station-grouping-validation.mjs
+          fi
       - name: Web contract and regression suite
         working-directory: ev-charge-portugal-github-ready
         run: npm test

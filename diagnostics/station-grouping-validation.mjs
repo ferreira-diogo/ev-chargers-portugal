@@ -2,11 +2,18 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');
 const distance=(a,b)=>{const r=Math.PI/180,dlat=(b.latitude-a.latitude)*r,dlon=(b.longitude-a.longitude)*r;const h=Math.sin(dlat/2)**2+Math.cos(a.latitude*r)*Math.cos(b.latitude*r)*Math.sin(dlon/2)**2;return 6371000*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));};
+const snapshotArg=process.argv.find(arg=>arg.startsWith('--snapshot='));
+let data;
+if(snapshotArg){
+ data=JSON.parse(await readFile(snapshotArg.slice('--snapshot='.length),'utf8'));
+}else{
 const napResponse=await fetch('https://ev-nap.mobie.pt/integration/nap/evChargingInfra',{signal:AbortSignal.timeout(300000)});if(!napResponse.ok)throw Error('NAP '+napResponse.status);
 const xml=await napResponse.text();await writeFile('/tmp/audit-nap.xml',xml);
 execFileSync('npm',['ci','--ignore-scripts'],{cwd:'ev-charge-portugal-github-ready',stdio:'inherit'});
 execFileSync(process.execPath,['scripts/import-nap-datex.mjs','--web-snapshot','--file=/tmp/audit-nap.xml'],{cwd:'ev-charge-portugal-github-ready',env:{...process.env,NAP_WEB_SNAPSHOT:'/tmp/audit-snapshot.json'},stdio:'inherit'});
-const data=JSON.parse(await readFile('/tmp/audit-snapshot.json','utf8'));if(data.stations.length<8000)throw Error('Incomplete catalogue');
+data=JSON.parse(await readFile('/tmp/audit-snapshot.json','utf8'));if(data.stations.length<8000)throw Error('Incomplete catalogue');
+}
+if(!Array.isArray(data.stations)||data.stations.length<8000||!Array.isArray(data.connectors)||data.connectors.length<15000)throw Error('Incomplete catalogue');
 const src=await readFile('ev-charge-portugal-github-ready/assets/chargevoy.js','utf8');
 const helpers=src.slice(src.indexOf('function stationLocationKey('),src.indexOf('function markerColor('));
 const connectorMap=new Map();for(const c of data.connectors){const list=connectorMap.get(c.station_id)||[];list.push(c);connectorMap.set(c.station_id,list);}
