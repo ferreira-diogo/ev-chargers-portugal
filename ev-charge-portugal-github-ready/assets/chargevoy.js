@@ -2731,6 +2731,7 @@
         coverage.push(nationalLoadState === "loading" ? t("A carregar o país…") : nationalLoadState === "partial" ? t("Carregamento parcial") : `${allStations.length.toLocaleString("pt-PT")} ${currentLanguage === "en" ? "charger records loaded" : "registos carregados"}`);
         document.getElementById("station-coverage").textContent = coverage.join(" · ");
         document.getElementById("retry-national").hidden = nationalLoadState !== "partial";
+        window.WebChargeVoy?.update(filtered);
         stationLayer.clearLayers();
         markerMap.clear();
         const markerZoom = map.getZoom();

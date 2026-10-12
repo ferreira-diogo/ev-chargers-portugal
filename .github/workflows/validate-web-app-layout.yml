@@ -1,0 +1,33 @@
+name: Validate website app layout
+on:
+  push:
+    branches: [feature/web-app-layout-20261012]
+  pull_request:
+    paths:
+      - 'ev-charge-portugal-github-ready/**'
+      - '.github/workflows/validate-web-app-layout.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ev-charge-portugal-github-ready
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:web
+      - run: npm install --no-save --package-lock=false playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/browser-app-layout.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: website-app-layout-qa
+          path: ev-charge-portugal-github-ready/scripts/qa/*.png
