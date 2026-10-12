@@ -2,6 +2,11 @@ name: D1 MOBI.E tariff sync
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ev-charge-portugal-github-ready/scripts/import-mobie-tariffs.py'
+      - '.github/workflows/d1-mobie-tariffs.yml'
   schedule:
     - cron: "43 5 * * *"
 
@@ -23,7 +28,7 @@ jobs:
         working-directory: ev-charge-portugal-github-ready
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Validate configuration
@@ -33,6 +38,15 @@ jobs:
         run: npm install --global wrangler@4
       - name: Prepare verified tariff batches
         run: python3 scripts/import-mobie-tariffs.py
+      - name: Back up current verified tariffs
+        run: |
+          mkdir -p tmp/tariff-rollback
+          wrangler d1 export "$D1_DATABASE_NAME" --remote --table official_opc_tariffs --output tmp/tariff-rollback/official_opc_tariffs.sql
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tariff-rollback-${{ github.run_id }}
+          path: ev-charge-portugal-github-ready/tmp/tariff-rollback/
+          retention-days: 30
       - name: Import tariffs incrementally
         run: |
           set -e

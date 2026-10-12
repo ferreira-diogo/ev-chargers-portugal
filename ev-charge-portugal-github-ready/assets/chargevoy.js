@@ -113,6 +113,49 @@
       let installPrompt = null;
       // Interface translations: all platforms (web, PWA and Capacitor) share this file.
       const I18N_EN = {
+        "A consultar tarifas recentes…": "Checking recent tariffs…",
+        "Não existem tarifas recentes verificadas suficientes para comparar nesta zona.": "There are not enough recent verified tariffs to compare in this area.",
+        "Encontre. Compare. Siga viagem.": "Find. Compare. Keep travelling.",
+        "ENCONTRE A SUA OPÇÃO": "FIND YOUR OPTION",
+        "★ RECOMENDADO PARA SI": "★ RECOMMENDED FOR YOU",
+        "€ MAIS BARATO COM PREÇO VALIDADO": "€ CHEAPEST WITH VERIFIED PRICE",
+        "ϟ MENOR TEMPO ESTIMADO": "ϟ SHORTEST ESTIMATED TIME",
+        "⌖ MAIS PRÓXIMO": "⌖ NEAREST",
+        "Seleciona o veículo para encontrar opções compatíveis.": "Select your vehicle to find compatible options.",
+        "Permite a localização ou pesquisa uma zona para encontrar opções próximas.": "Allow location access or search an area to find nearby options.",
+        "Não existem opções compatíveis nesta zona com os filtros atuais.": "No compatible options in this area with the current filters.",
+        "Ainda não há preço validado e disponibilidade recente suficientes para recomendar. Explora as alternativas abaixo.": "There is not enough verified pricing and recent availability to recommend a station yet. Explore the alternatives below.",
+        "Os filtros, o mapa e os detalhes dos postos continuam disponíveis.": "Filters, the map and station details remain available.",
+        "Equilíbrio entre distância, custo e tempo, com disponibilidade recente.": "A balance of distance, cost and time, with recent availability.",
+        "Comparação apenas entre os candidatos com tarifa validada.": "Comparison only among candidates with verified tariffs.",
+        "Tempo de carga estimado com a potência compatível do veículo.": "Estimated charging time using the power supported by your vehicle.",
+        "Distância em linha reta à localização selecionada.": "Straight-line distance from the selected location.",
+        "Preço por confirmar": "Price not verified",
+        "Tempo por confirmar": "Time not verified",
+        "IR PARA O POSTO →": "GO TO STATION →",
+        "Ver no mapa": "Show on map",
+        "€ Mais barato": "€ Cheapest",
+        "ϟ Mais rápido": "ϟ Fastest",
+        "⌖ Mais próximo": "⌖ Nearest",
+        "Sem dados": "No data",
+        "Sem opção validada": "No verified option",
+        "Sem preços recentes": "No recent prices",
+        "Detalhes e navegar ›": "Details and directions ›",
+        "Não existem outros candidatos nesta seleção.": "No other candidates in this selection.",
+        "Adicionar veículo": "Add vehicle",
+        "Personalizar pesquisa": "Customise search",
+        "☷ Filtros": "☷ Filters",
+        "Todos os filtros e veículo": "All filters and vehicle",
+        "O teu carregamento": "Your charging session",
+        "Preferências guardadas apenas neste dispositivo.": "Preferences saved only on this device.",
+        "Bateria atual (%)": "Current battery (%)",
+        "Objetivo (%)": "Target (%)",
+        "Período da tarifa": "Tariff period",
+        "Fora de vazio": "Off-peak excluded",
+        "Vazio": "Off-peak",
+        "Atualizar opções": "Update options",
+        "Define uma bateria entre 0 e 99% e um objetivo superior, até 100%.": "Set a battery level between 0 and 99% and a higher target, up to 100%.",
+
         "Filtros rápidos": "Quick filters",
         "Limpar": "Clear",
         "Limpar filtros rápidos": "Clear quick filters",
@@ -300,7 +343,7 @@
         while ((node = walker.nextNode())) {
           if (
             !node.nodeValue.trim() ||
-            node.parentElement?.closest("script,style")
+            node.parentElement?.closest("script,style,[data-i18n-managed]")
           )
             continue;
           if (!i18nOriginalText.has(node))
@@ -329,6 +372,7 @@
         currentLanguage = language === "en" ? "en" : "pt";
         localStorage.setItem("ev-charge-language", currentLanguage);
         applyTranslations();
+        window.WebChargeVoy?.translate();
         // Do not recreate the map/card grid here: it keeps the language change instant on mobile.
         if (selectedStation) {
           const info = stationAvailability(
@@ -1926,9 +1970,9 @@
           (!card.valid_from || today >= card.valid_from) && (!card.valid_to || today <= card.valid_to);
       }
 
-      function fixedCardRate(card, opc) {
+      function fixedCardRate(card, opc, stationContext = selectedStation) {
         if (!cardIsActive(card) || card.fixed_fast_eur_kwh == null || !Number.isFinite(Number(card.fixed_fast_eur_kwh)) || !(Number(opc.power_kw) >= 50) || ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type)) return null;
-        const operator = String(operatorMap.get(selectedStation?.operator_id) || selectedStation?.name || "").toLowerCase();
+        const operator = String(operatorMap.get(stationContext?.operator_id) || stationContext?.name || "").toLowerCase();
         if (card.fixed_fast_national_until && portugalPricingDate() > card.fixed_fast_national_until) return null;
         return card.network_scope === "national_fast" || operator.includes("atlante") || card.fixed_fast_national_until ? Number(card.fixed_fast_eur_kwh) : null;
       }
@@ -1946,7 +1990,7 @@
         }).join("");
       }
 
-      function calculateCardPrice(card, opc, scenario, period) {
+      function calculateCardPrice(card, opc, scenario, period, stationContext = selectedStation) {
         if (!cardIsActive(card)) return null;
         const energy = Number(scenario.energyKwh);
         const isAc = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
@@ -1960,14 +2004,14 @@
           5,
           Math.ceil(((energy / optionPower) * 60) / 0.75),
         );
-        const fixedRate = fixedCardRate(card, opc);
+        const fixedRate = fixedCardRate(card, opc, stationContext);
         if (card.pricing_mode === "final_fixed" && fixedRate === null) return null;
         if (fixedRate !== null) {
           const rate = fixedRate ?? Number(card.energy_price_eur_kwh);
           const total = rate * energy;
           const operator = String(
-            operatorMap.get(selectedStation?.operator_id) ||
-              selectedStation?.name ||
+            operatorMap.get(stationContext?.operator_id) ||
+              stationContext?.name ||
               "",
           ).toLowerCase();
           const ownNetwork = operator.includes("atlante");

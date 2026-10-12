@@ -13,6 +13,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 SOURCE = "https://www.mobie.pt/documents/42032/106470/8602.csv/d8679fe8-51c0-00ce-97b7-37f8a930c861?t=1749114000395"
+MAX_CSV_BYTES = 50_000_000
 EXPECTED = {"FLAT": "/charge", "ENERGY": "/kWh", "TIME": "/min"}
 
 
@@ -101,11 +102,11 @@ def main():
         content = args.file.read_bytes()
     else:
         with urlopen(Request(SOURCE, headers={"User-Agent": "ChargeVoy tariff catalogue/1.0"}), timeout=90) as response:
-            content = response.read(15_000_001)
-    if not 200_000 <= len(content) <= 15_000_000:
-        raise ValueError("Unexpected MOBI.E tariff CSV size")
+            content = response.read(MAX_CSV_BYTES + 1)
+    if not 200_000 <= len(content) <= MAX_CSV_BYTES:
+        raise ValueError(f"Unexpected MOBI.E tariff CSV size: {len(content)} bytes (maximum {MAX_CSV_BYTES})")
     reader = csv.DictReader(io.StringIO(content.decode("utf-8-sig")), delimiter=";")
-    expected_columns = {"ID", "UID_TOMADA", "TIPO_TARIFARIO", "TIPO_TARIFA", "TARIFA", "TIPO_TOMADA", "POTENCIA_TOMADA", "NIVELTENSAO"}
+    expected_columns = {"ID", "UID_TOMADA", "TIPO_TARIFARIO", "TIPO_TARIFA", "TARIFA", "TIPO_TOMADA", "POTENCIA_TOMADA", "NIVELTENSAO", "OPERADOR"}
     if not expected_columns.issubset(reader.fieldnames or []):
         raise ValueError("MOBI.E tariff CSV schema changed")
     parsed = build(reader)
@@ -120,7 +121,7 @@ def main():
     for batch, start in enumerate(range(0, len(parsed), 80), 1):
         values = ["(" + ",".join(quote(v) for v in (*row, updated_at)) + ")" for row in parsed[start:start + 80]]
         sql = f"INSERT INTO official_opc_tariffs ({cols}) VALUES\n" + ",\n".join(values)
-        sql += "\nON CONFLICT(id) DO UPDATE SET station_id=excluded.station_id,voltage_level=excluded.voltage_level,connector_type=excluded.connector_type,power_kw=excluded.power_kw,activation_fee_eur=excluded.activation_fee_eur,energy_price_eur_kwh=excluded.energy_price_eur_kwh,time_price_eur_min=excluded.time_price_eur_min,updated_at=excluded.updated_at WHERE station_id IS NOT excluded.station_id OR voltage_level IS NOT excluded.voltage_level OR connector_type IS NOT excluded.connector_type OR power_kw IS NOT excluded.power_kw OR activation_fee_eur IS NOT excluded.activation_fee_eur OR energy_price_eur_kwh IS NOT excluded.energy_price_eur_kwh OR time_price_eur_min IS NOT excluded.time_price_eur_min OR updated_at < datetime('now','-2 days');\n"
+        sql += "\nON CONFLICT(id) DO UPDATE SET station_id=excluded.station_id,voltage_level=excluded.voltage_level,connector_type=excluded.connector_type,power_kw=excluded.power_kw,activation_fee_eur=excluded.activation_fee_eur,energy_price_eur_kwh=excluded.energy_price_eur_kwh,time_price_eur_min=excluded.time_price_eur_min,updated_at=excluded.updated_at WHERE station_id IS NOT excluded.station_id OR voltage_level IS NOT excluded.voltage_level OR connector_type IS NOT excluded.connector_type OR power_kw IS NOT excluded.power_kw OR activation_fee_eur IS NOT excluded.activation_fee_eur OR energy_price_eur_kwh IS NOT excluded.energy_price_eur_kwh OR time_price_eur_min IS NOT excluded.time_price_eur_min OR julianday(updated_at) <= julianday('now','-1 day');\n"
         (args.out / f"{batch:04d}.sql").write_text(sql)
     print(json.dumps({"source": SOURCE, "source_sha256": hashlib.sha256(content).hexdigest(), "connectors": len(parsed), "stations": sites, "sql_batches": batch, "updated_at": updated_at}))
 
