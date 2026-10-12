@@ -1,0 +1,17 @@
+name: Diagnose web pricing (read only)
+on:
+  push:
+    branches: [fix/web-pricing-i18n-20261012]
+    paths: ['diagnostics/web-pricing-diagnostic.mjs', '.github/workflows/diagnose-web-pricing.yml']
+permissions:
+  contents: read
+jobs:
+  pricing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: node diagnostics/web-pricing-diagnostic.mjs
