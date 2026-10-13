@@ -306,6 +306,7 @@
         ANTERIOR: "PREVIOUS",
       };
       Object.assign(I18N_EN, {"€ MAIS BARATO NESTA SELEÇÃO": "€ CHEAPEST IN THIS SELECTION", "Repor todos os filtros": "Reset all filters", "Guardar as minhas opções": "Save my preferences", "Guardar veículo": "Save vehicle", "Encontre. Compare. Siga viagem.": "Find. Compare. Keep travelling.", "Sem preço elegível": "No eligible price", "Potência por confirmar": "Power not verified", "★ Remover dos favoritos": "★ Remove from favourites", "A carregar": "Loading", "Origem": "Origin", "Destino": "Destination", "Indique a origem e o destino.": "Enter the origin and destination.", "A bateria inicial deve ser superior à reserva de chegada.": "The initial battery must be higher than the arrival reserve.", "Limpar rota": "Clear route", "✕ Limpar rota": "✕ Clear route", "↗ Partilhar rota": "↗ Share route", "↻ Atualizar rota": "↻ Refresh route", "🧭 Navegar até ao destino": "🧭 Navigate to destination", "Menor estimativa entre os candidatos com preço disponível. Confirma a elegibilidade e o preço no fornecedor antes de carregar.": "Lowest estimate among candidates with available pricing. Check eligibility and price with the provider before charging.", "As tuas opções foram guardadas.": "Your preferences have been saved.", "Seleciona um veículo.": "Select a vehicle.", "Não foi possível guardar as opções neste dispositivo. Tenta novamente.": "Could not save preferences on this device. Try again."});
+      Object.assign(I18N_EN, {"de rota": "route", "a conduzir": "driving", "a carregar": "charging", "estimados": "estimated", "Destino:": "Destination:", "Plano B:": "Plan B:", "A calcular…": "Calculating…", "Não foi possível calcular a rota.": "Could not calculate the route.", "A procurar locais…": "Searching places…", "Sem sugestões. Pode escrever o local completo e pesquisar.": "No suggestions. Enter the full place name and search.", "Sugestões indisponíveis. Pode pesquisar pelo nome completo.": "Suggestions unavailable. Search by the full name.", "Não foi possível calcular uma rota rodoviária.": "Could not calculate a road route.", "Não foi possível calcular o percurso pelas paragens. Tente novamente.": "Could not calculate the route via charging stops. Try again.", "Percurso pelas paragens indisponível.": "Route via charging stops unavailable.", "✓ A rota é possível sem carregamento intermédio.": "✓ The route is possible without charging stops.", "⚠ Dados técnicos desta versão por confirmar.": "⚠ Technical specifications for this version are not verified.", "Plano B: não foi possível validar outro posto alcançável nesta zona.": "Plan B: could not verify another reachable station in this area."});
       let currentLanguage = "pt";
       try {
         if (localStorage.getItem("ev-charge-language") === "en") currentLanguage = "en";
@@ -313,6 +314,20 @@
       const i18nOriginalText = new WeakMap(),
         i18nOriginalAttrs = new WeakMap();
       let translatingPage = false;
+      function translateDynamicString(value) {
+        return value
+          .replace(/^⚡ Plano recomendado: (\d+) (paragem|paragens) · (\d+) min a carregar\.$/, (_, count, _word, minutes) => `⚡ Recommended plan: ${count} charging ${count === "1" ? "stop" : "stops"} · ${minutes} min charging.`)
+          .replace(/^Chegada estimada: ([\d.,]+)%\.$/, "Estimated arrival: $1%.")
+          .replace(/^chegada estimada com ([\d.,]+)%\.$/, "estimated arrival with $1%.")
+          .replace(/^— ao km ~([\d.,]+), chegada ([\d.,]+)%, carregar ([\d.,]+) kWh até ([\d.,]+)% ·$/, "— at km ~$1, arrival $2%, charge $3 kWh to $4% ·")
+          .replace(/^a ([\d.,]+) kW · desvio ~([\d.,]+) km/, "at $1 kW · detour ~$2 km")
+          .replace(/km do principal/g, "km from the main station")
+          .replace(/^⚠ Foram encontradas (\d+) paragens possíveis, mas não é possível completar a rota mantendo (\d+)% de reserva\. Experimente aumentar a bateria inicial ou reduzir a reserva\.$/, "⚠ Found $1 possible charging stops, but the route cannot be completed while keeping a $2% reserve. Increase the initial battery or reduce the reserve.")
+          .replace(/^⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota\.$/, "⚠ Charging is needed, but no compatible and reachable stations were found within 15 km of this route.")
+          .replace(/^Foram analisados (\d+) postos \((corredor completo da rota|fallback local)\) e (\d+) ficaram até 15 km do percurso\.$/, (_, total, source, count) => `${total} stations were analysed (${source === "fallback local" ? "local fallback" : "full route corridor"}); ${count} were within 15 km of the route.`)
+          .replace(/^Estimativa para (.*?)?, consumo de referência de ([\d.,]+) kWh\/100 km e margem de planeamento de 15% \(([\d.,]+) kWh\/100 km\)\. Valores estimados por modelo\/versão; velocidade, temperatura, vento, relevo e estado da bateria alteram o resultado\. Inclui curva média de carregamento, 4 minutos de operação por paragem e aproximadamente ([\d.,]+) km de desvios\.$/, "Estimate for $1, reference consumption $2 kWh/100 km and 15% planning margin ($3 kWh/100 km). Model/version estimates; speed, temperature, wind, terrain and battery condition change the result. Includes an average charging curve, 4 minutes per stop and approximately $4 km of detours.")
+          .replace(/^A rota usa valores genéricos nos dados em falta \(60 kWh, 170 Wh\/km ou 50 kW DC\); confirma a autonomia e a potência de carga do teu carro antes de viajar\.$/, "The route uses generic values for missing data (60 kWh, 170 Wh/km or 50 kW DC); check your car's range and charging power before travelling.");
+      }
       function translateString(value) {
         if (currentLanguage !== "en" || typeof value !== "string") return value;
         const leading = value.match(/^\s*/)?.[0] || "",
@@ -321,7 +336,7 @@
           leading.length,
           value.length - trailing.length,
         );
-        return leading + (I18N_EN[core] || core) + trailing;
+        return leading + (I18N_EN[core] || translateDynamicString(core)) + trailing;
       }
       function t(value) {
         return currentLanguage === "en" ? I18N_EN[value] || value : value;
