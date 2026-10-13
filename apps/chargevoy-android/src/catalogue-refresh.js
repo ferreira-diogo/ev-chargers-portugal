@@ -12,14 +12,14 @@
         payload.connectors.length < previous.connectors.length * .95)) return false;
     const ids = new Set(), connectors = new Set();
     for (const row of payload.stations) {
-      if (!row?.id || ids.has(row.id) || typeof row.latitude !== 'number' ||
+      if (typeof row?.id !== 'string' || !row.id || ids.has(row.id) || typeof row.latitude !== 'number' ||
           typeof row.longitude !== 'number' || !Number.isFinite(row.latitude) ||
           !Number.isFinite(row.longitude) || row.latitude < 30 || row.latitude > 43 ||
           row.longitude < -32 || row.longitude > -5) return false;
       ids.add(row.id);
     }
     for (const row of payload.connectors) {
-      if (!row?.id || connectors.has(row.id) || !ids.has(row.station_id)) return false;
+      if (typeof row?.id !== 'string' || !row.id || connectors.has(row.id) || !ids.has(row.station_id)) return false;
       connectors.add(row.id);
     }
     return true;
@@ -62,8 +62,11 @@
       const payload = await request();
       if (!validate(payload, validate(previous) ? previous : null)) throw Error('Incomplete or regressive catalogue');
       if (!previous || Date.parse(payload.publication_time) > Date.parse(previous.publication_time)) {
-        await storage(payload);
+        const persisted = await storage(payload);
         install(payload);
+        // Retry on the next launch when persistence fails; otherwise the older
+        // packaged copy would suppress refresh for a day after a quota error.
+        if (!persisted) return true;
       }
       try { scope.localStorage.setItem(checkKey, String(Date.now())); } catch {}
       return true;

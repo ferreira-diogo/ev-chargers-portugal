@@ -58,4 +58,11 @@ for(const width of [320,390,780,800,1024,1366]) {
 await page.setViewportSize({width:390,height:844});await page.locator('#android-filter-summary').evaluate(e=>{e.style.fontSize='24px';e.textContent='Powerdot · Disponível · Pesquisa personalizada em Portugal';});
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'200% summary wraps');
 assert.equal(errors.length,0,errors.join('\n'));console.log('P1 Android: active filter reset survives reload, viewport matrix and 200% summary passed.');
+
+const storedCatalogue=await page.evaluate(async()=>{
+ const data={publication_time:new Date().toISOString(),stations:Array.from({length:8000},(_,i)=>({id:'cache-site-'+i,latitude:39,longitude:-8,address:'x'.repeat(700)})),connectors:Array.from({length:17000},(_,i)=>({id:'cache-connector-'+i,station_id:'cache-site-'+i%8000}))};
+ const bytes=JSON.stringify(data).length;const saved=await ChargeVoyCatalogue.write(data),read=await ChargeVoyCatalogue.read();
+ return {bytes,persisted:!!saved,valid:ChargeVoyCatalogue.validate(read),sites:read?.stations.length,connectors:read?.connectors.length};
+});
+assert(storedCatalogue.bytes>5*1024*1024,'Exercise a catalogue larger than typical localStorage quota');assert(storedCatalogue.persisted&&storedCatalogue.valid);assert.equal(storedCatalogue.sites,8000);assert.equal(storedCatalogue.connectors,17000);console.log('P1 IndexedDB: complete catalogue persists above 5 MiB.',storedCatalogue);
 await context.close();const art=await browser.newPage();for(const [name,w,h] of [['icon',512,512],['feature-graphic',1024,500]]){await art.setViewportSize({width:w,height:h});await art.setContent('<style>body{margin:0}</style>'+await readFile(resolve(import.meta.dirname,'play-store/artwork',name+'.svg'),'utf8'));await art.screenshot({path:resolve(out,name+'.png')});}await art.close();}finally{await browser.close();server.close();}

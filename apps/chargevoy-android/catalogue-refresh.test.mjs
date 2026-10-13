@@ -7,7 +7,9 @@ function snapshot(date='2026-10-12T00:00:00Z') {
  return {publication_time:date,stations:Array.from({length:8000},(_,i)=>({id:'s'+i,latitude:39,longitude:-8})),connectors:Array.from({length:17000},(_,i)=>({id:'c'+i,station_id:'s'+i%8000}))};
 }
 function setup(fetch) {
- const values=new Map(),context=vm.createContext({Date,AbortSignal,fetch,console:{warn(){}},localStorage:{getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)}});
+ const database={value:null};
+ const indexedDB={open(){const request={};queueMicrotask(()=>{request.result={transaction(){const tx={objectStore(){return {put(value){database.value=value;return{}},get(){return {get result(){return database.value}}}}}};queueMicrotask(()=>tx.oncomplete());return tx},close(){}};request.onsuccess();});return request;}};
+ const values=new Map(),context=vm.createContext({Date,AbortSignal,fetch,indexedDB,console:{warn(){}},localStorage:{getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)}});
  vm.runInContext(source,context);return {context,api:context.ChargeVoyCatalogue,values};
 }
 test('rejects partial, duplicate, orphan, invalid coordinates, older and regressive catalogues',()=>{
@@ -33,4 +35,9 @@ test('native catalogue GET uses Capacitor HTTP with bounded timeouts, without D1
  const {context,api}=setup(()=>{throw Error('browser fetch not expected')});let calls=0;
  context.Capacitor={isNativePlatform:()=>true,Plugins:{CapacitorHttp:{get:async options=>{calls++;assert(options.url.endsWith('/assets/stations-snapshot.json'));assert.equal(options.readTimeout,15000);assert.equal(options.connectTimeout,15000);return {status:200,data:snapshot()}}}}};
  assert(await api.refresh(null,()=>{}));assert.equal(calls,1);
+});
+
+test('failed persistent cache does not suppress the next-launch refresh',async()=>{
+ let installs=0;const {context,api,values}=setup(async()=>({ok:true,json:async()=>snapshot()}));context.indexedDB=null;
+ assert(await api.refresh(null,()=>installs++));assert.equal(installs,1);assert.equal(values.size,0);
 });

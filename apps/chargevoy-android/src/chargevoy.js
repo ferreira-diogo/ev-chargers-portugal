@@ -2099,7 +2099,7 @@
           let payload = await response.json();
           const stored = await window.ChargeVoyCatalogue.read();
           if (window.ChargeVoyCatalogue.validate(stored) &&
-              (!window.ChargeVoyCatalogue.validate(payload) || Date.parse(stored.publication_time) > Date.parse(payload.publication_time))) payload = stored;
+              (!window.ChargeVoyCatalogue.validate(payload) || (window.ChargeVoyCatalogue.validate(stored, payload) && Date.parse(stored.publication_time) > Date.parse(payload.publication_time)))) payload = stored;
           if (!window.ChargeVoyCatalogue.validate(payload)) throw new Error("NAP snapshot incompleto");
           structuralCatalogue = payload;
           void window.ChargeVoyCatalogue.write(payload);
