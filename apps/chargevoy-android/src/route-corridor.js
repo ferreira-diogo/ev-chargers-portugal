@@ -1,6 +1,47 @@
 // Route-corridor planner override. Loaded after chargevoy.js.
 // Keeps the original local station set as a fallback if the corridor API is unavailable.
 (function () {
+  function routeChargingPower(station) {
+    let types = currentVehicle?.connector_types || [];
+    if (typeof types === 'string') { try { types = JSON.parse(types); } catch { return 0; } }
+    if (!Array.isArray(types) || !types.length) return 0;
+    const supported = new Set(types.map(connectorCategory));
+    const powers = stationConnectorRows(station).filter(c => supported.has(connectorCategory(c.type))).map(c => {
+      const ac = ['Type 2', 'Type 1', 'Schuko'].includes(connectorCategory(c.type));
+      const limit = Number(ac ? currentVehicle?.max_ac_power_kw : currentVehicle?.max_dc_power_kw);
+      const physical = Number(c.power_kw);
+      return Number.isFinite(limit) && limit > 0 && Number.isFinite(physical) && physical > 0 ? Math.min(limit, physical) : 0;
+    });
+    return Math.max(0, ...powers);
+  }
+
+  async function findReachableFallbackStation(primary, candidates, usedStations, maxVehiclePower, energyAtPrimary, reserveEnergy, consumption) {
+    if (!(consumption > 0) || !Number.isFinite(energyAtPrimary) || !Number.isFinite(reserveEnergy)) return null;
+    const range = Math.max(0, (energyAtPrimary - reserveEnergy) / consumption);
+    if (!range) return null;
+    let pool = candidates.filter(s => s.id !== primary.id && !usedStations.has(s.id) &&
+      routeChargingPower(s) > 0 && distanceKm({lat: primary.latitude, lon: primary.longitude}, {lat: s.latitude, lon: s.longitude}) <= range);
+    // Bound routing requests; only publish alternatives verified by a road route.
+    for (let attempt = 0; attempt < 3 && pool.length; attempt++) {
+      const candidate = findFallbackStation(primary, pool, usedStations, maxVehiclePower);
+      if (!candidate) break;
+      pool = pool.filter(s => s.id !== candidate.id);
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${primary.longitude},${primary.latitude};${candidate.longitude},${candidate.latitude}?overview=false&steps=false`;
+        const response = await fetchWithTimeout(url, {}, 5000);
+        if (!response.ok) continue;
+        const data = await response.json();
+        const rawDistance = data.routes?.[0]?.distance;
+        if (typeof rawDistance !== 'number') continue;
+        const roadKm = rawDistance / 1000;
+        if (data.code !== 'Ok' || !Number.isFinite(roadKm) || roadKm < 0 || roadKm > range) continue;
+        return {...candidate, distance_from_primary: roadKm, route_verified: true,
+          energy_after_detour: energyAtPrimary - roadKm * consumption};
+      } catch (error) { console.warn('Não foi possível validar o percurso do plano B:', error.message); }
+    }
+    return null;
+  }
+
   function routeBounds(coordinates) {
     let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
     for (const [lon, lat] of coordinates) {
@@ -107,16 +148,10 @@
 
       if (generation !== routePlanGeneration) return;
       let candidates = groupStationLocations(routeStations)
-        .filter((station) => {
-          if (!(Number(station.max_power_kw) > 0)) return false;
-          const knownConnectors = stationConnectorRows(station);
-          // Missing connector metadata must not create a false negative.
-          return !knownConnectors.length || stationCompatibleWithVehicle(station);
-        })
-        .map((station) => {
-          const availability = stationAvailability(stationConnectorRows(station));
-          return { ...station, ...stationRoutePosition(station, routeProfile), route_availability: availability };
-        })
+        .map(station => ({...station, max_power_kw: routeChargingPower(station)}))
+        .filter(station => station.max_power_kw > 0)
+        .map(station => ({...station, ...stationRoutePosition(station, routeProfile),
+          route_availability: stationAvailability(stationConnectorRows(station))}))
         .filter((station) => station.distance <= 15 && station.route_km > distance * 0.04 && station.route_km < distance * 0.96);
 
       console.info("ChargeVoy route candidates", { source: corridorSource, stations: routeStations.length, candidates: candidates.length });
@@ -133,9 +168,10 @@
         });
         reachable.sort((a, b) => routeCandidateScore(a, targetKm, reachableKm, maxVehiclePower) - routeCandidateScore(b, targetKm, reachableKm, maxVehiclePower));
         const station = reachable[0]; if (!station) break;
-        const fallback = findFallbackStation(station, candidates, usedStations, maxVehiclePower);
         const legKm = currentDetourKm + (station.route_km - currentKm) + station.distance;
         batteryEnergy = Math.max(0, batteryEnergy - legKm * consumption);
+        const fallback = await findReachableFallbackStation(station, candidates, usedStations, maxVehiclePower, batteryEnergy, reserveEnergy, consumption);
+        if (generation !== routePlanGeneration) return;
         const arrivalSoc = (batteryEnergy / capacity) * 100, targetEnergy = capacity * 0.8;
         const energyToCharge = Math.max(0, targetEnergy - batteryEnergy);
         const effectivePower = Math.max(1, Math.min(Number(station.max_power_kw) || 1, maxVehiclePower));
@@ -177,7 +213,7 @@
       const stopsHtml = chargeNeeded <= 0
         ? `<b>✓ A rota é possível sem carregamento intermédio.</b> Chegada estimada: ${finalSoc.toFixed(0)}%.`
         : suggested.length && routeFeasible
-          ? `<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length === 1 ? "paragem" : "paragens"} · ${chargingMinutes} min a carregar.</b>${isTeslaVehicle() ? "<br><small>Superchargers oficiais são priorizados quando não comprometem a autonomia nem criam um desvio excessivo.</small>" : ""}<ol class="route-stops">${suggested.map((station, index) => `<li><b>${index + 1}. ${escapeHtml(station.name || "Posto")}</b>${isOfficialTeslaStation(station) ? " · <b>Supercharger Tesla</b>" : ""} — ao km ~${station.route_km.toFixed(0)}, chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace(".", ",")} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace(".", ",")} km${station.route_availability.kind === "live" ? ` · ${escapeHtml(station.route_availability.label)}` : ""}${station.fallback ? `<br><small><b>Plano B:</b> ${escapeHtml(station.fallback.name || "Posto alternativo")} · ${station.fallback.distance_from_primary.toFixed(1).replace(".", ",")} km do principal · ${escapeHtml(station.fallback.max_power_kw || "—")} kW</small>` : "<br><small>Plano B: não foi encontrado outro posto alcançável nesta zona.</small>"}</li>`).join("")}</ol><b>Destino:</b> chegada estimada com ${finalSoc.toFixed(0)}%.`
+          ? `<b>⚡ Plano recomendado: ${suggested.length} ${suggested.length === 1 ? "paragem" : "paragens"} · ${chargingMinutes} min a carregar.</b>${isTeslaVehicle() ? "<br><small>Superchargers oficiais são priorizados quando não comprometem a autonomia nem criam um desvio excessivo.</small>" : ""}<ol class="route-stops">${suggested.map((station, index) => `<li><b>${index + 1}. ${escapeHtml(station.name || "Posto")}</b>${isOfficialTeslaStation(station) ? " · <b>Supercharger Tesla</b>" : ""} — ao km ~${station.route_km.toFixed(0)}, chegada ${station.arrival_soc.toFixed(0)}%, carregar ${station.energy_to_charge.toFixed(1).replace(".", ",")} kWh até ${station.departure_soc}% · <b>~${station.charge_minutes} min</b> a ${station.effective_power} kW · desvio ~${station.distance.toFixed(1).replace(".", ",")} km${station.route_availability.kind === "live" ? ` · ${escapeHtml(station.route_availability.label)}` : ""}${station.fallback ? `<br><small><b>Plano B:</b> ${escapeHtml(station.fallback.name || "Posto alternativo")} · ${station.fallback.distance_from_primary.toFixed(1).replace(".", ",")} km do principal · ${escapeHtml(station.fallback.max_power_kw || "—")} kW</small>` : "<br><small>Plano B: não foi possível validar outro posto alcançável nesta zona.</small>"}</li>`).join("")}</ol><b>Destino:</b> chegada estimada com ${finalSoc.toFixed(0)}%.`
           : suggested.length
             ? `<b>⚠ Foram encontradas ${suggested.length} paragens possíveis, mas não é possível completar a rota mantendo ${reserve}% de reserva. Experimente aumentar a bateria inicial ou reduzir a reserva.</b>`
             : `<b>⚠ É necessário carregar, mas não foram encontrados postos compatíveis e alcançáveis até 15 km desta rota.</b><br><small>Foram analisados ${routeStations.length} postos (${corridorSource === "route-corridor" ? "corredor completo da rota" : "fallback local"}) e ${candidates.length} ficaram até 15 km do percurso.</small>`;
