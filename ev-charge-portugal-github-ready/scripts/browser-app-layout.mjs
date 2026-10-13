@@ -7,7 +7,7 @@ await page.goto('http://127.0.0.1:'+server.address().port,{waitUntil:'domcontent
 // P1: default-closed drawer, reserved desktop space and responsive matrix.
 for(const width of [320,390,780,800,1024,1366]) {
  await page.setViewportSize({width,height:900});await page.evaluate(()=>closeFilterMenu());
- assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No horizontal overflow at '+width);
+ const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1&&!e.closest('.leaflet-pane')}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,right:e.getBoundingClientRect().right})));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No horizontal overflow at '+width+': '+JSON.stringify(overflow));
  assert.equal(await page.locator('#filter-menu').isVisible(),false,'Drawer closed at '+width);
  if(width>780){
   await page.locator('#nav-vehicle').click();
@@ -21,7 +21,7 @@ await page.setViewportSize({width:390,height:844});
 await page.locator('#nav-vehicle').click();await page.locator('#operator-filter').selectOption('Powerdot');await page.locator('.status-filter[value="unknown"]').uncheck();await page.locator('#close-mobile-filters').click();
 await page.waitForFunction(()=>document.querySelector('#android-filter-summary').textContent.includes('Powerdot'));
 assert((await page.locator('#android-filter-summary').textContent()).includes('Disponível'));
-await page.locator('.android-filters summary').click();await page.locator('#reset-all-filters').click();
+if(!(await page.locator('.android-filters').evaluate(e=>e.open)))await page.locator('.android-filters summary').click();await page.locator('#reset-all-filters').click();
 assert.equal(await page.locator('#operator-filter').inputValue(),'all');assert(await page.locator('.status-filter[value="unknown"]').isChecked());
 await page.locator('#android-filter-summary').evaluate(e=>{e.style.fontSize='24px';e.textContent='Powerdot · Disponível · Pesquisa personalizada em Portugal';});
 const summary=await page.locator('.android-filters summary').boundingBox(),filter=await page.locator('#android-filter-summary').boundingBox();
