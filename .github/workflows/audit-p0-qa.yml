@@ -1,0 +1,28 @@
+name: Audit P0 web regression checks
+on:
+  push:
+    branches: [fix/audit-p0-web-20261013]
+  pull_request:
+    paths: ['ev-charge-portugal-github-ready/**', '.github/workflows/audit-p0-qa.yml']
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ev-charge-portugal-github-ready
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:web
+      - run: npm install --no-save --package-lock=false playwright@1.58.2
+      - run: node scripts/browser-app-layout.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome

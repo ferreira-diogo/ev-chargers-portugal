@@ -19,3 +19,12 @@ body{padding-bottom:0;padding-left:210px}.top{height:110px!important;min-height:
 .android-hero a{color:#89ceff}.android-bottom-nav{transform:none!important}
 @media(min-width:781px){.top{backdrop-filter:none!important}.android-bottom-nav button+button{border-left:0!important}}
 @media(min-width:781px){.top{z-index:2501!important}}
+
+/* Active filters remain readable at narrow widths and enlarged text. */
+.android-filters summary span{float:none;display:block;margin-top:6px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.quick-filters-heading{flex-wrap:wrap;gap:8px}
+#reset-all-filters{min-height:44px;border:1px solid #29485d;border-radius:8px;padding:8px 12px;background:#16354c;color:#e3eef3;cursor:pointer}
+@media(min-width:781px){.layout:not(.sidebar-collapsed){display:grid!important;grid-template-columns:minmax(240px,300px) minmax(0,1fr);gap:20px}.layout:not(.sidebar-collapsed)>.side{position:static!important;width:auto!important;max-height:none;align-self:start;box-shadow:none}.layout:not(.sidebar-collapsed)>.main{grid-template-columns:minmax(0,1fr)}.top .search{min-width:0}.top .brand small{white-space:normal}}
+@media(min-width:781px) and (max-width:1100px){.main,.main.station-selected{grid-template-columns:minmax(0,1fr)!important}.layout:not(.sidebar-collapsed){grid-template-columns:minmax(220px,240px) minmax(0,1fr)}.layout:not(.sidebar-collapsed) .mapbox{min-width:0}}
+
+.android-filters[open] .quick-filters{display:block!important}

@@ -65,13 +65,22 @@ jobs:
 
       - name: Validate and stage changed NAP feed
         if: github.event_name == 'push' || github.event_name == 'schedule' || inputs.mode == 'stage'
-        run: npm run nap:stage | tee nap-result.json
+        run: set -o pipefail; npm run nap:stage | tee nap-result.json
         working-directory: ev-charge-portugal-github-ready
 
       - name: Validate NAP feed without database writes
-        if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run')
-        run: npm run nap:check | tee nap-result.json
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        run: set -o pipefail; npm run nap:check | tee nap-result.json
         working-directory: ev-charge-portugal-github-ready
+
+      - name: Validate bounded web quarantine for pull requests
+        if: github.event_name == 'pull_request'
+        working-directory: ev-charge-portugal-github-ready
+        run: |
+          set -o pipefail
+          mkdir -p tmp
+          curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > tmp/previous-stations.json
+          NAP_PREVIOUS_SNAPSHOT=tmp/previous-stations.json NAP_WEB_SNAPSHOT=tmp/audit-snapshot.json node scripts/import-nap-datex.mjs --web-snapshot | tee nap-result.json
 
       - name: Publish run summary
         if: always()

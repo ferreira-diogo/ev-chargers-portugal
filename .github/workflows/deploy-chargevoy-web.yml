@@ -76,7 +76,9 @@ jobs:
           if [ "$LEGAL_ONLY_DEPLOY" = true ] || [ "$PRESERVE_CATALOGUE" = true ]; then
             curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > assets/stations-snapshot.json
           else
-            node scripts/import-nap-datex.mjs --web-snapshot
+            mkdir -p tmp
+            curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > tmp/previous-stations.json
+            NAP_PREVIOUS_SNAPSHOT=tmp/previous-stations.json node scripts/import-nap-datex.mjs --web-snapshot
           fi
           node scripts/verify-static-snapshot.mjs
           npm run build:web
@@ -167,3 +169,11 @@ jobs:
         if: ${{ failure() && steps.deploy.outcome == 'success' }}
         working-directory: ev-charge-portugal-github-ready
         run: wrangler rollback "${{ steps.backup.outputs.version }}" --config wrangler-deploy.toml --message "Automated rollback after failed static site verification"
+
+      - name: Upload NAP quarantine evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nap-web-quarantine
+          path: ev-charge-portugal-github-ready/tmp/nap-quarantine.json
+          if-no-files-found: ignore
