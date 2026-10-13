@@ -33,7 +33,7 @@
       hide(); const query = input.value.trim();
       if (query.length < 3 || query === 'A minha localização') return;
       timer = setTimeout(async () => {
-        box.replaceChildren(); box.hidden = false; box.textContent = 'A procurar locais…'; input.setAttribute('aria-expanded', 'true');
+        box.replaceChildren(); box.hidden = false; box.textContent = t('A procurar locais…'); input.setAttribute('aria-expanded', 'true');
         try {
           let places = cache.get(query.toLowerCase());
           if (!places) {
@@ -46,12 +46,12 @@
           }
           if (sequence !== generation) return;
           box.replaceChildren();
-          if (!places.length) { box.textContent = 'Sem sugestões. Pode escrever o local completo e pesquisar.'; return; }
+          if (!places.length) { box.textContent = t('Sem sugestões. Pode escrever o local completo e pesquisar.'); return; }
           for (const place of places) {
             const button = document.createElement('button'); button.type = 'button'; button.setAttribute('role', 'option'); button.textContent = place.label;
             button.addEventListener('pointerdown', event => event.preventDefault()); button.addEventListener('click', () => choose(place)); box.append(button);
           }
-        } catch (error) { if (sequence === generation && error.name !== 'AbortError') box.textContent = 'Sugestões indisponíveis. Pode pesquisar pelo nome completo.'; }
+        } catch (error) { if (sequence === generation && error.name !== 'AbortError') box.textContent = t('Sugestões indisponíveis. Pode pesquisar pelo nome completo.'); }
       }, 700);
     });
     input.addEventListener('keydown', event => {
