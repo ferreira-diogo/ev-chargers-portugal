@@ -52,8 +52,8 @@ assert.equal(await page.evaluate(()=>localStorage.getItem('chargevoy-android-opt
 await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.AndroidChargeVoy);
 assert.equal(await page.locator('#operator-filter').inputValue(),'all');assert.equal(await page.evaluate(()=>selectedPower),'all');
 for(const width of [320,390,780,800,1024,1366]) {
- await page.setViewportSize({width,height:900});await page.evaluate(()=>closeFilterMenu());
- const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1&&!e.closest('.leaflet-pane')}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,right:e.getBoundingClientRect().right})));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No horizontal overflow at '+width+': '+JSON.stringify(overflow));
+ await page.setViewportSize({width,height:900});await page.evaluate(()=>closeFilterMenu());await page.waitForTimeout(250);
+ const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+.01&&!e.closest('.leaflet-pane')}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,right:e.getBoundingClientRect().right})));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No horizontal overflow at '+width+': '+JSON.stringify({overflow,dimensions:await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,inner:innerWidth,body:document.body.scrollWidth}))}));
 }
 await page.setViewportSize({width:390,height:844});await page.locator('#android-filter-summary').evaluate(e=>{e.style.fontSize='24px';e.textContent='Powerdot · Disponível · Pesquisa personalizada em Portugal';});
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'200% summary wraps');

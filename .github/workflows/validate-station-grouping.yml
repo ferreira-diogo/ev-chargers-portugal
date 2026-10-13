@@ -20,7 +20,7 @@ jobs:
           node-version: 24
       - name: Web and Android grouping regressions
         run: node --test ev-charge-portugal-github-ready/scripts/catalogue-locations.test.mjs ev-charge-portugal-github-ready/scripts/station-grouping.test.mjs
-      - name: Validate national source without database writes
+      - name: Validate published national catalogue without database writes
         run: node diagnostics/station-grouping-validation.mjs
       - name: Web contract and regression suite
         working-directory: ev-charge-portugal-github-ready

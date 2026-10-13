@@ -45,3 +45,8 @@ body.mobile-landscape #filter-menu.side.mobile-open{bottom:var(--android-nav-hei
 .android-actions,.android-station-actions{flex-wrap:wrap}
 .android-actions button,.android-station-actions button{min-width:0;overflow-wrap:anywhere}
 .android-actions [data-android-favorite],.android-station-actions [data-android-favorite]{flex-basis:100%}
+
+.top .brand small{white-space:normal}
+.android-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+.android-metrics>span{min-width:0;overflow-wrap:anywhere}
+.android-filters[open] .quick-filters{display:block!important}
