@@ -155,7 +155,7 @@
       const maxVehiclePower = Number(currentVehicle?.max_dc_power_kw) || 50;
       let batteryEnergy = (capacity * startBattery) / 100, currentKm = 0, currentDetourKm = 0, chargingMinutes = 0, detourKm = 0;
       const suggested = [], usedStations = new Set();
-      while (batteryEnergy - (currentDetourKm + distance - currentKm) * consumption < reserveEnergy && suggested.length < 5) {
+      while (batteryEnergy - (currentDetourKm + distance - currentKm) * consumption < reserveEnergy && suggested.length < 20) {
         const reachableKm = Math.max(0, (batteryEnergy - reserveEnergy) / consumption);
         const targetKm = currentKm + reachableKm * 0.82;
         const reachable = candidates.filter((station) => {

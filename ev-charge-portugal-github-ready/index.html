@@ -36,7 +36,7 @@
     />
     <link rel="stylesheet" href="./assets/chargevoy.css?v=24" />
   <link rel="stylesheet" href="./assets/geocoding.css?v=1" />
-  <link rel="stylesheet" href="./assets/web-app-layout.css?v=1" />
+  <link rel="stylesheet" href="./assets/web-app-layout.css?v=2" />
   </head>
   <body class="map-mode">
     <header class="top">
@@ -74,7 +74,7 @@
         </button>
       </nav>
     </header>
-    <div class="layout">
+    <div class="layout sidebar-collapsed">
       <aside class="side" id="filter-menu">
         <button
           class="drawer-close"
@@ -272,6 +272,7 @@
 </div><div class="web-results-column">        <section id="android-recommendations" aria-live="polite"><div class="android-scenario"><button id="android-vehicle">🚗 <span id="android-vehicle-label">Adicionar veículo</span></button><button id="android-soc">🔋 <span id="android-soc-label">Definir bateria</span> ✎</button></div><article id="android-hero" class="android-hero"><h2>A preparar opções próximas…</h2><p>Permite a localização e seleciona o veículo para personalizar.</p></article><div id="android-alternatives" class="android-alternatives"></div><p class="android-note" id="android-note"></p></section><details class="android-filters"><summary>☷ Filtros <span id="android-filter-summary">Personalizar pesquisa</span></summary>        <section class="quick-filters" aria-labelledby="quick-filter-heading">
           <div class="quick-filters-heading">
             <h2 id="quick-filter-heading">Filtros rápidos</h2>
+            <button id="reset-all-filters" type="button">Repor todos os filtros</button>
             <button id="clear-quick-filters" type="button" aria-label="Limpar filtros rápidos">Limpar</button>
           </div>
           <div class="quick-filter-grid">
@@ -573,10 +574,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
     <script src="./assets/geocoding.js?v=1"></script>
-    <script src="./assets/chargevoy.js?v=36"></script>
-    <script src="./assets/route-corridor.js?v=20"></script>
+    <script src="./assets/chargevoy.js?v=37"></script>
+    <script src="./assets/route-corridor.js?v=21"></script>
 <dialog id="android-scenario-dialog"><form method="dialog"><button class="android-close" aria-label="Fechar">×</button></form><h2>O teu carregamento</h2><p>Preferências guardadas apenas neste dispositivo.</p><label>Bateria atual (%)<input id="android-start" type="number" min="0" max="99" value="32"></label><label>Objetivo (%)<input id="android-target" type="number" min="1" max="100" value="80"></label><label>Período da tarifa<select id="android-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></label><p id="android-scenario-error" role="alert"></p><button id="android-save-scenario" type="button">Atualizar opções</button></dialog>
-<script src="./assets/recommendations.js?v=1"></script><script src="./assets/web-app-ui.js?v=3"></script>
+<script src="./assets/recommendations.js?v=1"></script><script src="./assets/web-app-ui.js?v=4"></script>
   </body>
 </html>
 

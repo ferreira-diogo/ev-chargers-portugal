@@ -40,8 +40,18 @@ jobs:
           if [ "$(node scripts/is-presentation-only.mjs "$BASE_SHA")" = true ]; then
             curl --fail --silent --show-error --retry 3 --max-time 45 https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json > assets/stations-snapshot.json
           else
-            node scripts/import-nap-datex.mjs --web-snapshot
+            mkdir -p tmp
+            curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > tmp/previous-stations.json
+            NAP_PREVIOUS_SNAPSHOT=tmp/previous-stations.json node scripts/import-nap-datex.mjs --web-snapshot
           fi
           node scripts/verify-static-snapshot.mjs
           npm run build:web
           npx --yes wrangler@4 deploy --dry-run --outdir /tmp/chargevoy-wrangler-dry-run --config wrangler.toml
+
+      - name: Upload NAP quarantine evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nap-web-quarantine
+          path: ev-charge-portugal-github-ready/tmp/nap-quarantine.json
+          if-no-files-found: ignore

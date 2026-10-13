@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { createClient } from "@supabase/supabase-js";
+import { prepareWebCatalogue } from "./nap-web-quarantine.mjs";
 import { SaxesParser } from "saxes";
 
 const DEFAULT_URL = "https://ev-nap.mobie.pt/integration/nap/evChargingInfra";
@@ -31,7 +32,16 @@ if (source.notModified) {
   process.exit(0);
 }
 
-const parsed = await parseDatex(source.stream);
+let parsed = await parseDatex(source.stream);
+if (args.has("--web-snapshot")) {
+  const previous = JSON.parse(await readFile(process.env.NAP_PREVIOUS_SNAPSHOT || "assets/stations-snapshot.json", "utf8"));
+  const prepared = prepareWebCatalogue(parsed, previous);
+  parsed = prepared.parsed;
+  const report = process.env.NAP_QUARANTINE_REPORT || "tmp/nap-quarantine.json";
+  await mkdir(join(report, ".."), {recursive:true});
+  await writeFile(report, JSON.stringify(prepared.report, null, 2));
+  console.log(JSON.stringify({quarantine_report:report, ...prepared.report}));
+}
 const validation = validate(parsed);
 const summary = {
   success: validation.errors.length === 0,
