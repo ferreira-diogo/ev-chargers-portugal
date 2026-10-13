@@ -120,6 +120,49 @@
       let installPrompt = null;
       // Interface translations: all platforms (web, PWA and Capacitor) share this file.
       const I18N_EN = {
+        "A consultar tarifas recentes…": "Checking recent tariffs…",
+        "Não existem tarifas recentes verificadas suficientes para comparar nesta zona.": "There are not enough recent verified tariffs to compare in this area.",
+        "Encontre. Compare. Siga viagem.": "Find. Compare. Keep travelling.",
+        "ENCONTRE A SUA OPÇÃO": "FIND YOUR OPTION",
+        "★ RECOMENDADO PARA SI": "★ RECOMMENDED FOR YOU",
+        "€ MAIS BARATO COM PREÇO VALIDADO": "€ CHEAPEST WITH VERIFIED PRICE",
+        "ϟ MENOR TEMPO ESTIMADO": "ϟ SHORTEST ESTIMATED TIME",
+        "⌖ MAIS PRÓXIMO": "⌖ NEAREST",
+        "Seleciona o veículo para encontrar opções compatíveis.": "Select your vehicle to find compatible options.",
+        "Permite a localização ou pesquisa uma zona para encontrar opções próximas.": "Allow location access or search an area to find nearby options.",
+        "Não existem opções compatíveis nesta zona com os filtros atuais.": "No compatible options in this area with the current filters.",
+        "Ainda não há preço validado e disponibilidade recente suficientes para recomendar. Explora as alternativas abaixo.": "There is not enough verified pricing and recent availability to recommend a station yet. Explore the alternatives below.",
+        "Os filtros, o mapa e os detalhes dos postos continuam disponíveis.": "Filters, the map and station details remain available.",
+        "Equilíbrio entre distância, custo e tempo, com disponibilidade recente.": "A balance of distance, cost and time, with recent availability.",
+        "Comparação apenas entre os candidatos com tarifa validada.": "Comparison only among candidates with verified tariffs.",
+        "Tempo de carga estimado com a potência compatível do veículo.": "Estimated charging time using the power supported by your vehicle.",
+        "Distância em linha reta à localização selecionada.": "Straight-line distance from the selected location.",
+        "Preço por confirmar": "Price not verified",
+        "Tempo por confirmar": "Time not verified",
+        "IR PARA O POSTO →": "GO TO STATION →",
+        "Ver no mapa": "Show on map",
+        "€ Mais barato": "€ Cheapest",
+        "ϟ Mais rápido": "ϟ Fastest",
+        "⌖ Mais próximo": "⌖ Nearest",
+        "Sem dados": "No data",
+        "Sem opção validada": "No verified option",
+        "Sem preços recentes": "No recent prices",
+        "Detalhes e navegar ›": "Details and directions ›",
+        "Não existem outros candidatos nesta seleção.": "No other candidates in this selection.",
+        "Adicionar veículo": "Add vehicle",
+        "Personalizar pesquisa": "Customise search",
+        "☷ Filtros": "☷ Filters",
+        "Todos os filtros e veículo": "All filters and vehicle",
+        "O teu carregamento": "Your charging session",
+        "Preferências guardadas apenas neste dispositivo.": "Preferences saved only on this device.",
+        "Bateria atual (%)": "Current battery (%)",
+        "Objetivo (%)": "Target (%)",
+        "Período da tarifa": "Tariff period",
+        "Fora de vazio": "Off-peak excluded",
+        "Vazio": "Off-peak",
+        "Atualizar opções": "Update options",
+        "Define uma bateria entre 0 e 99% e um objetivo superior, até 100%.": "Set a battery level between 0 and 99% and a higher target, up to 100%.",
+
         "Filtros rápidos": "Quick filters",
         "Limpar": "Clear",
         "Limpar filtros rápidos": "Clear quick filters",
@@ -151,7 +194,7 @@
         "🚗 O meu veículo": "🚗 My vehicle",
         "Todas as marcas": "All makes",
         "A carregar veículos…": "Loading vehicles…",
-        "A obter catálogo de postos…": "Fetching station catalogue…",
+        "A obter dados da Supabase…": "Fetching data from Supabase…",
         "Onde quer carregar?": "Where do you want to charge?",
         Potência: "Power",
         Todos: "All",
@@ -263,6 +306,7 @@
         "sem leitura atual": "without a current reading",
         ANTERIOR: "PREVIOUS",
       };
+      Object.assign(I18N_EN, {"€ MAIS BARATO NESTA SELEÇÃO": "€ CHEAPEST IN THIS SELECTION", "Repor todos os filtros": "Reset all filters", "Guardar as minhas opções": "Save my preferences", "Guardar veículo": "Save vehicle", "Encontre. Compare. Siga viagem.": "Find. Compare. Keep travelling.", "Sem preço elegível": "No eligible price", "Potência por confirmar": "Power not verified", "★ Remover dos favoritos": "★ Remove from favourites", "A carregar": "Loading", "Origem": "Origin", "Destino": "Destination", "Indique a origem e o destino.": "Enter the origin and destination.", "A bateria inicial deve ser superior à reserva de chegada.": "The initial battery must be higher than the arrival reserve.", "Limpar rota": "Clear route", "✕ Limpar rota": "✕ Clear route", "↗ Partilhar rota": "↗ Share route", "↻ Atualizar rota": "↻ Refresh route", "🧭 Navegar até ao destino": "🧭 Navigate to destination", "Menor estimativa entre os candidatos com preço disponível. Confirma a elegibilidade e o preço no fornecedor antes de carregar.": "Lowest estimate among candidates with available pricing. Check eligibility and price with the provider before charging.", "As tuas opções foram guardadas.": "Your preferences have been saved.", "Seleciona um veículo.": "Select a vehicle.", "Não foi possível guardar as opções neste dispositivo. Tenta novamente.": "Could not save preferences on this device. Try again."});
       let currentLanguage = "pt";
       try {
         if (localStorage.getItem("ev-charge-language") === "en") currentLanguage = "en";
@@ -307,7 +351,7 @@
         while ((node = walker.nextNode())) {
           if (
             !node.nodeValue.trim() ||
-            node.parentElement?.closest("script,style")
+            node.parentElement?.closest("script,style,[data-i18n-managed]")
           )
             continue;
           if (!i18nOriginalText.has(node))
@@ -336,6 +380,7 @@
         currentLanguage = language === "en" ? "en" : "pt";
         localStorage.setItem("ev-charge-language", currentLanguage);
         applyTranslations();
+        window.AndroidChargeVoy?.translate();
         // Do not recreate the map/card grid here: it keeps the language change instant on mobile.
         if (selectedStation) {
           const info = stationAvailability(
