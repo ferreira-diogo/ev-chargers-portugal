@@ -22,7 +22,7 @@ jobs:
           node-version: 24
       - name: Web and Android grouping regressions
         run: node --test ev-charge-portugal-github-ready/scripts/catalogue-locations.test.mjs ev-charge-portugal-github-ready/scripts/station-grouping.test.mjs
-      - name: Validate national source without database writes
+      - name: Validate published national catalogue without database writes
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |

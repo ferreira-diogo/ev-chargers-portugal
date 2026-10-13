@@ -1,0 +1,84 @@
+{
+  "validation_source": "provided-static-snapshot",
+  "publication_time": "2026-10-13T03:00:04.165Z",
+  "station_records": 8846,
+  "connectors": 19373,
+  "previous_locations": 7233,
+  "new_locations": 6782,
+  "grouped_locations": 1025,
+  "north": {
+    "id": "nap-ACC-VRL-00061",
+    "name": "Vila Real Norte",
+    "address": "A4, 5000-751 Lamares, Portugal",
+    "city": "Vila Real",
+    "latitude": 41.324436,
+    "longitude": -7.640977,
+    "operator": "ACCIONA RECARGA PORTUGAL,UNIPESSOAL LDA",
+    "group_key": "nap-mobie|nap-operator-acciona-recarga-portugal-unipessoal-lda|a4, 5000-751 lamares, portugal|vila real|41.32444|-7.64098",
+    "connectors": [
+      {
+        "id": "nap-ACC-VRL-00061-29",
+        "type": "CCS",
+        "power_kw": 150,
+        "quantity": 1
+      },
+      {
+        "id": "nap-ACC-VRL-00061-30",
+        "type": "CCS",
+        "power_kw": 150,
+        "quantity": 1
+      }
+    ]
+  },
+  "north_members": [
+    {
+      "id": "nap-ACC-VRL-00061",
+      "name": "Vila Real 1",
+      "address": "A4, 5000-751 Lamares, Portugal",
+      "city": "Vila Real",
+      "latitude": 41.324436,
+      "longitude": -7.640977,
+      "operator": "ACCIONA RECARGA PORTUGAL,UNIPESSOAL LDA",
+      "group_key": "nap-mobie|nap-operator-acciona-recarga-portugal-unipessoal-lda|a4, 5000-751 lamares, portugal|vila real|41.32444|-7.64098",
+      "connectors": [
+        {
+          "id": "nap-ACC-VRL-00061-29",
+          "type": "CCS",
+          "power_kw": 150,
+          "quantity": 1
+        },
+        {
+          "id": "nap-ACC-VRL-00061-30",
+          "type": "CCS",
+          "power_kw": 150,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "nap-ACC-VRL-00062",
+      "name": "Vila Real Norte 2",
+      "address": "A4, 5000-751 Lamares, Portugal",
+      "city": "Vila Real",
+      "latitude": 41.324417,
+      "longitude": -7.640926,
+      "operator": "ACCIONA RECARGA PORTUGAL,UNIPESSOAL LDA",
+      "group_key": "nap-mobie|nap-operator-acciona-recarga-portugal-unipessoal-lda|a4, 5000-751 lamares, portugal|vila real|41.32442|-7.64093",
+      "connectors": [
+        {
+          "id": "nap-ACC-VRL-00062-21",
+          "type": "CCS",
+          "power_kw": 200,
+          "quantity": 1
+        },
+        {
+          "id": "nap-ACC-VRL-00062-22",
+          "type": "CCS",
+          "power_kw": 200,
+          "quantity": 1
+        }
+      ]
+    }
+  ],
+  "all_records_and_connectors_preserved": true
+}
