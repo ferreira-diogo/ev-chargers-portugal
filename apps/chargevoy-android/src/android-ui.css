@@ -40,3 +40,8 @@ body.mobile-landscape #filter-menu.side.mobile-open{bottom:var(--android-nav-hei
 .android-filters summary span{float:none;display:block;margin-top:6px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
 .quick-filters-heading{flex-wrap:wrap;gap:8px}
 #reset-all-filters{min-height:44px;border:1px solid #29485d;border-radius:8px;padding:8px 12px;background:#16354c;color:#e3eef3;cursor:pointer}
+
+.android-scenario button{min-width:0;overflow-wrap:anywhere}
+.android-actions,.android-station-actions{flex-wrap:wrap}
+.android-actions button,.android-station-actions button{min-width:0;overflow-wrap:anywhere}
+.android-actions [data-android-favorite],.android-station-actions [data-android-favorite]{flex-basis:100%}

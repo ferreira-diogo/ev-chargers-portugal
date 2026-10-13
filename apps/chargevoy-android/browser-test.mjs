@@ -46,14 +46,14 @@ console.log('Android UI: mobile/tablet, route pin isolation, Google-only favouri
 const savedOptions=await page.evaluate(()=>JSON.parse(localStorage.getItem('chargevoy-android-options')));assert.equal(savedOptions.power,'50-150');assert.equal(savedOptions.operator,'Powerdot');assert(savedOptions.connectors.includes('CCS'));assert(!savedOptions.statuses.includes('unknown'));
 await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#operator-filter').value==='Powerdot');assert.equal(await page.evaluate(()=>selectedPower),'50-150');await page.waitForFunction(id=>currentVehicle?.id===id,savedVehicleId);assert.equal(await page.evaluate(()=>localStorage.getItem('ev-charge-vehicle')),savedVehicleId);assert(await page.locator('.connector-filter[value="CCS"]').isChecked());assert(!(await page.locator('.status-filter[value="unknown"]').isChecked()));assert.equal(errors.length,0,errors.join('\n'));console.log('Saved vehicle and filters restored after reload; map and filter GPS icons validated.');
 await page.waitForFunction(()=>document.querySelector('#android-filter-summary').textContent.includes('Powerdot'));
-await page.locator('.android-filters summary').click();await page.locator('#reset-all-filters').click();
+if(!(await page.locator('.android-filters').evaluate(e=>e.open)))await page.locator('.android-filters summary').click();await page.locator('#reset-all-filters').click();
 assert.equal(await page.locator('#operator-filter').inputValue(),'all');assert(await page.locator('.status-filter[value="unknown"]').isChecked());
 assert.equal(await page.evaluate(()=>localStorage.getItem('chargevoy-android-options')),null);
 await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.AndroidChargeVoy);
 assert.equal(await page.locator('#operator-filter').inputValue(),'all');assert.equal(await page.evaluate(()=>selectedPower),'all');
 for(const width of [320,390,780,800,1024,1366]) {
  await page.setViewportSize({width,height:900});await page.evaluate(()=>closeFilterMenu());
- assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No horizontal overflow at '+width);
+ const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1&&!e.closest('.leaflet-pane')}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,right:e.getBoundingClientRect().right})));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No horizontal overflow at '+width+': '+JSON.stringify(overflow));
 }
 await page.setViewportSize({width:390,height:844});await page.locator('#android-filter-summary').evaluate(e=>{e.style.fontSize='24px';e.textContent='Powerdot · Disponível · Pesquisa personalizada em Portugal';});
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'200% summary wraps');
