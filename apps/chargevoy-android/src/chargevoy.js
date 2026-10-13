@@ -2089,20 +2089,32 @@
         })().finally(() => { publicAvailabilityRequest = null; });
         return publicAvailabilityRequest;
       }
+      let structuralCatalogue = null;
       async function loadFallbackStations(locationPromise) {
         // The static national catalogue is the primary source. It does not
         // consume D1 rows or Worker requests when served as a matched asset.
         try {
           const response = await fetchWithTimeout("./assets/stations-snapshot.json", { cache: "no-cache" }, 30000);
           if (!response.ok) throw new Error(`NAP snapshot HTTP ${response.status}`);
-          const payload = await response.json();
-          if (!Array.isArray(payload.stations) || payload.stations.length < 8000 ||
-              !Array.isArray(payload.connectors) || payload.connectors.length < 15000)
-            throw new Error("NAP snapshot incompleto");
+          let payload = await response.json();
+          const stored = await window.ChargeVoyCatalogue.read();
+          if (window.ChargeVoyCatalogue.validate(stored) &&
+              (!window.ChargeVoyCatalogue.validate(payload) || Date.parse(stored.publication_time) > Date.parse(payload.publication_time))) payload = stored;
+          if (!window.ChargeVoyCatalogue.validate(payload)) throw new Error("NAP snapshot incompleto");
+          structuralCatalogue = payload;
+          void window.ChargeVoyCatalogue.write(payload);
           restoreConnectorRows(payload.connectors);
           try { applyPublicAvailability(JSON.parse(localStorage.getItem(PUBLIC_AVAILABILITY_CACHE_KEY) || "null")); } catch {}
           return payload.stations;
-        } catch (error) { console.warn("Catálogo estático indisponível", error); }
+        } catch (error) {
+          console.warn("Catálogo estático indisponível", error);
+          const stored = await window.ChargeVoyCatalogue.read();
+          if (window.ChargeVoyCatalogue.validate(stored)) {
+            structuralCatalogue = stored;
+            restoreConnectorRows(stored.connectors);
+            return stored.stations;
+          }
+        }
         // Both APIs use the same national seed so background pages have stable offsets.
         const params = new URLSearchParams({ limit: "300" });
         for (const endpoint of [...new Set([D1_FALLBACK_URL, D1_API_WORKER_URL])]) {
@@ -2370,6 +2382,28 @@
             });
           renderStations(false);
           void refreshPublicAvailability();
+          void window.ChargeVoyCatalogue.refresh(structuralCatalogue, payload => {
+            structuralCatalogue = payload;
+            ++nationalLoadGeneration;
+            allStations = payload.stations;
+            restoreConnectorRows(payload.connectors);
+            reliabilityMap = new Map();
+            operatorMap = new Map(allStations.map(station => [station.operator_id, station.operator_name || "Operador não indicado"]));
+            hydrateStationOperators(allStations);
+            nationalNextOffset = allStations.length;
+            nationalLoadState = "ready";
+            cacheStationRows(allStations, payload.connectors);
+            const select = document.getElementById("operator-filter");
+            const selected = select.value;
+            const names = new Set([...select.options].map(option => option.value));
+            for (const name of [...new Set(allStations.map(station => station.operator_name).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt"))) {
+              if (names.has(name)) continue;
+              const option = document.createElement("option"); option.value = option.textContent = name; select.appendChild(option);
+            }
+            select.value = selected;
+            try { applyPublicAvailability(JSON.parse(localStorage.getItem(PUBLIC_AVAILABILITY_CACHE_KEY) || "null")); } catch {}
+            renderStations(false);
+          });
           if (stations.length === 300) void loadRemainingNationalStations(generation);
 
           const vehicles = await vehiclePromise;
@@ -2425,6 +2459,17 @@
         selectedPower = "all";
         document.querySelectorAll(".connector-filter").forEach((input) => { input.checked = false; });
         document.querySelectorAll(".status-filter").forEach((input) => { input.checked = true; });
+        renderStations(false);
+      }
+
+      function resetAllFilters() {
+        selectedPower = "all";
+        document.querySelectorAll(".connector-filter").forEach(input => { input.checked = false; });
+        document.querySelectorAll(".status-filter").forEach(input => { input.checked = true; });
+        document.getElementById("operator-filter").value = "all";
+        document.getElementById("global-search").value = "";
+        document.getElementById("sort-filter").selectedIndex = 0;
+        window.dispatchEvent(new Event("chargevoy-filters-reset"));
         renderStations(false);
       }
 
@@ -3519,6 +3564,7 @@
         input.addEventListener("change", () => updateQuickFilter(input)),
       );
       document.getElementById("clear-quick-filters").addEventListener("click", clearQuickFilters);
+      document.getElementById("reset-all-filters").addEventListener("click", resetAllFilters);
       syncQuickFilters();
       document
         .getElementById("apply-filters")

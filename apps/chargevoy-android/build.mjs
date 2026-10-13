@@ -12,7 +12,7 @@ for(const photo of photos.filter(photo=>photo.android_segmented)) {
 }
 await cp(resolve(web,'icon.svg'),resolve(dist,'icon.svg'));
 await cp(resolve(app,'src/index.html'),resolve(dist,'index.html'));
-for(const name of ['chargevoy.js','android-ui.js','android-ui.css','recommendations.js','route-corridor.js','account.js','search-suggestions.js','android-config.js'])await cp(resolve(app,'src',name),resolve(dist,'assets',name));
+for(const name of ['chargevoy.js','android-ui.js','android-ui.css','recommendations.js','route-corridor.js','account.js','search-suggestions.js','android-config.js','catalogue-refresh.js'])await cp(resolve(app,'src',name),resolve(dist,'assets',name));
 if(process.env.ANDROID_INCLUDE_CATALOGUE === '1') {
   let failure;
   for(let attempt=1;attempt<=3;attempt++) {
@@ -28,5 +28,5 @@ if(process.env.ANDROID_INCLUDE_CATALOGUE === '1') {
   }
   if(failure)throw failure;
 }
-await writeFile(resolve(dist,'android-build.json'),JSON.stringify({interface:'android-only',version:'1.1.4',built_at:new Date().toISOString()}));
+await writeFile(resolve(dist,'android-build.json'),JSON.stringify({interface:'android-only',version:'1.1.5',built_at:new Date().toISOString()}));
 console.log('Android-only bundle built in apps/chargevoy-android/dist; web bundle untouched.');
