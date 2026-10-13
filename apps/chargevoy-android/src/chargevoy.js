@@ -194,7 +194,6 @@
         "🚗 O meu veículo": "🚗 My vehicle",
         "Todas as marcas": "All makes",
         "A carregar veículos…": "Loading vehicles…",
-        "A obter dados da Supabase…": "Fetching data from Supabase…",
         "Onde quer carregar?": "Where do you want to charge?",
         Potência: "Power",
         Todos: "All",
