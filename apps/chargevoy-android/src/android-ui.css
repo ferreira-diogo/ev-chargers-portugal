@@ -50,3 +50,11 @@ body.mobile-landscape #filter-menu.side.mobile-open{bottom:var(--android-nav-hei
 .android-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
 .android-metrics>span{min-width:0;overflow-wrap:anywhere}
 .android-filters[open] .quick-filters{display:block!important}
+
+/* Multi-selection stays touch-friendly inside the existing drawer. */
+#operator-filter[hidden]{display:none!important}
+.android-operator-choices{max-height:240px;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--line,#dce5e0);border-radius:12px;padding:6px;margin-top:8px}
+.android-operator-choices .check{display:flex;align-items:center;gap:9px;min-height:44px;margin:0;padding:4px 6px;overflow-wrap:anywhere}
+.android-operator-choices input{width:20px;height:20px;flex-shrink:0;accent-color:#00a875}
+.android-filter-hint{font-size:12px;margin:6px 0;color:var(--muted,#567568)}
+#operator-search{width:100%;min-height:44px;box-sizing:border-box}

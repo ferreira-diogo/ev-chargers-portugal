@@ -17,12 +17,12 @@ test('economic search includes a cheaper ninth candidate, bounds count/radius an
 });
 test('reset all clears operator/text/power/status/connector filters while retaining location and vehicle',()=>{
  const connectors=[{checked:true}],statuses=[{checked:false},{checked:false},{checked:true}],nodes=new Map([['operator-filter',{value:'Powerdot'}],['global-search',{value:'Lisboa'}],['sort-filter',{selectedIndex:2}]]);let renders=0,events=0;
- const c=vm.createContext({selectedPower:'250+',searchPosition:{lat:39},currentVehicle:{id:'car'},document:{querySelectorAll:s=>s==='.connector-filter'?connectors:statuses,getElementById:id=>nodes.get(id)},window:{dispatchEvent:e=>{assert.equal(e.type,'chargevoy-filters-reset');events++;}},Event,renderStations:()=>renders++});
+ const c=vm.createContext({selectedPower:'250+',searchPosition:{lat:39},currentVehicle:{id:'car'},document:{querySelectorAll:s=>s==='.connector-filter'?connectors:statuses,getElementById:id=>nodes.get(id)},window:{dispatchEvent:e=>{assert.equal(e.type,'chargevoy-filters-reset');events++;}},Event,renderOperatorChoices(){},renderStations:()=>renders++});
  vm.runInContext(extract(app,'resetAllFilters','      function matchesPower'),c);c.resetAllFilters();
  assert.equal(c.selectedPower,'all');assert.equal(nodes.get('operator-filter').value,'all');assert.equal(nodes.get('global-search').value,'');assert(statuses.every(s=>s.checked));assert(connectors.every(s=>!s.checked));assert.equal(c.currentVehicle.id,'car');assert.equal(c.searchPosition.lat,39);assert.equal(renders,1);assert.equal(events,1);
 });
 test('filter summary exposes operator and availability restrictions',()=>{
  const nodes=new Map(['android-filter-summary','android-vehicle-label','android-soc-label','operator-filter','global-search'].map(id=>[id,{value:''}]));nodes.get('operator-filter').value='Powerdot';
- const c=vm.createContext({$:id=>nodes.get(id),selectedPower:'all',selectedValues:s=>s==='.status-filter'?['available']:[],document:{querySelectorAll:()=>[1,2,3]},currentVehicle:{make:'Tesla',model:'Model 3'},scenario:{start:32,target:80},syncVehicleThumbnail(){},t:x=>x});
+ const c=vm.createContext({$:id=>nodes.get(id),selectedPower:'all',selectedValues:s=>s==='.status-filter'?['available']:[],document:{querySelectorAll:()=>[1,2,3]},currentVehicle:{make:'Tesla',model:'Model 3'},scenario:{start:32,target:80},syncVehicleThumbnail(){},selectedOperatorValues:()=>[nodes.get('operator-filter').value],t:x=>x});
  vm.runInContext(extract(ui,'summary','function compatibleConnectors'),c);c.summary();assert.match(nodes.get('android-filter-summary').textContent,/Powerdot.*Disponível/);
 });

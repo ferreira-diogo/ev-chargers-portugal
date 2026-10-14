@@ -51,8 +51,8 @@ assert((await page.locator('#modal-body').textContent()).includes('chargevoy@cha
 assert(!(await page.locator('#modal-body').textContent()).includes('evchargeportugal@gmail.com'));
 await page.locator('#modal-close').click();assert.equal(errors.length,0,errors.join('\n'));
 console.log('Route clear, pending-route cancellation, vehicle save, compact GPS and contact validated.');
-console.log('Android UI: mobile/tablet, route pin isolation, Google-only favourites, GPS replacement and suggestions passed.');console.log('Tariff request counters:',await page.evaluate(()=>window.AndroidChargeVoy.metrics()));await page.route('**/api/catalog**',async route=>{const url=new URL(route.request().url());const table=url.searchParams.get('table');const rows=table==='vehicle_models'?[vehicle]:table==='operators'?stations.map(s=>({id:s.operator_id,name:s.operator_name})):[];await route.fulfill({json:{rows}})});await page.setViewportSize({width:390,height:844});await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('[data-choice="cheap"]')&&!document.querySelector('[data-choice="cheap"]').disabled);await page.locator('[data-choice="cheap"]').click();assert((await page.locator('#android-hero').textContent()).includes('myAtlante'));await page.screenshot({path:resolve(out,'android-no-opc.png'),fullPage:true});assert.equal(errors.length,0,errors.join('\n'));console.log('No OPC rows: eligible fixed offer remains selectable.');await page.locator('#nav-vehicle').click();await page.locator('#power-filter [data-power="50-150"]').click();await page.locator('.connector-filter[value="CCS"]').check();await page.locator('.status-filter[value="unknown"]').uncheck();await page.locator('#operator-filter').selectOption('Powerdot');await page.locator('#location-search').fill('Porto');await page.locator('#android-save-options').click();await page.waitForFunction(()=>searchPosition?.lat===41.15);
-const savedOptions=await page.evaluate(()=>JSON.parse(localStorage.getItem('chargevoy-android-options')));assert.equal(savedOptions.power,'50-150');assert.equal(savedOptions.operator,'Powerdot');assert(savedOptions.connectors.includes('CCS'));assert(!savedOptions.statuses.includes('unknown'));
+console.log('Android UI: mobile/tablet, route pin isolation, Google-only favourites, GPS replacement and suggestions passed.');console.log('Tariff request counters:',await page.evaluate(()=>window.AndroidChargeVoy.metrics()));await page.route('**/api/catalog**',async route=>{const url=new URL(route.request().url());const table=url.searchParams.get('table');const rows=table==='vehicle_models'?[vehicle]:table==='operators'?stations.map(s=>({id:s.operator_id,name:s.operator_name})):[];await route.fulfill({json:{rows}})});await page.setViewportSize({width:390,height:844});await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('[data-choice="cheap"]')&&!document.querySelector('[data-choice="cheap"]').disabled);await page.locator('[data-choice="cheap"]').click();assert((await page.locator('#android-hero').textContent()).includes('myAtlante'));await page.screenshot({path:resolve(out,'android-no-opc.png'),fullPage:true});assert.equal(errors.length,0,errors.join('\n'));console.log('No OPC rows: eligible fixed offer remains selectable.');await page.locator('#nav-vehicle').click();await page.locator('#power-filter [data-power="50-150"]').click();await page.locator('.connector-filter[value="CCS"]').check();await page.locator('.status-filter[value="unknown"]').uncheck();await page.locator('#operator-choices input[value="Powerdot"]').check();await page.locator('#location-search').fill('Porto');await page.locator('#android-save-options').click();await page.waitForFunction(()=>searchPosition?.lat===41.15);
+const savedOptions=await page.evaluate(()=>JSON.parse(localStorage.getItem('chargevoy-android-options')));assert.deepEqual(savedOptions.powers,['50-150']);assert.deepEqual(savedOptions.operators,['Powerdot']);assert(savedOptions.connectors.includes('CCS'));assert(!savedOptions.statuses.includes('unknown'));
 await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#operator-filter').value==='Powerdot');assert.equal(await page.evaluate(()=>selectedPower),'50-150');await page.waitForFunction(id=>currentVehicle?.id===id,savedVehicleId);assert.equal(await page.evaluate(()=>localStorage.getItem('ev-charge-vehicle')),savedVehicleId);assert(await page.locator('.connector-filter[value="CCS"]').isChecked());assert(!(await page.locator('.status-filter[value="unknown"]').isChecked()));assert.equal(errors.length,0,errors.join('\n'));console.log('Saved vehicle and filters restored after reload; map and filter GPS icons validated.');
 await page.waitForFunction(()=>document.querySelector('#android-filter-summary').textContent.includes('Powerdot'));
 if(!(await page.locator('.android-filters').evaluate(e=>e.open)))await page.locator('.android-filters summary').click();await page.locator('#reset-all-filters').click();
@@ -74,4 +74,49 @@ const storedCatalogue=await page.evaluate(async()=>{
  return {bytes,persisted:!!saved,valid:ChargeVoyCatalogue.validate(read),sites:read?.stations.length,connectors:read?.connectors.length};
 });
 assert(storedCatalogue.bytes>5*1024*1024,'Exercise a catalogue larger than typical localStorage quota');assert(storedCatalogue.persisted&&storedCatalogue.valid);assert.equal(storedCatalogue.sites,8000);assert.equal(storedCatalogue.connectors,17000);console.log('P1 IndexedDB: complete catalogue persists above 5 MiB.',storedCatalogue);
+// Phase 1: exercise touch controls, dynamic aliases and migration on real rendered screens.
+await page.setViewportSize({width:390,height:844});
+const extraStations=[
+ {id:'continente-ac',name:'Continente Normal',operator_id:'mch',operator_name:'Modelo Continente Hipermercados, S.A.',source:'nap-mobie',latitude:39.749,longitude:-8.809,max_power_kw:22,status:'available'},
+ {id:'continente-fast',name:'Continente Rápido',operator_id:'mch',operator_name:'Modelo Continente Hipermercados, S.A.',source:'nap-mobie',latitude:39.760,longitude:-8.820,max_power_kw:120,status:'available'},
+ {id:'continente-ultra',name:'Continente Ultrarrápido',operator_id:'mch',operator_name:'Modelo Continente Hipermercados, S.A.',source:'nap-mobie',latitude:39.770,longitude:-8.830,max_power_kw:240,status:'available'}
+];
+const phaseStations=[...stations,...extraStations];const phaseConnectors=[...connectors,...extraStations.map((s,i)=>({id:s.id+'-c',station_id:s.id,type:i?'CCS':'Type 2',power_kw:s.max_power_kw,quantity:1,available_count:1,status:'available',availability_source:'mobie_nap',availability_updated_at:now}))];
+await page.route('**/api/stations**',route=>route.fulfill({json:{stations:phaseStations,connectors:phaseConnectors,source:'cloudflare-d1+kv'}}));
+await page.evaluate(()=>{localStorage.removeItem('chargevoy-nearby-stations-v1');localStorage.removeItem('chargevoy-android-scenario');localStorage.setItem('chargevoy-android-options',JSON.stringify({version:1,power:'0-50',operator:'Modelo Continente Hipermercados, S.A.',connectors:[],statuses:['available','unavailable','unknown']}));return new Promise(resolve=>{const req=indexedDB.deleteDatabase('chargevoy-catalogue');req.onsuccess=req.onerror=req.onblocked=resolve;});});
+await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('#operator-filter option[value="Continente Plug&Charge"]'));
+await page.waitForFunction(()=>selectedOperatorValues().includes('Continente Plug&Charge'));
+assert.equal(await page.evaluate(()=>selectedPower),'0-50');
+await page.locator('#nav-vehicle').click();
+assert(await page.locator('#operator-choices input[value="Continente Plug&Charge"]').isChecked());
+assert.equal(await page.locator('#operator-filter option[value="Modelo Continente Hipermercados, S.A."]').count(),0);
+await page.locator('#operator-choices input[value="Powerdot"]').check();
+await page.locator('#power-filter [data-power="50-150"]').click();
+assert.deepEqual(await page.evaluate(()=>selectedOperatorValues().sort()),['Continente Plug&Charge','Powerdot']);
+assert.equal(await page.locator('#power-filter .chip.on').count(),2);
+assert.equal(await page.locator('#quick-power-filter .chip.on').count(),2);
+await page.locator('#operator-search').fill('continente');assert.equal(await page.locator('#operator-choices input').count(),2);
+await page.locator('#operator-search').fill('xyz-no-match');assert((await page.locator('#operator-choices').textContent()).includes('Nenhum operador encontrado'));
+await page.locator('#operator-search').fill('');assert(await page.locator('#operator-choices input[value="Powerdot"]').isChecked());
+await page.locator('#location-search').fill('');await page.locator('#android-save-options').click();
+const phaseSaved=await page.evaluate(()=>JSON.parse(localStorage.getItem('chargevoy-android-options')));assert.equal(phaseSaved.version,2);assert.deepEqual(phaseSaved.powers.sort(),['0-50','50-150']);assert.deepEqual(phaseSaved.operators.sort(),['Continente Plug&Charge','Powerdot']);
+await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>selectedOperatorValues().length===2);assert.equal(await page.evaluate(()=>selectedPower),'0-50|50-150');
+await page.waitForFunction(()=>allStations.some(s=>s.id==='continente-ac'));
+await page.evaluate(()=>{document.getElementById('operator-filter').value='Continente Plug&Charge';renderOperatorChoices();renderStations(false);});
+await page.waitForFunction(()=>document.querySelector('#android-hero').textContent.includes('Continente'));
+assert((await page.locator('#android-hero').textContent()).includes('não deduzido'));
+await page.evaluate(()=>{selectStation(allStations.find(s=>s.id==='continente-ac'),operatorMap.get('mch'));});
+await page.waitForFunction(()=>document.querySelector('#price-comparison').textContent.includes('Valor a pagar'));
+assert((await page.locator('#price-comparison').textContent()).includes('Benefício condicional'));
+assert(!(await page.locator('#price-comparison').textContent()).includes('myAtlante'));
+await page.evaluate(()=>{selectStation(allStations.find(s=>s.id==='continente-ultra'),operatorMap.get('mch'));});
+await page.waitForFunction(()=>document.querySelector('#price-comparison').textContent.includes('0,45 e 0,55'));
+assert.equal(await page.locator('#price').textContent(),'Preço por confirmar');
+await page.evaluate(()=>closeStationPanel());await page.locator('#nav-vehicle').click();
+await page.screenshot({path:resolve(out,'android-phase1-multifilters.png'),fullPage:true});
+await page.locator('#operator-choices input[value="all"]').check();await page.locator('#power-filter [data-power="all"]').click();
+assert.deepEqual(await page.evaluate(()=>selectedOperatorValues()),[]);assert.equal(await page.evaluate(()=>selectedPower),'all');
+await page.locator('#operator-choices input[value="Powerdot"]').check();await page.locator('#operator-choices input[value="Powerdot"]').uncheck();assert(await page.locator('#operator-choices input[value="all"]').isChecked());
+await page.locator('#android-save-options').scrollIntoViewIfNeeded();const phaseSave=await page.locator('#android-save-options').boundingBox(),phaseNav=await page.locator('.android-bottom-nav').boundingBox();assert(phaseSave.y+phaseSave.height<=phaseNav.y);
+assert.equal(errors.length,0,errors.join('\n'));console.log('Phase 1: v1 alias migration, multiple operators/powers, search, save/reload, All/deselect and Continente AC/ultrafast/payment/cashback UI passed.');
 await context.close();const art=await browser.newPage();for(const [name,w,h] of [['icon',512,512],['feature-graphic',1024,500]]){await art.setViewportSize({width:w,height:h});await art.setContent('<style>body{margin:0}</style>'+await readFile(resolve(import.meta.dirname,'play-store/artwork',name+'.svg'),'utf8'));await art.screenshot({path:resolve(out,name+'.png')});}await art.close();}finally{await browser.close();server.close();}

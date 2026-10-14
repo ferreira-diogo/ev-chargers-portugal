@@ -128,7 +128,7 @@
         </div>
         <div class="fg">
           <div class="label">Potência</div>
-          <div class="chips" id="power-filter">
+          <p class="android-filter-hint">Podes selecionar várias faixas.</p><div class="chips" id="power-filter">
             <button class="chip on" data-power="all">Todos</button
             ><button class="chip" data-power="0-50">Até 50</button
             ><button class="chip" data-power="50-150">50–150</button
@@ -182,9 +182,12 @@
         </div>
         <div class="fg">
           <div class="label">Operador</div>
-          <select id="operator-filter" aria-label="Filtrar por operador">
-            <option value="all">Todos os operadores</option>
+          <select id="operator-filter" multiple hidden aria-label="Filtrar por operador">
+            <option value="all" selected>Todos os operadores</option>
           </select>
+          <p class="android-filter-hint">Podes selecionar vários operadores.</p>
+          <input id="operator-search" type="search" placeholder="Pesquisar operadores" aria-label="Pesquisar operadores" autocomplete="off" />
+          <div id="operator-choices" class="android-operator-choices" role="group" aria-label="Operador"></div>
         </div>
         <button id="android-save-options" type="button">Guardar as minhas opções</button>
         <button class="go" id="apply-filters">⌕ Procurar</button>
