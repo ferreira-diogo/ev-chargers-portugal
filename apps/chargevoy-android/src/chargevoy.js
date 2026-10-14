@@ -1783,8 +1783,12 @@
         return compatible;
       }
 
+      function operatorIdentityKey(name) {
+        return String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      }
       function operatorDisplayName(name) {
         const normalized = String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        if (/^atlante(?: infra portugal)?(?: s a)?$/.test(normalized)) return "Atlante";
         return /^(?:modelo )?continente hipermercados(?: s a)?$/.test(normalized) || /^continente plug (?:and )?charge$/.test(normalized) || normalized === "continente"
           ? "Continente Plug&Charge" : String(name || "");
       }
@@ -2289,7 +2293,16 @@
 
       function hydrateStationOperators(stations) {
         const selector = document.getElementById("operator-filter");
-        const existing = new Set([...selector.options].map((option) => option.value));
+        const selectedKeys = new Set(selectedOperatorValues().map(value=>operatorIdentityKey(operatorDisplayName(value))));
+        const existing = new Map();
+        for (const option of [...selector.options]) {
+          if (option.value === "all") continue;
+          const name = operatorDisplayName(option.value), key = operatorIdentityKey(name);
+          if (existing.has(key)) { option.remove(); continue; }
+          option.value = option.textContent = name;
+          option.selected = selectedKeys.has(key);
+          existing.set(key, option);
+        }
         for (const station of stations) {
           let amenities = station.amenities || {};
           if (typeof amenities === "string") {
@@ -2300,8 +2313,10 @@
           if (!name) continue;
           station.operator_name = name;
           if (station.operator_id) operatorMap.set(station.operator_id, name);
-          if (!existing.has(name)) {
-            selector.add(new Option(name, name)); existing.add(name);
+          const key = operatorIdentityKey(name);
+          if (!existing.has(key)) {
+            const option = new Option(name, name); option.selected = selectedKeys.has(key);
+            selector.add(option); existing.set(key, option);
           }
         }
         const sorted = [...selector.options].filter(option=>option.value!=="all").sort((a,b)=>a.text.localeCompare(b.text,"pt"));
@@ -2503,19 +2518,6 @@
           nationalNextOffset = stations.length;
           nationalLoadState = stations.length === 300 ? "loading" : "ready";
           cacheStationRows(stations, [...connectorMap.values()].flat());
-          const operatorSelect = document.getElementById("operator-filter");
-          const seenOperators = new Set(
-            [...operatorSelect.options].map((option) => option.value),
-          );
-          [...new Set(stations.map((station) => station.operator_name).filter(Boolean))]
-            .sort((a, b) => a.localeCompare(b, "pt"))
-            .forEach((name) => {
-              if (seenOperators.has(name)) return;
-              const option = document.createElement("option");
-              option.value = name;
-              option.textContent = name;
-              operatorSelect.appendChild(option);
-            });
           renderStations(false);
           void refreshPublicAvailability();
           void window.ChargeVoyCatalogue.refresh(structuralCatalogue, payload => {
@@ -2529,15 +2531,6 @@
             nationalNextOffset = allStations.length;
             nationalLoadState = "ready";
             cacheStationRows(allStations, payload.connectors);
-            const select = document.getElementById("operator-filter");
-            const selected = new Set([...select.selectedOptions].map(option=>option.value));
-            const names = new Set([...select.options].map(option => option.value));
-            for (const name of [...new Set(allStations.map(station => station.operator_name).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt"))) {
-              if (names.has(name)) continue;
-              const option = document.createElement("option"); option.value = option.textContent = name; select.appendChild(option);
-            }
-            for (const option of select.options) option.selected = selected.has(option.value);
-            renderOperatorChoices();
             try { applyPublicAvailability(JSON.parse(localStorage.getItem(PUBLIC_AVAILABILITY_CACHE_KEY) || "null")); } catch {}
             renderStations(false);
           });
@@ -2670,11 +2663,11 @@
           .toLocaleLowerCase("pt");
         const connectors = selectedValues(".connector-filter");
         const statuses = selectedValues(".status-filter");
-        const selectedOperators = selectedOperatorValues();
+        const selectedOperators = new Set(selectedOperatorValues().map(value=>operatorIdentityKey(operatorDisplayName(value))));
         const sort = document.getElementById("sort-filter").value;
         let filtered = groupStationLocations(allStations).filter((s) => {
           const stationConnectors = stationConnectorRows(s);
-          const operatorName = operatorMap.get(s.operator_id) || "";
+          const operatorName = operatorDisplayName(s.operator_name || s.amenities?.operator_name || operatorMap.get(s.operator_id) || "");
           const haystack = [s.name, s.address, s.city, operatorName]
             .filter(Boolean)
             .join(" ")
@@ -2687,7 +2680,7 @@
             (stationConnectors.length ? stationConnectors.some(c=>matchesPower(c.power_kw) && (!connectors.filter(type=>type!=="Tesla").length || connectors.includes(connectorCategory(c.type)))) : matchesPower(stationMaxPowerKw(s))) &&
             connectorMatch &&
             statusMatch &&
-            (!selectedOperators.length || selectedOperators.includes(operatorDisplayName(operatorName)))
+            (!selectedOperators.size || selectedOperators.has(operatorIdentityKey(operatorDisplayName(operatorName))))
           );
         });
         // Keep map markers separate from the nearby sidebar shortlist.

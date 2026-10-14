@@ -31,5 +31,5 @@ if(process.env.ANDROID_INCLUDE_CATALOGUE === '1') {
   }
   if(failure)throw failure;
 }
-await writeFile(resolve(dist,'android-build.json'),JSON.stringify({interface:'android-only',version:'1.1.7',built_at:new Date().toISOString()}));
+await writeFile(resolve(dist,'android-build.json'),JSON.stringify({interface:'android-only',version:'1.1.8',built_at:new Date().toISOString()}));
 console.log('Android-only bundle built in apps/chargevoy-android/dist; web bundle untouched.');

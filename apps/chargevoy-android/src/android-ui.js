@@ -16,10 +16,10 @@ function restoreOptions(){
   for(const [selector,key] of [['.connector-filter','connectors'],['.status-filter','statuses']]){
    if(Array.isArray(saved[key]))document.querySelectorAll(selector).forEach(input=>{input.checked=saved[key].includes(input.value);});
   }
-  const wanted=(saved.version===1?[saved.operator]:saved.operators||[]).filter(value=>typeof value==='string'&&value!=='all').map(operatorDisplayName);
+  const wanted=(saved.version===1?[saved.operator]:saved.operators||[]).filter(value=>typeof value==='string'&&value!=='all').map(value=>operatorIdentityKey(operatorDisplayName(value)));
   const select=$('operator-filter');
   const restoreOperator=()=>{
-   for(const option of select.options)option.selected=option.value==='all'?!wanted.length:wanted.includes(option.value);
+   for(const option of select.options)option.selected=option.value==='all'?!wanted.length:wanted.includes(operatorIdentityKey(operatorDisplayName(option.value)));
    // Keep observing: later catalogue pages may add saved operators.
    renderOperatorChoices();renderStations(false);
   };
