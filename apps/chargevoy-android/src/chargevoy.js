@@ -305,6 +305,7 @@
         "sem leitura atual": "without a current reading",
         ANTERIOR: "PREVIOUS",
       };
+      Object.assign(I18N_EN, {"Requer App Cartão Continente, adesão ao Cartão Continente, fatura eletrónica e Continente Pay. Benefício de 0,10 €/kWh em saldo com cupão após compras elegíveis superiores a 30 €; validade de 10 dias e um cupão por dia. Confirma as condições na app do fornecedor.":"Requires the Continente Card app, membership, electronic billing and Continente Pay. Conditional \u20ac0.10/kWh card balance with a coupon after qualifying purchases above \u20ac30; valid for 10 days, one coupon per day. Check conditions in the provider app.","Pesquisar operadores": "Search operators", "Nenhum operador encontrado.": "No operator found.", "Podes selecionar várias faixas.": "You can select multiple ranges.", "Podes selecionar vários operadores.": "You can select multiple operators.", "Valor a pagar": "Amount to pay", "IVA incluído": "VAT included", "Benefício condicional em Cartão Continente": "Conditional Continente Card benefit", "Não deduzido ao valor a pagar.": "Not deducted from the amount to pay.", "Sem preço validado para as tomadas compatíveis.": "No verified price for compatible connectors.", "Tarifário Continente a carregar.": "Loading Continente tariff.", "Ultrarrápido: fonte oficial apresenta 0,45 e 0,55 €/kWh. Confirma na App Cartão Continente; excluído da comparação automática.": "Ultrafast: official source lists both €0.45 and €0.55/kWh. Check the Continente Card app; excluded from automatic comparison.", "Inatividade: 0,20 €/min após 15 minutos de tolerância depois de terminar a carga. Não incluída na estimativa.": "Idle fee: €0.20/min after a 15-minute grace period following charge completion. Not included in the estimate."});
       Object.assign(I18N_EN, {"€ MAIS BARATO NESTA SELEÇÃO": "€ CHEAPEST IN THIS SELECTION", "Repor todos os filtros": "Reset all filters", "Guardar as minhas opções": "Save my preferences", "Guardar veículo": "Save vehicle", "Encontre. Compare. Siga viagem.": "Find. Compare. Keep travelling.", "Sem preço elegível": "No eligible price", "Potência por confirmar": "Power not verified", "★ Remover dos favoritos": "★ Remove from favourites", "A carregar": "Loading", "Origem": "Origin", "Destino": "Destination", "Indique a origem e o destino.": "Enter the origin and destination.", "A bateria inicial deve ser superior à reserva de chegada.": "The initial battery must be higher than the arrival reserve.", "Limpar rota": "Clear route", "✕ Limpar rota": "✕ Clear route", "↗ Partilhar rota": "↗ Share route", "↻ Atualizar rota": "↻ Refresh route", "🧭 Navegar até ao destino": "🧭 Navigate to destination", "Menor estimativa entre os candidatos com preço disponível. Confirma a elegibilidade e o preço no fornecedor antes de carregar.": "Lowest estimate among candidates with available pricing. Check eligibility and price with the provider before charging.", "As tuas opções foram guardadas.": "Your preferences have been saved.", "Seleciona um veículo.": "Select a vehicle.", "Não foi possível guardar as opções neste dispositivo. Tenta novamente.": "Could not save preferences on this device. Try again."});
       Object.assign(I18N_EN, {"de rota": "route", "a conduzir": "driving", "a carregar": "charging", "estimados": "estimated", "Destino:": "Destination:", "Plano B:": "Plan B:", "A calcular…": "Calculating…", "Não foi possível calcular a rota.": "Could not calculate the route.", "A procurar locais…": "Searching places…", "Sem sugestões. Pode escrever o local completo e pesquisar.": "No suggestions. Enter the full place name and search.", "Sugestões indisponíveis. Pode pesquisar pelo nome completo.": "Suggestions unavailable. Search by the full name.", "Não foi possível calcular uma rota rodoviária.": "Could not calculate a road route.", "Não foi possível calcular o percurso pelas paragens. Tente novamente.": "Could not calculate the route via charging stops. Try again.", "Percurso pelas paragens indisponível.": "Route via charging stops unavailable.", "✓ A rota é possível sem carregamento intermédio.": "✓ The route is possible without charging stops.", "⚠ Dados técnicos desta versão por confirmar.": "⚠ Technical specifications for this version are not verified.", "Plano B: não foi possível validar outro posto alcançável nesta zona.": "Plan B: could not verify another reachable station in this area."});
       let currentLanguage = "pt";
@@ -1782,6 +1783,14 @@
         return compatible;
       }
 
+      function operatorDisplayName(name) {
+        const normalized = String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        return /^(?:modelo )?continente hipermercados(?: s a)?$/.test(normalized) || /^continente plug (?:and )?charge$/.test(normalized) || normalized === "continente"
+          ? "Continente Plug&Charge" : String(name || "");
+      }
+      function isContinenteStation(station) {
+        return operatorDisplayName(station?.operator_name || station?.amenities?.operator_name || operatorMap.get(station?.operator_id)) === "Continente Plug&Charge";
+      }
       function cardEnergyRate(card, period) {
         return Number(period === "vazio" && card.energy_price_vazio_eur_kwh != null
           ? card.energy_price_vazio_eur_kwh : card.energy_price_eur_kwh);
@@ -1801,6 +1810,16 @@
       }
 
       function fixedCardRate(card, opc, stationContext = selectedStation) {
+        if (card.id === "continente-plug-charge") {
+          if (!cardIsActive(card) || !isContinenteStation(stationContext)) return null;
+          const power = Number(opc.power_kw);
+          const ac = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
+          if (!(power > 0)) return null;
+          if (ac && power <= 22) return Number(card.normal_eur_kwh);
+          if (["CCS", "CHAdeMO"].includes(opc.connector_type) && power <= 120) return Number(card.rapid_eur_kwh);
+          // Official simulator and FAQ conflict on ultrafast pricing. Do not rank an uncertain price.
+          return null;
+        }
         if (!cardIsActive(card) || card.fixed_fast_eur_kwh == null || !Number.isFinite(Number(card.fixed_fast_eur_kwh)) || !(Number(opc.power_kw) >= 50) || ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type)) return null;
         const operator = String(operatorMap.get(stationContext?.operator_id) || stationContext?.name || "").toLowerCase();
         if (card.fixed_fast_national_until && portugalPricingDate() > card.fixed_fast_national_until) return null;
@@ -1822,7 +1841,9 @@
 
       function calculateCardPrice(card, opc, scenario, period, stationContext = selectedStation) {
         if (!cardIsActive(card)) return null;
+        if (isContinenteStation(stationContext) && card.id !== "continente-plug-charge") return null;
         const energy = Number(scenario.energyKwh);
+        if (!Number.isFinite(energy) || energy <= 0) return null;
         const isAc = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
         const vehiclePower =
           Number(isAc ? currentVehicle?.max_ac_power_kw : currentVehicle?.max_dc_power_kw) || Number(opc.power_kw) || 22;
@@ -1860,7 +1881,8 @@
             minutes,
             effectiveKwh: rate,
             finalFixed: true,
-            fixedCondition: card.network_scope === "national_fast" ? `Rápidos elegíveis · até ${card.valid_to.split("-").reverse().join("/")}` : card.fixed_fast_national_until && !ownNetwork ? `Campanha até ${card.fixed_fast_national_until.split("-").reverse().join("/")}` : "Rede Atlante",
+            conditionalBenefit: card.id === "continente-plug-charge" ? energy * Number(card.benefit_eur_kwh || 0) : null,
+            fixedCondition: card.id === "continente-plug-charge" ? "Rede Continente Plug&Charge" : card.network_scope === "national_fast" ? `Rápidos elegíveis · até ${card.valid_to.split("-").reverse().join("/")}` : card.fixed_fast_national_until && !ownNetwork ? `Campanha até ${card.fixed_fast_national_until.split("-").reverse().join("/")}` : "Rede Atlante",
             cashback: total * cashbackRate,
             cashbackRate,
           };
@@ -1948,6 +1970,22 @@
         return `<div class="price-empty"><span class="official-price">${currentLanguage === "en" ? "OFFICIAL AD HOC PRICE" : "PREÇO AD HOC OFICIAL"}</span><br><b>${parts.join(" · ")}</b><br>${text}</div>`;
       }
 
+      function renderContinenteComparison(container, headline) {
+        const card = cemeCards.find(card => card.id === "continente-plug-charge");
+        if (!card) { headline.textContent = t("Preço por confirmar"); container.textContent = t("Tarifário Continente a carregar."); return; }
+        const vehicleTypes = currentVehicle?.connector_types || [];
+        const types = Array.isArray(vehicleTypes) ? vehicleTypes : JSON.parse(vehicleTypes || "[]");
+        const connectors = stationConnectorRows(selectedStation).filter(c => !types.length || types.map(connectorCategory).includes(connectorCategory(c.type)));
+        const scenario = pricingScenario();
+        const options = connectors.map(c => calculateCardPrice(card, {connector_type:connectorCategory(c.type),power_kw:c.power_kw}, scenario, "fora_vazio", selectedStation)).filter(Boolean).sort((a,b)=>a.total-b.total);
+        const best = options[0];
+        headline.textContent = best ? `≈ ${best.total.toFixed(2).replace(".", ",")} €` : t("Preço por confirmar");
+        container.innerHTML = (best ? `<div class="price-card"><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(t("Valor a pagar"))} · ${best.effectiveKwh.toFixed(2).replace(".", ",")} €/kWh · ${escapeHtml(best.opc.connector_type)} ${best.opc.power_kw} kW · ${escapeHtml(t("IVA incluído"))}</span></div><div class="price-total">≈ ${best.total.toFixed(2).replace(".", ",")} €</div></div><p>${escapeHtml(t("Benefício condicional em Cartão Continente"))}: ${best.conditionalBenefit.toFixed(2).replace(".", ",")} € · ${escapeHtml(t("Não deduzido ao valor a pagar."))}</p>` : `<p>${escapeHtml(t("Sem preço validado para as tomadas compatíveis."))}</p>`) +
+          (connectors.some(c=>Number(c.power_kw)>120) ? `<p>${escapeHtml(t("Ultrarrápido: fonte oficial apresenta 0,45 e 0,55 €/kWh. Confirma na App Cartão Continente; excluído da comparação automática."))}</p>` : "") +
+          `<p>${escapeHtml(t(card.conditions))}</p><p>${escapeHtml(t("Inatividade: 0,20 €/min após 15 minutos de tolerância depois de terminar a carga. Não incluída na estimativa."))}</p><p>${cardSourceLink(card)}</p>`;
+        applyTranslations(container);
+      }
+
       function renderPriceComparison() {
         const container = document.getElementById("price-comparison");
         const headline = document.getElementById("price");
@@ -1956,6 +1994,10 @@
           return;
         }
         const directPrice = adHocPriceMarkup();
+        if (isContinenteStation(selectedStation)) {
+          renderContinenteComparison(container, headline);
+          return;
+        }
         if (!["nap", "nap-mobie"].includes(selectedStation.source)) {
           headline.textContent = "Preço oficial indisponível";
           container.innerHTML =
@@ -2254,13 +2296,47 @@
             try { amenities = JSON.parse(amenities); } catch { amenities = {}; }
           }
           station.amenities = amenities;
-          const name = station.operator_name || amenities.operator_name;
+          const name = operatorDisplayName(station.operator_name || amenities.operator_name);
           if (!name) continue;
           station.operator_name = name;
           if (station.operator_id) operatorMap.set(station.operator_id, name);
           if (!existing.has(name)) {
             selector.add(new Option(name, name)); existing.add(name);
           }
+        }
+        const sorted = [...selector.options].filter(option=>option.value!=="all").sort((a,b)=>a.text.localeCompare(b.text,"pt"));
+        for (const option of sorted) selector.appendChild(option);
+        renderOperatorChoices();
+      }
+
+      function selectedOperatorValues() {
+        const select = document.getElementById("operator-filter");
+        return [...(select.selectedOptions || [])].map(o=>o.value).filter(v=>v!=="all");
+      }
+      function renderOperatorChoices() {
+        const select = document.getElementById("operator-filter"), list = document.getElementById("operator-choices");
+        if (!list) return;
+        const query = document.getElementById("operator-search").value.trim().toLocaleLowerCase("pt");
+        const selected = selectedOperatorValues();
+        list.replaceChildren();
+        for (const option of select.options) {
+          if (option.value !== "all" && !option.text.toLocaleLowerCase("pt").includes(query)) continue;
+          const label = document.createElement("label"); label.className = "check";
+          const input = document.createElement("input"); input.type = "checkbox"; input.value = option.value;
+          input.checked = option.value === "all" ? !selected.length : option.selected;
+          input.addEventListener("change", () => {
+            if (option.value === "all") for (const item of select.options) item.selected = item.value === "all";
+            else {
+              option.selected = input.checked;
+              select.options[0].selected = !selectedOperatorValues().length;
+            }
+            select.dispatchEvent(new Event("change", {bubbles:true}));
+          });
+          label.append(input, document.createTextNode(option.value==="all" ? t("Todos os operadores") : option.text));
+          list.appendChild(label);
+        }
+        if (list.children.length === 1 && query) {
+          const empty = document.createElement("p"); empty.textContent = t("Nenhum operador encontrado."); list.appendChild(empty);
         }
       }
 
@@ -2409,6 +2485,7 @@
             return response.json();
           }).then((rows) => {
             cemeCards = rows;
+            renderStations(false);
             if (selectedStation) renderPriceComparison();
           }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));
 
@@ -2453,13 +2530,14 @@
             nationalLoadState = "ready";
             cacheStationRows(allStations, payload.connectors);
             const select = document.getElementById("operator-filter");
-            const selected = select.value;
+            const selected = new Set([...select.selectedOptions].map(option=>option.value));
             const names = new Set([...select.options].map(option => option.value));
             for (const name of [...new Set(allStations.map(station => station.operator_name).filter(Boolean))].sort((a,b) => a.localeCompare(b,"pt"))) {
               if (names.has(name)) continue;
               const option = document.createElement("option"); option.value = option.textContent = name; select.appendChild(option);
             }
-            select.value = selected;
+            for (const option of select.options) option.selected = selected.has(option.value);
+            renderOperatorChoices();
             try { applyPublicAvailability(JSON.parse(localStorage.getItem(PUBLIC_AVAILABILITY_CACHE_KEY) || "null")); } catch {}
             renderStations(false);
           });
@@ -2496,7 +2574,7 @@
       // The menu controls remain the source of truth for both filter surfaces.
       function syncQuickFilters() {
         document.querySelectorAll("#power-filter .chip, #quick-power-filter .chip").forEach((button) => {
-          const selected = button.dataset.power === selectedPower;
+          const selected = selectedPower === "all" ? button.dataset.power === "all" : selectedPower.split("|").includes(button.dataset.power);
           button.classList.toggle("on", selected);
           button.setAttribute("aria-pressed", String(selected));
         });
@@ -2526,6 +2604,8 @@
         document.querySelectorAll(".connector-filter").forEach(input => { input.checked = false; });
         document.querySelectorAll(".status-filter").forEach(input => { input.checked = true; });
         document.getElementById("operator-filter").value = "all";
+        const operatorSearch = document.getElementById("operator-search"); if (operatorSearch) operatorSearch.value = "";
+        renderOperatorChoices();
         document.getElementById("global-search").value = "";
         document.getElementById("sort-filter").selectedIndex = 0;
         window.dispatchEvent(new Event("chargevoy-filters-reset"));
@@ -2534,11 +2614,13 @@
 
       function matchesPower(power) {
         const value = Number(power) || 0;
-         if (selectedPower === "0-50") return value > 0 && value <= 50;
-        if (selectedPower === "50-150") return value > 50 && value <= 150;
-        if (selectedPower === "150-250") return value > 150 && value <= 250;
-        if (selectedPower === "250+") return value > 250;
-        return true;
+        return selectedPower === "all" || selectedPower.split("|").some(range => {
+          if (range === "0-50") return value > 0 && value <= 50;
+          if (range === "50-150") return value > 50 && value <= 150;
+          if (range === "150-250") return value > 150 && value <= 250;
+          if (range === "250+") return value > 250;
+          return false;
+        });
       }
 
       function stationMaxPowerKw(station) {
@@ -2588,8 +2670,7 @@
           .toLocaleLowerCase("pt");
         const connectors = selectedValues(".connector-filter");
         const statuses = selectedValues(".status-filter");
-        const selectedOperator =
-          document.getElementById("operator-filter").value;
+        const selectedOperators = selectedOperatorValues();
         const sort = document.getElementById("sort-filter").value;
         let filtered = groupStationLocations(allStations).filter((s) => {
           const stationConnectors = stationConnectorRows(s);
@@ -2603,10 +2684,10 @@
             !statuses.length || statuses.includes(effectiveStationStatus(s));
           return (
             (!search || haystack.includes(search)) &&
-            matchesPower(stationMaxPowerKw(s)) &&
+            (stationConnectors.length ? stationConnectors.some(c=>matchesPower(c.power_kw) && (!connectors.filter(type=>type!=="Tesla").length || connectors.includes(connectorCategory(c.type)))) : matchesPower(stationMaxPowerKw(s))) &&
             connectorMatch &&
             statusMatch &&
-            (selectedOperator === "all" || operatorName === selectedOperator)
+            (!selectedOperators.length || selectedOperators.includes(operatorDisplayName(operatorName)))
           );
         });
         // Keep map markers separate from the nearby sidebar shortlist.
@@ -3615,7 +3696,10 @@
       // Simulator controls are initialized above with energy/time modes.
       document.querySelectorAll("#power-filter .chip, #quick-power-filter .chip").forEach((button) =>
         button.addEventListener("click", () => {
-          selectedPower = button.dataset.power;
+          const value = button.dataset.power;
+          const ranges = new Set(selectedPower === "all" ? [] : selectedPower.split("|"));
+          if (value === "all") ranges.clear(); else if (ranges.has(value)) ranges.delete(value); else ranges.add(value);
+          selectedPower = ranges.size ? [...ranges].join("|") : "all";
           renderStations(false);
         }),
       );
@@ -3662,7 +3746,8 @@
         );
       document
         .getElementById("operator-filter")
-        .addEventListener("change", () => renderStations());
+        .addEventListener("change", () => { renderOperatorChoices(); renderStations(false); });
+      document.getElementById("operator-search").addEventListener("input", renderOperatorChoices);
       document
         .getElementById("sort-filter")
         .addEventListener("change", () => renderStations(false));

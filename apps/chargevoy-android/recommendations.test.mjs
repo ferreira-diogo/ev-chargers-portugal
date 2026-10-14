@@ -11,7 +11,7 @@ test('Android price calculation uses each candidate network rather than the open
  class PricingDate extends Date{constructor(...args){super(...(args.length?args:['2026-10-03T12:00:00Z']))}}
  const ctx=vm.createContext({Date:PricingDate,currentVehicle:{max_dc_power_kw:100},operatorMap:new Map([['atlante','Atlante'],['other','Other']]),selectedStation:{operator_id:'atlante'}});
  const extract=(a,b)=>web.slice(web.indexOf(a),web.indexOf(b,web.indexOf(a)));
- vm.runInContext(extract('function cardEnergyRate(','function cardSourceLink('),ctx);vm.runInContext(extract('function calculateCardPrice(','function adHocPriceMarkup('),ctx);
+ vm.runInContext(extract('function operatorDisplayName(','function cardSourceLink('),ctx);vm.runInContext(extract('function calculateCardPrice(','function adHocPriceMarkup('),ctx);
  const card=cards.find(x=>x.id==='myatlante'),opc={connector_type:'CCS',power_kw:50};const other=ctx.calculateCardPrice(card,opc,{energyKwh:20},'fora_vazio',{operator_id:'other'}),own=ctx.calculateCardPrice(card,opc,{energyKwh:20},'fora_vazio',{operator_id:'atlante'});
  assert.equal(other.total,11);assert.equal(own.total,11);assert.equal(other.cashback,1.1);assert.equal(own.cashback,2.75);assert.equal(ctx.calculateCardPrice(card,{connector_type:'Type 2',power_kw:50},{energyKwh:20},'fora_vazio',{operator_id:'other'}),null);
 });
@@ -24,7 +24,7 @@ test('fixed final offer survives absent/stale OPC; eligibility and grouped conne
  class ClockDate extends Date{constructor(...args){super(...(args.length?args:[clock.now]))}static now(){return Date.parse(clock.now)}}
  const ctx=vm.createContext({Date:ClockDate,currentVehicle:{max_dc_power_kw:170,max_ac_power_kw:11},operatorMap:new Map(),selectedStation:null,cemeCards:cards,cache:new Map(),scenario:{period:'fora_vazio'},connectorCategory:x=>x,compatibleConnectors:s=>s.connectors||[]});
  const extract=(a,b)=>controller.slice(controller.indexOf(a),controller.indexOf(b,controller.indexOf(a)));
- vm.runInContext(extract('function cardEnergyRate(','function cardSourceLink('),ctx);vm.runInContext(extract('function calculateCardPrice(','function adHocPriceMarkup('),ctx);
+ vm.runInContext(extract('function operatorDisplayName(','function cardSourceLink('),ctx);vm.runInContext(extract('function calculateCardPrice(','function adHocPriceMarkup('),ctx);
  vm.runInContext(ui.slice(ui.indexOf('function priced('),ui.indexOf('function openStation(')),ctx);
  const station={id:'nap-test',source:'nap-mobie',connectors:[{type:'CCS',power_kw:150}]},r={energy:28.8,total:null,station};
  assert.equal(ctx.priced(r).total,15.840000000000002);
