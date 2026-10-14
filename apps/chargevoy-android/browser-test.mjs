@@ -119,4 +119,32 @@ assert.deepEqual(await page.evaluate(()=>selectedOperatorValues()),[]);assert.eq
 await page.locator('#operator-choices input[value="Powerdot"]').check();await page.locator('#operator-choices input[value="Powerdot"]').uncheck();assert(await page.locator('#operator-choices input[value="all"]').isChecked());
 await page.locator('#android-save-options').scrollIntoViewIfNeeded();const phaseSave=await page.locator('#android-save-options').boundingBox(),phaseNav=await page.locator('.android-bottom-nav').boundingBox();assert(phaseSave.y+phaseSave.height<=phaseNav.y);
 assert.equal(errors.length,0,errors.join('\n'));console.log('Phase 1: v1 alias migration, multiple operators/powers, search, save/reload, All/deselect and Continente AC/ultrafast/payment/cashback UI passed.');
+
+await page.evaluate(()=>{
+ const names=['Atlante Infra Portugal S.a','Atlante Infra Portugal S.A','Atlante Infra Portugal S.a.','Atlante Infra Portugal S.A.','Atlante Infra Portugal, S.A','Atlante Infra Portugal, S.A.'];
+ const select=document.getElementById('operator-filter');
+ for(const name of names){const option=new Option(name,name);option.selected=true;select.add(option);}
+ const rows=names.map((operator_name,i)=>({id:'alias-'+i,operator_id:'alias-operator-'+i,operator_name}));
+ hydrateStationOperators(rows);hydrateStationOperators(rows);
+});
+assert.equal(await page.locator('#operator-filter option[value="Atlante"]').count(),1);
+assert.equal(await page.locator('#operator-choices input[value="Atlante"]').count(),1);
+assert(await page.locator('#operator-choices input[value="Atlante"]').isChecked());
+assert.equal(await page.locator('#operator-filter option').evaluateAll(options=>options.filter(o=>o.value.includes('Infra Portugal')).length),0);
+await page.locator('#android-save-options').click();await page.reload({waitUntil:'domcontentloaded'});
+await page.evaluate(()=>hydrateStationOperators([{operator_id:'real-atlante',operator_name:'Atlante Infra Portugal, S.A.'}]));
+await page.waitForFunction(()=>selectedOperatorValues().includes('Atlante'));
+console.log('Operator aliases: one choice, repeated hydration and saved selection restore passed.');
+const realCatalogue=JSON.parse(await readFile(resolve(dir,'assets/stations-snapshot.json'),'utf8'));
+const production=await page.evaluate(payload=>{
+ allStations=payload.stations;restoreConnectorRows(payload.connectors);operatorMap=new Map();hydrateStationOperators(allStations);
+ const local=allStations.find(s=>s.id==='nap-CNT-0269PL0001');if(!local)return {missing:true};
+ document.getElementById('operator-filter').value='all';selectedPower='50-150|150-250';
+ const excluded=!stationConnectorRows(local).some(c=>matchesPower(c.power_kw));selectedPower='0-50';
+ const included=stationConnectorRows(local).some(c=>matchesPower(c.power_kw));selectedPower='all';renderOperatorChoices();renderStations(false);
+ return {excluded,included,name:local.operator_name,power:local.max_power_kw,connectors:stationConnectorRows(local).length,atlanteOptions:[...document.getElementById('operator-filter').options].filter(o=>o.value==='Atlante').length};
+},realCatalogue);
+assert(!production.missing);assert(production.excluded&&production.included);assert.equal(production.name,'Continente Plug&Charge');assert.equal(production.power,22);assert.equal(production.connectors,2);assert.equal(production.atlanteOptions,1);
+await page.screenshot({path:resolve(out,'android-real-catalogue-operators.png'),fullPage:true});
+console.log('Real Continente Modelo Marinha Grande: two Type 2 22 kW sockets; included with All/Up to 50; excluded with 50-150/150-250.',production);
 await context.close();const art=await browser.newPage();for(const [name,w,h] of [['icon',512,512],['feature-graphic',1024,500]]){await art.setViewportSize({width:w,height:h});await art.setContent('<style>body{margin:0}</style>'+await readFile(resolve(import.meta.dirname,'play-store/artwork',name+'.svg'),'utf8'));await art.screenshot({path:resolve(out,name+'.png')});}await art.close();}finally{await browser.close();server.close();}

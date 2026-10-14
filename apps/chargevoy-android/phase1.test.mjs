@@ -38,3 +38,10 @@ test('candidate pricing works for Continente AC without OPC and preserves physic
  assert.equal(c.priced({station:{...station,connectors:[{type:'CCS',power_kw:240}]},energy:20,total:null}).total,null);
  const grouped={_location_members:[{...station,connectors:[]},{id:'edp',operator_id:'edp',source:'nap-mobie',connectors:[{type:'Type 2',power_kw:22}]}]};assert.equal(c.priced({station:grouped,energy:20,total:null}).total,null);
 });
+
+test('real operator spelling variants have one identity without merging unrelated brands',()=>{
+ const c=vm.createContext({});vm.runInContext(extract('operatorIdentityKey','function isContinenteStation('),c);
+ for(const name of ['Atlante','Atlante Infra Portugal S.a','Atlante Infra Portugal S.A','Atlante Infra Portugal S.a.','Atlante Infra Portugal S.A.','Atlante Infra Portugal, S.A','Atlante Infra Portugal, S.A.'])assert.equal(c.operatorDisplayName(name),'Atlante');
+ assert.equal(c.operatorIdentityKey('EDP Comercial, S.A.'),c.operatorIdentityKey('edp comercial S.a'));
+ assert.notEqual(c.operatorIdentityKey('EDP Comercial'),c.operatorIdentityKey('EDP Distribuição'));
+});
