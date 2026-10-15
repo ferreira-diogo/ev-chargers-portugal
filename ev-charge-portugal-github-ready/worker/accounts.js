@@ -42,7 +42,7 @@ export async function accountGateway(request, upstream) {
     }
     return result;
   } catch(error) {
-    console.error('Account service invocation failed', {name:error?.name || 'Error'});
+    console.error('Account service invocation failed', {name:error?.name || 'Error',message:String(error?.message || '').replace(/[A-Za-z0-9_-]{40,}/g,'[redacted]')});
     return reply({error:'Serviço de contas temporariamente indisponível.'},503);
   }
 }

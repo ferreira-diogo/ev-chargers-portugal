@@ -189,11 +189,22 @@ jobs:
         run: |
           set -euo pipefail
           base='https://broken-mud-373e.zombid.workers.dev'
-          code="$(curl --silent --show-error --max-time 20 -o /tmp/web-account-me.json -w '%{http_code}' "$base/api/account/me")"
-          test "$code" = 401
-          node -e 'const x=require("/tmp/web-account-me.json");if(typeof x.error!=="string"||"token" in x)process.exit(1)'
-          curl --fail --silent --show-error --max-time 20 -X POST -H "Origin: $base" -H 'Content-Type: application/json' --data '{}' "$base/api/account/challenge" > /tmp/web-account-challenge.json
-          node -e 'const x=require("/tmp/web-account-challenge.json");if(!/^[A-Za-z0-9_-]{43}$/.test(x.nonce||"")||"token" in x)process.exit(1);console.log("Published account gateway: anonymous session 401; login challenge 200 and valid nonce")'
+          verified=false
+          for attempt in 1 2 3 4 5 6 7 8; do
+            code="$(curl --silent --show-error --max-time 20 -o /tmp/web-account-me.json -w '%{http_code}' "$base/api/account/me")"
+            echo "Account gateway attempt $attempt: anonymous session HTTP $code"
+            if [ "$code" = 401 ] && node -e 'const x=require("/tmp/web-account-me.json");if(typeof x.error!=="string"||"token" in x)process.exit(1)'; then
+              challenge_code="$(curl --silent --show-error --max-time 20 -o /tmp/web-account-challenge.json -w '%{http_code}' -X POST -H "Origin: $base" -H 'Content-Type: application/json' --data '{}' "$base/api/account/challenge")"
+              echo "Account gateway attempt $attempt: login challenge HTTP $challenge_code"
+              if [ "$challenge_code" = 200 ] && node -e 'const x=require("/tmp/web-account-challenge.json");if(!/^[A-Za-z0-9_-]{43}$/.test(x.nonce||"")||"token" in x)process.exit(1)'; then
+                verified=true
+                break
+              fi
+            fi
+            sleep 5
+          done
+          test "$verified" = true
+          echo "Published account gateway: anonymous session 401; login challenge 200 and valid nonce"
           code="$(curl --silent --show-error --max-time 20 -o /tmp/web-account-csrf.json -w '%{http_code}' -X POST -H 'Origin: https://example.invalid' -H 'Content-Type: application/json' --data '{}' "$base/api/account/challenge")"
           test "$code" = 403
       - name: Restore previous web Worker on failed verification
