@@ -6,6 +6,10 @@ compatibility_date = "2026-09-25"
 directory = "./dist"
 binding = "ASSETS"
 
+[[services]]
+binding = "ACCOUNT_SERVICE"
+service = "chargevoy-android-accounts-staging"
+
 # Cloudflare resource IDs are injected by the deployment workflow.
 # Do not commit placeholder IDs here: Wrangler treats them as real resources
 # and rejects the deployment before the Worker can be published.

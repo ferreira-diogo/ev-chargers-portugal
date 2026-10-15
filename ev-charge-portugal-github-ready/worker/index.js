@@ -138,7 +138,7 @@ async function stations(request, env) {
 }
 export default {async fetch(request,env){
   const url=new URL(request.url);
-  if(url.pathname.startsWith("/api/account/"))return accountGateway(request);
+  if(url.pathname.startsWith("/api/account/"))return accountGateway(request,env.ACCOUNT_SERVICE?.fetch ? (target,options)=>env.ACCOUNT_SERVICE.fetch(target,options) : null);
   if(request.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type"}});
   if(url.pathname==="/api/availability"){
     try {

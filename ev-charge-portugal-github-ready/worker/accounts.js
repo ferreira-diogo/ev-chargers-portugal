@@ -3,15 +3,19 @@ const API = 'https://chargevoy-android-accounts-staging.zombid.workers.dev';
 const COOKIE = '__Host-chargevoy_session';
 const cookie = (token, age) => `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${age}`;
 const reply = (body, status) => Response.json(body, {status, headers:{'Cache-Control':'no-store'}});
-export async function accountGateway(request, upstream = fetch) {
+export async function accountGateway(request, upstream) {
   const url = new URL(request.url);
   let path;try{path=decodeURIComponent(url.pathname.slice('/api/account'.length));}catch{return reply({error:'Pedido inválido.'},400);}
   const allowed = new Map([['/challenge',['POST']],['/google',['POST']],['/me',['GET','DELETE']],['/logout',['POST']],['/favorites',['GET']],['/preferences',['GET','PUT']],['/history',['GET','POST']]]);
   const methods = allowed.get(path) || (/^\/favorites\/[a-zA-Z0-9:_-]{1,160}$/.test(path)?['PUT','DELETE']:/^\/reviews\/[a-zA-Z0-9:_-]{1,160}$/.test(path)?['GET','PUT']:[]);
   if (!methods.includes(request.method)) return reply({error:'Pedido não permitido.'},405);
   if (request.headers.get('Sec-Fetch-Site') === 'cross-site' || (request.method !== 'GET' && request.headers.get('Origin') !== url.origin)) return reply({error:'Origem não autorizada.'},403);
+  if (typeof upstream !== 'function') return reply({error:'Serviço de contas temporariamente indisponível.'},503);
   const headers = new Headers();
   headers.set('Content-Type','application/json');
+  // This platform-managed incoming header remains inside the trusted service binding.
+  const clientIp=request.headers.get('CF-Connecting-IP');
+  if(clientIp)headers.set('CF-Connecting-IP',clientIp);
   // Do not forward caller-provided authorization, cookies or proxy headers.
   const token = (request.headers.get('Cookie') || '').split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);
   if (token && /^[A-Za-z0-9_-]{43}$/.test(token)) headers.set('Authorization','Bearer '+token);
@@ -37,5 +41,8 @@ export async function accountGateway(request, upstream = fetch) {
       result.headers.set('Set-Cookie',cookie('',0));
     }
     return result;
-  } catch { return reply({error:'Serviço de contas temporariamente indisponível.'},503); }
+  } catch(error) {
+    console.error('Account service invocation failed', {name:error?.name || 'Error'});
+    return reply({error:'Serviço de contas temporariamente indisponível.'},503);
+  }
 }
