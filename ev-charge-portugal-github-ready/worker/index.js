@@ -1,3 +1,4 @@
+import {accountGateway} from './accounts.js';
 async function readAvailabilitySnapshot(env) {
   if (!env.AVAILABILITY_KV) return null;
   try {
@@ -137,6 +138,7 @@ async function stations(request, env) {
 }
 export default {async fetch(request,env){
   const url=new URL(request.url);
+  if(url.pathname.startsWith("/api/account/"))return accountGateway(request);
   if(request.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":"*","access-control-allow-methods":"GET,OPTIONS","access-control-allow-headers":"Content-Type"}});
   if(url.pathname==="/api/availability"){
     try {

@@ -1,0 +1,52 @@
+name: Validate Google-only web accounts
+on:
+  push:
+    branches: [feat/web-google-account-sync]
+  pull_request:
+    paths:
+      - 'ev-charge-portugal-github-ready/assets/account*.js'
+      - 'ev-charge-portugal-github-ready/assets/preferences-sync.js'
+      - 'ev-charge-portugal-github-ready/worker/accounts.js'
+      - 'apps/chargevoy-android/account-worker/**'
+      - 'tests/web-account*.test.mjs'
+      - '.github/workflows/web-google-accounts-validation.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Verify distributed Android app is untouched
+        if: github.ref_name == 'feat/web-google-account-sync' || github.head_ref == 'feat/web-google-account-sync'
+        run: git diff --exit-code e35380124c0135919c44ee379b63898e3ad225de -- apps/chargevoy-android/src apps/chargevoy-android/android apps/chargevoy-android/package.json apps/chargevoy-android/build.mjs
+      - run: npm ci --prefix apps/chargevoy-android/account-worker
+      - run: npm test --prefix apps/chargevoy-android/account-worker
+      - run: node --test tests/web-account*.test.mjs
+      - run: npm ci --prefix ev-charge-portugal-github-ready
+      - run: npm test --prefix ev-charge-portugal-github-ready
+      - run: npm run build:web --prefix ev-charge-portugal-github-ready
+      - name: Install browser test client
+        working-directory: ev-charge-portugal-github-ready
+        run: npm install --no-save --package-lock=false playwright@1.58.2
+      - name: Verify account and existing public flows
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          node ev-charge-portugal-github-ready/scripts/browser-account-login.mjs
+          node ev-charge-portugal-github-ready/scripts/browser-app-layout.mjs
+      - name: Diagnose real Google web origins without signing in
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node ev-charge-portugal-github-ready/scripts/check-google-web-origins.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: google-web-account-ui
+          path: ev-charge-portugal-github-ready/scripts/qa/*.png

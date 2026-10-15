@@ -20,7 +20,7 @@ const [html, js, routeJs, worker, staticWorker, packageJson, schema, mappingScri
 ]);
 
 const canParse = (source) => { try { new Function(source); return true; } catch (error) { console.error(error.message); return false; } };
-const canParseWorkerModule = (source) => canParse(source.replace(/export\s+default/, "return"));
+const canParseWorkerModule = (source) => canParse(source.replace(/^import .*;$/gm, "").replace(/export\s+default/, "return"));
 const canParseModuleWithoutImports = (source) => canParse(source.replace(/^import .*;$/gm, "").replace(/^const response = await /m, "const response = "));
 const npmTest = JSON.parse(packageJson).scripts?.test || "";
 
@@ -32,7 +32,7 @@ const checks = [
   ["PWA shell caches extracted CSS", worker.includes("./assets/chargevoy.css")],
   ["PWA shell caches extracted JavaScript", worker.includes("./assets/chargevoy.js")],
   ["PWA shell caches corridor planner", worker.includes("./assets/route-corridor.js")],
-  ["PWA cache version is current", worker.includes("ev-charge-shell-v41") && worker.includes("chargevoy.css?v=24") && html.includes("chargevoy.css?v=24") && html.includes("chargevoy.js?v=37")],
+  ["PWA cache version is current", worker.includes("ev-charge-shell-v42") && worker.includes("chargevoy.css?v=24") && html.includes("chargevoy.css?v=24") && html.includes("chargevoy.js?v=38")],
   ["Homepage declares its canonical URL", html.includes('<link rel="canonical" href="https://chargevoy.pt/"')],
   ["Homepage has one visible brand heading", (html.match(/<h1\b/g) || []).length === 1 && html.includes("Encontre. Compare. Siga viagem.")],
   ["Sitemap lists the public homepage", sitemap.includes("<loc>https://chargevoy.pt/</loc>") && (sitemap.match(/<loc>/g) || []).length === 1],

@@ -208,7 +208,7 @@ test('any incomplete vehicle specification visibly uses generic route assumption
 
 test('personal battery and charging values fill a missing variant without changing the catalogue', () => {
   const stored = JSON.stringify({battery_capacity_kwh:64, consumption_wh_km:180, max_dc_power_kw:150});
-  const context = vm.createContext({localStorage:{getItem(){return stored;}}});
+  const context = vm.createContext({window:{ChargeVoyAccount:{storage:{getItem(){return stored;}}}}});
   vm.runInContext(extract('function vehicleUsesGenericRouteProfile(', 'function populateVehicles('), context);
   const original = {id:'custom-renault', battery_capacity_kwh:null, consumption_wh_km:null, max_dc_power_kw:null};
   const adjusted = context.vehicleWithPersonalSpecs(original);
@@ -225,7 +225,7 @@ test('vehicle catalogue merges D1 rows with local fallback and keeps D1 values',
   const context = vm.createContext({staticVehicleModels:[], LOCAL_VEHICLE_FALLBACK:[
     {id:'local-1',source:'local-fallback',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023,max_dc_power_kw:170},
     {id:'local-2',source:'local-fallback',make:'BMW',model:'i4',variant:'eDrive40',model_year_start:2023,max_dc_power_kw:200},
-  ], document:{getElementById:makeElement}, localStorage:{getItem(){return null;}}, escapeHtml:s=>String(s), normalizeVehicle:v=>v, applyVehicle(){}});
+  ], window:{ChargeVoyAccount:{storage:{getItem(){return null;}}}}, document:{getElementById:makeElement}, localStorage:{getItem(){return null;}}, escapeHtml:s=>String(s), normalizeVehicle:v=>v, applyVehicle(){}});
   vm.runInContext(extract('function populateVehicles(', 'function vehicleIllustration('), context);
   context.renderVehicleOptions = () => {};
   context.populateVehicles([{id:'d1-1',source:'gaia-evdb',make:'Tesla',model:'Model 3',variant:'RWD',model_year_start:2023,max_dc_power_kw:170}]);
@@ -453,9 +453,9 @@ test('restricted mobile storage does not abort the public map script', () => {
   vm.runInContext(web.slice(web.indexOf('let currentLanguage ='),web.indexOf('const i18nOriginalText =')),context);
   assert.equal(vm.runInContext('favoriteStationIds.size',context),0);
   assert.equal(vm.runInContext('currentLanguage',context),'pt');
-  const auth = vm.createContext({window:{},SUPABASE_URL:'https://example.com',SUPABASE_KEY:'public'});
-  vm.runInContext(web.slice(web.indexOf('const authClient ='),web.indexOf('const map =')),auth);
-  assert.equal(vm.runInContext('authClient == null',auth),true);
+  assert(!web.includes('const authClient ='));
+  assert(!web.includes('signInWithPassword'));
+  assert(!web.includes('signInWithOAuth'));
 });
 
 test('station markers retain last known colour beyond twenty minutes without claiming LIVE', () => {

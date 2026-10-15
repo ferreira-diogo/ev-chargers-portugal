@@ -1,0 +1,111 @@
+name: Activate Google web accounts
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/web-google-account-sync, main]
+    paths: ['.github/workflows/activate-google-web-accounts.yml']
+permissions:
+  contents: read
+concurrency:
+  group: chargevoy-google-account-rollout
+  cancel-in-progress: false
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci --prefix apps/chargevoy-android/account-worker
+      - run: npm test --prefix apps/chargevoy-android/account-worker
+      - run: npm ci --prefix ev-charge-portugal-github-ready
+      - run: npm test --prefix ev-charge-portugal-github-ready
+      - run: npm run build:web --prefix ev-charge-portugal-github-ready
+      - run: npm install --no-save --package-lock=false --prefix ev-charge-portugal-github-ready playwright@1.58.2
+      - name: Test interface then require both real Google origins
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          REQUIRE_GOOGLE_ORIGINS: '1'
+        run: |
+          node ev-charge-portugal-github-ready/scripts/browser-account-login.mjs
+          node ev-charge-portugal-github-ready/scripts/browser-app-layout.mjs
+          node ev-charge-portugal-github-ready/scripts/check-google-web-origins.mjs
+  account_backend:
+    needs: readiness
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chargevoy-android/account-worker
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm install --global wrangler@4
+      - name: Save active Worker version and private D1 recovery bookmark
+        id: backup
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          mkdir -p tmp/accounts-rollback
+          wrangler deployments list --json > /tmp/accounts-deployments.json
+          node - <<'NODE' > tmp/accounts-rollback/worker-version.txt
+          const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/accounts-deployments.json','utf8'));
+          const d=x.sort((a,b)=>a.created_on.localeCompare(b.created_on)).at(-1);
+          if(d?.versions?.length!==1||d.versions[0].percentage!==100)throw Error('Expected one active account Worker version');
+          console.log(d.versions[0].version_id);
+          NODE
+          echo "version=$(cat tmp/accounts-rollback/worker-version.txt)" >> "$GITHUB_OUTPUT"
+          wrangler d1 time-travel info chargevoy-accounts-staging --json > tmp/accounts-rollback/d1-bookmark.json
+          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("tmp/accounts-rollback/d1-bookmark.json","utf8"));if(!x.bookmark&&!x.result?.bookmark)throw Error("No recovery bookmark returned");'
+          git rev-parse HEAD > tmp/accounts-rollback/candidate-commit.txt
+      - name: Persist recovery metadata before any migration
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-account-recovery-metadata
+          path: apps/chargevoy-android/account-worker/tmp/accounts-rollback/
+          retention-days: 7
+      - name: Inspect the existing private account schema and add only missing tables
+        run: |
+          set -euo pipefail
+          wrangler d1 execute chargevoy-accounts-staging --remote --command "SELECT name FROM sqlite_master WHERE type='table'" --json > /tmp/account-schema.json
+          node - <<'NODE' > /tmp/account-schema-state.json
+          const fs=require('fs');const raw=JSON.parse(fs.readFileSync('/tmp/account-schema.json','utf8'));
+          const entries=Array.isArray(raw)?raw:[raw];const tables=new Set(entries.flatMap(x=>x.results||x.result?.results||[]).map(x=>x.name));
+          for(const table of ['users','sessions','favorites','challenges'])if(!tables.has(table))throw Error('Not the existing account database: '+table);
+          const history=tables.has('account_route_history'),reviews=tables.has('account_station_reviews');
+          if(history!==reviews)throw Error('Partial web schema; requires investigation');
+          console.log(JSON.stringify({preferences:tables.has('user_preferences'),web:history&&reviews}));
+          NODE
+          if [ "$(node -e 'process.stdout.write(String(require("/tmp/account-schema-state.json").preferences))')" = false ]; then
+            wrangler d1 execute chargevoy-accounts-staging --remote --file migrations/0002_preferences.sql
+          fi
+          if [ "$(node -e 'process.stdout.write(String(require("/tmp/account-schema-state.json").web))')" = false ]; then
+            wrangler d1 execute chargevoy-accounts-staging --remote --file migrations/0003_web_account_data.sql
+          fi
+      - name: Deploy the compatible account Worker
+        id: deploy
+        run: wrangler deploy
+      - name: Verify new schema and existing native access boundary
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --max-time 20 'https://chargevoy-android-accounts-staging.zombid.workers.dev/health' > /tmp/health.json
+          node -e 'const x=require("/tmp/health.json");if(x.ok!==true||x.schemaReady!==true||x.service!=="chargevoy-accounts-web-v1")process.exit(1)'
+          code="$(curl --silent --show-error --max-time 20 -o /tmp/anonymous.json -w '%{http_code}' 'https://chargevoy-android-accounts-staging.zombid.workers.dev/favorites')"
+          test "$code" = 401
+      - name: Restore previous account Worker if verification fails
+        if: ${{ failure() && steps.deploy.outcome == 'success' }}
+        run: wrangler rollback '${{ steps.backup.outputs.version }}' --message 'Rollback after failed Google web account backend verification'
+  website:
+    needs: account_backend
+    uses: ./.github/workflows/deploy-chargevoy-web.yml
+    with:
+      preserve_catalogue: true
+    secrets: inherit

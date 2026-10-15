@@ -5,13 +5,38 @@ on:
   push:
     paths:
       - 'apps/chargevoy-android/**'
+      - '!apps/chargevoy-android/account-worker/**'
       - '.github/workflows/android-test-build.yml'
 
 permissions:
   contents: read
 
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      android: ${{ steps.paths.outputs.android }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: paths
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          node - <<'NODE' >> "$GITHUB_OUTPUT"
+          const {execFileSync}=require('node:child_process');
+          const before=process.env.BEFORE;
+          let android=true;
+          if(process.env.GITHUB_EVENT_NAME==='push' && /^[a-f0-9]{40}$/.test(before||'') && !/^0+$/.test(before)){
+            const paths=execFileSync('git',['diff','--name-only',before,'HEAD'],{encoding:'utf8'}).trim().split('\n');
+            android=paths.some(p=>p.startsWith('apps/chargevoy-android/')&&!p.startsWith('apps/chargevoy-android/account-worker/'));
+          }
+          console.log('android='+android);
+          NODE
   build:
+    needs: scope
+    if: needs.scope.outputs.android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

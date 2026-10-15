@@ -1,6 +1,11 @@
 name: Deploy ChargeVoy web
 
 on:
+  workflow_call:
+    inputs:
+      preserve_catalogue:
+        type: boolean
+        default: false
   workflow_dispatch:
   schedule:
     # Publish the primary map catalogue daily, independently of D1 availability.
@@ -45,6 +50,15 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
           test -n "$D1_DATABASE_NAME" || test -n "$D1_DATABASE_ID" || { echo "::error::Missing D1 database configuration"; exit 1; }
+      - name: Require working Google origins and the migrated account backend
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          REQUIRE_GOOGLE_ORIGINS: '1'
+        run: |
+          npm install --no-save --package-lock=false --prefix ev-charge-portugal-github-ready playwright@1.58.2
+          node ev-charge-portugal-github-ready/scripts/check-google-web-origins.mjs
+          curl --fail --silent --show-error --max-time 20 'https://chargevoy-android-accounts-staging.zombid.workers.dev/health' > /tmp/account-health.json
+          node -e 'const x=require("/tmp/account-health.json");if(x.service!=="chargevoy-accounts-web-v1"||x.schemaReady!==true||x.ok!==true)process.exit(1)'
       - name: Identify legal page publication
         id: scope
         env:
@@ -64,7 +78,13 @@ jobs:
         id: catalogue_scope
         env:
           BEFORE_SHA: ${{ github.event.before }}
-        run: echo "preserve=$(node ev-charge-portugal-github-ready/scripts/is-presentation-only.mjs "$BEFORE_SHA")" >> "$GITHUB_OUTPUT"
+          FORCE_PRESERVE: ${{ inputs.preserve_catalogue || false }}
+        run: |
+          if [ "$FORCE_PRESERVE" = true ]; then
+            echo 'preserve=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "preserve=$(node ev-charge-portugal-github-ready/scripts/is-presentation-only.mjs "$BEFORE_SHA")" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build web bundle
         working-directory: ev-charge-portugal-github-ready
         env:
