@@ -1,8 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {accountGateway} from '../ev-charge-portugal-github-ready/worker/accounts.js';
+import website from '../ev-charge-portugal-github-ready/worker/index.js';
 const token='a'.repeat(43),origin='https://chargevoy.pt';
 const req=(path,method='GET',headers={},body)=>new Request(origin+'/api/account'+path,{method,headers:{Origin:origin,'Content-Type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});
+test('published Worker routes login preparation through its service binding, with no public-fetch fallback',async()=>{
+ let calls=0;
+ const binding={async fetch(url,options){assert.equal(this,binding);calls++;assert.equal(url,'https://chargevoy-android-accounts-staging.zombid.workers.dev/challenge');assert.equal(options.headers.get('Origin'),null);assert.equal(options.headers.get('CF-Connecting-IP'),'192.0.2.44');return Response.json({nonce:'n'.repeat(43)});}};
+ const response=await website.fetch(req('/challenge','POST',{'CF-Connecting-IP':'192.0.2.44'},{}),{ACCOUNT_SERVICE:binding});
+ assert.equal(response.status,200);assert.equal((await response.json()).nonce.length,43);assert.equal(calls,1);
+ assert.equal((await website.fetch(req('/me'),{})).status,503);
+});
 test('login sets a bounded secure HttpOnly host cookie and never returns its session token to JS',async()=>{
  const response=await accountGateway(req('/google','POST',{}, {idToken:'google-token',nonce:token}),async(url,options)=>{
   assert.equal(url,'https://chargevoy-android-accounts-staging.zombid.workers.dev/google');

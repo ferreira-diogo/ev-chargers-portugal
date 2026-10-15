@@ -1,0 +1,46 @@
+name: Validate web account service binding
+on:
+  push:
+    branches: [fix/web-account-service-binding]
+  pull_request:
+    paths:
+      - 'ev-charge-portugal-github-ready/worker/accounts.js'
+      - 'ev-charge-portugal-github-ready/worker/index.js'
+      - 'ev-charge-portugal-github-ready/wrangler.toml'
+      - 'tests/web-account-gateway.test.mjs'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Observe the currently deployed gateway before any hotfix deployment
+        run: |
+          node - <<'NODE'
+          (async()=>{
+            const base='https://broken-mud-373e.zombid.workers.dev';
+            for(const [url,init] of [
+              ['https://chargevoy-android-accounts-staging.zombid.workers.dev/health',{}],
+              [base+'/api/account/me',{}],
+              [base+'/api/account/challenge',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:'{}'}]
+            ]){
+              const r=await fetch(url,{...init,signal:AbortSignal.timeout(20000)});
+              let data;try{data=await r.json();}catch{data={format:'not-json'};}
+              console.log(JSON.stringify({url,status:r.status,error:data.error||null,schemaReady:data.schemaReady||null,nonceLength:typeof data.nonce==='string'?data.nonce.length:null}));
+            }
+          })().catch(e=>{console.error(e.message);process.exitCode=1;});
+          NODE
+      - run: npm ci --prefix ev-charge-portugal-github-ready
+      - run: npm test --prefix ev-charge-portugal-github-ready
+      - run: npm run build:web --prefix ev-charge-portugal-github-ready
+      - run: npm install --no-save --package-lock=false --prefix ev-charge-portugal-github-ready playwright@1.58.2
+      - name: Verify account and public interface scenarios
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          node ev-charge-portugal-github-ready/scripts/browser-account-login.mjs
+          node ev-charge-portugal-github-ready/scripts/browser-app-layout.mjs

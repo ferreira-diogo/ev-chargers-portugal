@@ -185,6 +185,17 @@ jobs:
           done
           echo "::error::Static site validation failed; roll back the Worker deployment to the previous version"
           exit 1
+      - name: Verify account gateway through the published web Worker
+        run: |
+          set -euo pipefail
+          base='https://broken-mud-373e.zombid.workers.dev'
+          code="$(curl --silent --show-error --max-time 20 -o /tmp/web-account-me.json -w '%{http_code}' "$base/api/account/me")"
+          test "$code" = 401
+          node -e 'const x=require("/tmp/web-account-me.json");if(typeof x.error!=="string"||"token" in x)process.exit(1)'
+          curl --fail --silent --show-error --max-time 20 -X POST -H "Origin: $base" -H 'Content-Type: application/json' --data '{}' "$base/api/account/challenge" > /tmp/web-account-challenge.json
+          node -e 'const x=require("/tmp/web-account-challenge.json");if(!/^[A-Za-z0-9_-]{43}$/.test(x.nonce||"")||"token" in x)process.exit(1);console.log("Published account gateway: anonymous session 401; login challenge 200 and valid nonce")'
+          code="$(curl --silent --show-error --max-time 20 -o /tmp/web-account-csrf.json -w '%{http_code}' -X POST -H 'Origin: https://example.invalid' -H 'Content-Type: application/json' --data '{}' "$base/api/account/challenge")"
+          test "$code" = 403
       - name: Restore previous web Worker on failed verification
         if: ${{ failure() && steps.deploy.outcome == 'success' }}
         working-directory: ev-charge-portugal-github-ready
