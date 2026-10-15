@@ -1,0 +1,35 @@
+name: Verify published Google web login
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-google-web-production.yml'
+      - 'ev-charge-portugal-github-ready/scripts/verify-google-web-production.mjs'
+  workflow_run:
+    workflows: ['Activate Google web accounts']
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci --prefix ev-charge-portugal-github-ready
+      - run: npm install --no-save --package-lock=false --prefix ev-charge-portugal-github-ready playwright@1.58.2
+      - name: Check the actual published root and www login
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node ev-charge-portugal-github-ready/scripts/verify-google-web-production.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-google-login-qa
+          path: ev-charge-portugal-github-ready/scripts/qa/production-google-*.png
