@@ -241,6 +241,7 @@
         "● Estado ainda não selecionado": "● No station selected yet",
         "Potência máx.": "Max power",
         Tomadas: "Outlets",
+        "Tomadas reportadas": "Reported connectors",
         Disponibilidade: "Availability",
         "O que há por perto?": "What is nearby?",
         Atualizar: "Refresh",
@@ -397,15 +398,7 @@
         applyTranslations();
         window.AndroidChargeVoy?.translate();
         // Do not recreate the map/card grid here: it keeps the language change instant on mobile.
-        if (selectedStation) {
-          const info = stationAvailability(
-            stationConnectorRows(selectedStation),
-          );
-          document.getElementById("station-live").innerHTML =
-            availabilityHtml(info);
-          document.getElementById("station-status").innerHTML =
-            availabilityHtml(info);
-        }
+        if (selectedStation) updateStationConnectorPanel(selectedStation, stationConnectorRows(selectedStation));
       }
       // Dynamic map data can contain thousands of elements. Translation is intentionally
       // applied only on explicit language changes so it never blocks map interactions.
@@ -647,7 +640,9 @@
         return t("Disponibilidade não comunicada");
       }
 
-      function stationAvailability(connectors) {
+      function stationAvailability(connectors, station = null) {
+        connectors = connectors.filter(c => String(c.type || "").toLowerCase() !== "unknown");
+        const inventory = window.ChargeVoyInventory?.analyze(station, station ? stationConnectorRows(station) : connectors);
         const total = connectors.reduce(
           (sum, c) => sum + (Number(c.quantity) || 1),
           0,
@@ -674,6 +669,7 @@
            return {
              kind: "none",
              total,
+             inventoryPartial: !!inventory?.partial,
              label: t("Disponibilidade não comunicada"),
              detail: t("Sem leitura atual"),
           };
@@ -704,17 +700,18 @@
         const kind = fresh.length ? "live" : "stale";
         const label =
           currentLanguage === "en"
-            ? `${available}/${knownTotal} available connectors${kind === "stale" ? " in the last reading" : ""}${suffix} · source updated ${ageMinutes} min ago`
-            : `${available}/${knownTotal} fichas em pontos livres${kind === "stale" ? " na última leitura" : ""}${suffix} · fonte há ${ageMinutes} min`;
+            ? `${available}/${knownTotal} reported connectors available${kind === "stale" ? " in the last reading" : ""}${suffix} · source updated ${ageMinutes} min ago`
+            : `${available}/${knownTotal} fichas reportadas em pontos livres${kind === "stale" ? " na última leitura" : ""}${suffix} · fonte há ${ageMinutes} min`;
         const detail =
           currentLanguage === "en"
-            ? `Available connectors: ${types}`
-            : `Fichas em pontos livres: ${types}`;
+            ? `Reading covers reported connectors: ${types}${inventory?.partial ? ". Other equipment at this location is not covered." : ". Physical site coverage is unverified."}`
+            : `Leitura das fichas reportadas: ${types}${inventory?.partial ? ". Outros equipamentos do local não estão abrangidos." : ". Cobertura física do local por confirmar."}`;
         return {
           kind,
           total,
           knownTotal,
           complete,
+          inventoryPartial: !!inventory?.partial,
           available,
           ageMinutes,
           label,
@@ -737,12 +734,12 @@
       }
 
       function effectiveStationStatus(station) {
-        const info = stationAvailability(stationConnectorRows(station));
+        const info = stationAvailability(stationConnectorRows(station), station);
          // Preserve the last reported colour, but never label it LIVE after five minutes.
         if (info.kind === "live" || info.kind === "stale")
           return info.available > 0
             ? "available"
-            : info.complete
+            : info.complete && !info.inventoryPartial
               ? "unavailable"
               : "unknown";
         return station.status === "unavailable" || station.status === "offline"
@@ -1261,8 +1258,9 @@
         }
         target.innerHTML = connectors
           .map((connector, index) => {
+            if (String(connector.type).toLowerCase() === "unknown") return `<div class="connector-row"><div><b>${currentLanguage === "en" ? "Point without connector details" : "Ponto sem detalhe de conector"}</b><small>${currentLanguage === "en" ? "Type, power and socket count unverified" : "Tipo, potência e número de fichas por confirmar"}</small></div><span class="connector-state unknown">${currentLanguage === "en" ? "Not reported" : "Sem dados"}</span></div>`;
             const quantity = Math.max(1, Number(connector.quantity) || 1);
-            const reading = stationAvailability([connector]);
+            const reading = stationAvailability([connector], station);
             const previous = reading.kind === "stale";
             const free =
               reading.kind === "live" || previous ? reading.available : null;
@@ -1294,6 +1292,28 @@
           })
           .join("");
       }
+      function renderStationInventory(station, connectors) {
+        const target = document.getElementById("station-inventory"), english = currentLanguage === "en";
+        if (!target || !window.ChargeVoyInventory) return;
+        const r = window.ChargeVoyInventory.analyze(station, connectors), e = r.supplemental;
+        target.className = "inventory-panel" + (r.partial ? " is-partial" : "");
+        target.setAttribute("data-i18n-managed", "");
+        const source = r.sources.includes("nap-mobie") ? "MOBI.E NAP" : r.sources.join(", ") || (english ? "Not reported" : "Não comunicada");
+        const date = r.sourceDate ? new Date(r.sourceDate).toLocaleDateString(english ? "en-GB" : "pt-PT") : (english ? "not reported" : "não comunicada");
+        let html = `<h3>${escapeHtml(window.ChargeVoyInventory.summary(station, connectors, english))}</h3><p>${escapeHtml(english ? `Source: ${source} · inventory dated ${date}.` : `Fonte: ${source} · inventário de ${date}.`)}</p><p>${escapeHtml(english ? `${r.reportedCount} reported connector(s). Exact physical total unverified.` : `${r.reportedCount} tomada(s) reportada(s). Total físico exato por confirmar.`)}</p>`;
+        if (r.unknownRows) html += `<p>${escapeHtml(english ? `${r.unknownRows} point(s) lack connector details and are not counted as known sockets.` : `${r.unknownRows} ponto(s) sem detalhe de conector, não contados como tomadas conhecidas.`)}</p>`;
+        if (e) {
+          const old = Date.now() - Date.parse(e.checkedAt + "T00:00:00Z") > 30 * 86400000;
+          html += `<p>${escapeHtml(english ? `Operator: ${e.normalPlaces} normal and ${e.rapidPlaces} rapid parking spaces. Verified on ${e.checkedAt}.` : `Operador: ${e.normalPlaces} lugares normais e ${e.rapidPlaces} rápidos. Verificado em ${e.checkedAt}.`)}</p>`;
+          if (r.missingRapid) html += `<p>${escapeHtml(english ? "Rapid charging exists according to the operator. Connector details and rapid-charger availability are not reported by this catalogue." : "O operador confirma carregamento rápido. Este catálogo não comunica as respetivas fichas nem a disponibilidade dos rápidos.")}</p>`;
+          if (r.missingNormal) html += `<p>${escapeHtml(english ? "Normal charging reported by the operator is missing from this catalogue." : "O carregamento normal indicado pelo operador está em falta neste catálogo.")}</p>`;
+          if (old) html += `<p>${escapeHtml(english ? "Operator confirmation is over 30 days old; recheck the source." : "Confirmação do operador com mais de 30 dias; consultar novamente a fonte.")}</p>`;
+          html += `<a href="${escapeHtml(e.sourceUrl)}" target="_blank" rel="noopener noreferrer">${english ? "Operator source" : "Fonte do operador"}</a>`;
+        }
+        html += `<p>${escapeHtml(english ? "Availability applies only to connectors with a source reading. Parking spaces do not prove simultaneous charging capacity." : "A disponibilidade aplica-se apenas às fichas com leitura da fonte. Os lugares não comprovam a capacidade de carga simultânea.")}</p>`;
+        target.innerHTML = html;
+      }
+
       function updateStationConnectorPanel(station, stationConnectors) {
         const connectorTypes = [
           ...new Set(
@@ -1302,21 +1322,19 @@
             ),
           ),
         ];
-        const totalPoints = stationConnectors.reduce(
-          (total, connector) => total + (Number(connector.quantity) || 1),
-          0,
-        );
-        const availability = stationAvailability(stationConnectors);
+        const totalPoints = window.ChargeVoyInventory.analyze(station, stationConnectors).reportedCount;
+        const availability = stationAvailability(stationConnectors, station);
         document.getElementById("station-status").innerHTML =
           availabilityHtml(availability);
         document.getElementById("station-connectors").textContent =
           connectorTypes.join(" · ") || "—";
         document.getElementById("station-points").textContent =
-          totalPoints || "—";
+          window.ChargeVoyInventory?.analyze(station, stationConnectors).reportedCount || "—";
         const capacity = document.getElementById("station-capacity-note");
         if (capacity) capacity.textContent = currentLanguage === "en"
-          ? `${station._location_members?.length || 1} charger(s) at this location. Connector count does not indicate simultaneous charging capacity.`
-          : `${station._location_members?.length || 1} ${station._location_members?.length > 1 ? "carregadores" : "carregador"} neste local. O total de fichas não indica quantos carros podem carregar em simultâneo.`;
+          ? `${station._location_members?.length || 1} source record(s) grouped here. Records, connectors and parking spaces are different counts. Simultaneous charging capacity is unverified.`
+          : `${station._location_members?.length || 1} registo(s) da fonte agrupados aqui. Registos, fichas e lugares são contagens diferentes. Capacidade de carga simultânea por confirmar.`;
+        renderStationInventory(station, stationConnectors);
         document.getElementById("station-live").innerHTML =
           availabilityHtml(availability);
         renderConnectorMatrix(stationConnectors, station);
@@ -1365,8 +1383,7 @@
           })
           .catch(() => {
             if (selectedStation?.id === station.id)
-              document.getElementById("station-connectors").textContent =
-                "Disponibilidade indisponível";
+              document.getElementById("station-refresh-message").textContent = currentLanguage === "en" ? "Could not refresh. Stored connector details and the last source reading are retained." : "Não foi possível atualizar. Mantidos os conectores guardados e a última leitura da fonte.";
           });
         document.querySelector(".right")?.classList.add("station-open");
         if (window.innerWidth <= 780)
@@ -1619,7 +1636,7 @@
         let stationHtml = "";
         if (selectedStation) {
           const availability = stationAvailability(
-            stationConnectorRows(selectedStation),
+            stationConnectorRows(selectedStation), selectedStation,
           );
           stationHtml = `<p><b>${escapeHtml(selectedStation.name || "Posto selecionado")}</b><br>Estado atual: <b>${escapeHtml(availability.label)}</b></p><p><small>A fiabilidade do posto só será calculada depois de existirem snapshots provenientes de uma fonte live validada.</small></p>`;
         }
@@ -2758,11 +2775,8 @@
           const connectorText =
             [...new Set(stationConnectors.map((c) => c.type))].join(" · ") ||
             "Conector não indicado";
-          const totalPoints = stationConnectors.reduce(
-            (total, connector) => total + (Number(connector.quantity) || 1),
-            0,
-          );
-          const availability = stationAvailability(stationConnectors);
+          const totalPoints = window.ChargeVoyInventory.analyze(s, stationConnectors).reportedCount;
+          const availability = stationAvailability(stationConnectors, s);
           const operatorName =
             operatorMap.get(s.operator_id) || "Operador não indicado";
           const location =
@@ -2776,7 +2790,7 @@
             fillOpacity: 1,
           }).addTo(stationLayer);
           marker.bindPopup(
-            `<b>${escapeHtml(s.name || operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw ?? "—")} kW · ${escapeHtml(totalPoints)} tomadas · ${escapeHtml(connectorText)}<br>● ${escapeHtml(availability.kind === "none" && isOfficialTeslaStation(s) ? "Disponibilidade na app Tesla" : availability.label)}<br><button onclick="routeToStationById('${escapeHtml(s.id)}')" style="margin-top:7px;border:0;border-radius:6px;padding:6px 9px;background:#0eaf72;color:#fff;font-weight:700;cursor:pointer">🧭 Criar rota</button>`,
+            `<b>${escapeHtml(s.name || operatorName)}</b><br>${escapeHtml(operatorName)}<br>${escapeHtml(location)}<br>⚡ ${escapeHtml(s.max_power_kw ?? "—")} kW · ${escapeHtml(totalPoints)} tomadas reportadas · ${escapeHtml(connectorText)}<br>● ${escapeHtml(availability.kind === "none" && isOfficialTeslaStation(s) ? "Disponibilidade na app Tesla" : availability.label)}<br>${escapeHtml(window.ChargeVoyInventory?.summary(s, stationConnectors, currentLanguage === "en") || "")}<br><button onclick="routeToStationById('${escapeHtml(s.id)}')" style="margin-top:7px;border:0;border-radius:6px;padding:6px 9px;background:#0eaf72;color:#fff;font-weight:700;cursor:pointer">🧭 Criar rota</button>`,
           );
           marker.on("click", () => selectStation(s, operatorName));
           for (const member of s._location_members || [s]) markerMap.set(member.id, marker);
@@ -2796,7 +2810,7 @@
               "Não indicado";
             const operatorName =
               operatorMap.get(s.operator_id) || "Operador não indicado";
-            const availability = stationAvailability(stationConnectors);
+            const availability = stationAvailability(stationConnectors, s);
             const distance =
               s.distance_km != null
                 ? `${s.distance_km.toFixed(1).replace(".", ",")} km`
@@ -2805,10 +2819,7 @@
                   : String(s.source).startsWith("nap")
                     ? "NAP oficial"
                     : "Dados comunitários";
-            const totalPoints = stationConnectors.reduce(
-              (total, connector) => total + (Number(connector.quantity) || 1),
-              0,
-            );
+            const totalPoints = window.ChargeVoyInventory.analyze(s, stationConnectors).reportedCount;
             const reliability = reliabilityMap.get(s.id) || {};
             const reliabilityText = reliability.review_count
               ? "⭐ " +
@@ -2827,7 +2838,7 @@
                   Number(currentVehicle.max_dc_power_kw),
                 )
               : Number(s.max_power_kw) || 0;
-            return `<article class="card"><div class="rank">${index + 1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name || "Posto de carregamento")}</div><div class="avail">${availability.kind === "none" && isOfficialTeslaStation(s) ? "● Disponibilidade na app Tesla" : availabilityHtml(availability)}</div><div class="reliability">${reliabilityText}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower || "—")} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km != null ? "distância aproximada" : escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(totalPoints)} fichas no local</b> · ${escapeHtml(connectorText)}<br><small>${escapeHtml(s.max_power_kw)} kW máximo${s._location_members ? ` · ${s._location_members.length} carregadores` : ""}</small><div class="card-actions"><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button><button class="secondary" data-station-details="${escapeHtml(s.id)}">Ver detalhes e navegar</button></div></article>`;
+            return `<article class="card"><div class="rank">${index + 1} <span class="tag">Compatível</span></div><div class="op">${escapeHtml(operatorName)}</div><div class="st">${escapeHtml(s.name || "Posto de carregamento")}</div><div class="avail">${availability.kind === "none" && isOfficialTeslaStation(s) ? "● Disponibilidade na app Tesla" : availabilityHtml(availability)}</div><p class="inventory-note" data-i18n-managed>${escapeHtml(window.ChargeVoyInventory?.summary(s, stationConnectors, currentLanguage === "en") || "")}</p><div class="reliability">${reliabilityText}</div><div class="metrics"><div class="metric"><b>${escapeHtml(effectivePower || "—")} kW</b>máximo com o veículo</div><div class="metric"><b>${escapeHtml(distance)}</b>${s.distance_km != null ? "distância aproximada" : escapeHtml(`${totalPoints} tomadas · ${connectorText}`)}</div></div><div class="cost"><b>${escapeHtml(totalPoints)} fichas reportadas</b> · ${escapeHtml(connectorText)}<br><small>${escapeHtml(s.max_power_kw)} kW máximo${s._location_members ? ` · ${s._location_members.length} registos` : ""}</small><div class="card-actions"><button data-station-id="${escapeHtml(s.id)}">Ver no mapa</button><button class="secondary" data-station-details="${escapeHtml(s.id)}">Ver detalhes e navegar</button></div></article>`;
           })
           .join("");
         if (!best.length)
@@ -3362,7 +3373,7 @@
             )
             .map((station) => {
               const availability = stationAvailability(
-                stationConnectorRows(station),
+                stationConnectorRows(station), station,
               );
               return {
                 ...station,

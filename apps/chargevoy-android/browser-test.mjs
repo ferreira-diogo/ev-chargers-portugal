@@ -147,4 +147,29 @@ const production=await page.evaluate(payload=>{
 assert(!production.missing);assert(production.excluded&&production.included);assert.equal(production.name,'Continente Plug&Charge');assert.equal(production.power,22);assert.equal(production.connectors,2);assert.equal(production.atlanteOptions,1);
 await page.screenshot({path:resolve(out,'android-real-catalogue-operators.png'),fullPage:true});
 console.log('Real Continente Modelo Marinha Grande: two Type 2 22 kW sockets; included with All/Up to 50; excluded with 50-150/150-250.',production);
+
+// Scope inventory and LIVE readings on the actual reported location; never manufacture missing DC connectors.
+await page.route('**/api/connectors**',route=>route.fulfill({status:503,json:{error:'fixture upstream unavailable'}}));
+await page.evaluate(()=>{
+ const station=allStations.find(s=>s.id==='nap-CNT-0269PL0001');
+ for(const c of stationConnectorRows(station)){c.available_count=1;c.availability_source='mobie_nap';c.availability_updated_at=new Date().toISOString();}
+ selectStation(station,station.operator_name);
+});
+await page.waitForFunction(()=>document.getElementById('station-inventory').textContent.includes('Inventário parcial'));
+assert((await page.locator('#station-inventory').textContent()).includes('2 lugares normais e 2 rápidos'));
+assert((await page.locator('#station-inventory').textContent()).includes('nem a disponibilidade dos rápidos'));
+assert.equal(await page.locator('#station-points').textContent(),'2');
+assert((await page.locator('#station-status').textContent()).includes('fichas reportadas'));
+assert.equal(await page.locator('#station-inventory a').getAttribute('href'),'https://feed.continente.pt/plug-charge/continente-modelo-marinha-grande');
+await page.waitForFunction(()=>document.getElementById('station-refresh-message').textContent.includes('Mantidos os conectores'));
+assert.equal(await page.locator('#station-connectors').textContent(),'Type 2');
+await page.evaluate(()=>setLanguage('en'));
+assert((await page.locator('#station-inventory').textContent()).includes('Partial inventory'));
+assert((await page.locator('#station-inventory').textContent()).includes('2 normal and 2 rapid parking spaces'));
+await page.evaluate(()=>setLanguage('pt'));
+await page.screenshot({path:resolve(out,'android-inventory-partial-mobile.png'),fullPage:true});
+await page.setViewportSize({width:800,height:1000});await page.screenshot({path:resolve(out,'android-inventory-partial-tablet.png'),fullPage:true});
+for(const width of [320,390,800]){await page.setViewportSize({width,height:900});assert(!(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)),'Inventory detail overflow at '+width);}
+assert.equal(errors.length,0,errors.join('\n'));
+console.log('Inventory: reviewed operator source, scoped AC readings, absent DC availability, PT/EN, retained connectors on upstream failure and viewport matrix passed.');
 await context.close();const art=await browser.newPage();for(const [name,w,h] of [['icon',512,512],['feature-graphic',1024,500]]){await art.setViewportSize({width:w,height:h});await art.setContent('<style>body{margin:0}</style>'+await readFile(resolve(import.meta.dirname,'play-store/artwork',name+'.svg'),'utf8'));await art.screenshot({path:resolve(out,name+'.png')});}await art.close();}finally{await browser.close();server.close();}
