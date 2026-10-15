@@ -6,17 +6,6 @@
         apikey: SUPABASE_KEY,
         Authorization: "Bearer " + SUPABASE_KEY,
       };
-      const authClient = window.supabase?.createClient?.(
-        SUPABASE_URL,
-        SUPABASE_KEY,
-        {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-          },
-        },
-      );
       const map = L.map("map", {
         preferCanvas: true,
         zoomSnap: 0.5,
@@ -301,7 +290,7 @@
       };
       let currentLanguage = "pt";
       try {
-        if (localStorage.getItem("ev-charge-language") === "en") currentLanguage = "en";
+        if (window.ChargeVoyAccount.storage.getItem("ev-charge-language") === "en") currentLanguage = "en";
       } catch {}
       const i18nOriginalText = new WeakMap(),
         i18nOriginalAttrs = new WeakMap();
@@ -370,7 +359,7 @@
       }
       function setLanguage(language) {
         currentLanguage = language === "en" ? "en" : "pt";
-        localStorage.setItem("ev-charge-language", currentLanguage);
+        window.ChargeVoyAccount.storage.setItem("ev-charge-language", currentLanguage);
         applyTranslations();
         window.WebChargeVoy?.translate();
         // Do not recreate the map/card grid here: it keeps the language change instant on mobile.
@@ -835,7 +824,7 @@
       function vehicleWithPersonalSpecs(vehicle) {
         if (!vehicle) return null;
         let saved = {};
-        try { saved = JSON.parse(localStorage.getItem(`chargevoy-vehicle-specs:${vehicle.id}`) || "{}"); } catch {}
+        try { saved = JSON.parse(window.ChargeVoyAccount.storage.getItem(`chargevoy-vehicle-specs:${vehicle.id}`) || "{}"); } catch {}
         const result = { ...vehicle };
         for (const [field, min, max] of Object.values(VEHICLE_SPEC_FIELDS)) {
           const value = Number(saved[field]);
@@ -854,7 +843,7 @@
           if (!Number.isFinite(value) || value < min || value > max) return;
           overrides[field] = value;
         }
-        try { localStorage.setItem(`chargevoy-vehicle-specs:${vehicle.id}`, JSON.stringify(overrides)); } catch {}
+        try { window.ChargeVoyAccount.storage.setItem(`chargevoy-vehicle-specs:${vehicle.id}`, JSON.stringify(overrides)); } catch {}
         currentVehicle = vehicleWithPersonalSpecs(vehicle);
         showVehicleSpecs();
         sim();
@@ -909,7 +898,7 @@
             )
             .join("");
         let saved = null;
-        try { saved = localStorage.getItem("ev-charge-vehicle"); } catch {}
+        try { saved = window.ChargeVoyAccount.storage.getItem("ev-charge-vehicle"); } catch {}
         const savedVehicle = vehicleModels.find((vehicle) => vehicle.id === saved);
         const defaultVehicle =
           savedVehicle ||
@@ -923,6 +912,7 @@
           vehicleModels[0];
         if (defaultVehicle) brandSelect.value = defaultVehicle.make;
         renderVehicleOptions(brandSelect.value, defaultVehicle?.id);
+        window.ChargeVoyWebPreferences?.catalogueReady();
       }
 
       function renderVehicleOptions(brand = "all", preferredId = null) {
@@ -1045,10 +1035,10 @@
           null;
         currentVehicle = vehicleWithPersonalSpecs(selectedVehicle);
         if (!currentVehicle) return;
-        try { localStorage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
+        try { window.ChargeVoyAccount.storage.setItem("ev-charge-vehicle", currentVehicle.id); } catch {}
         for (const [elementId, [field]] of Object.entries(VEHICLE_SPEC_FIELDS)) {
           let saved = {};
-          try { saved = JSON.parse(localStorage.getItem(`chargevoy-vehicle-specs:${currentVehicle.id}`) || "{}"); } catch {}
+          try { saved = JSON.parse(window.ChargeVoyAccount.storage.getItem(`chargevoy-vehicle-specs:${currentVehicle.id}`) || "{}"); } catch {}
           document.getElementById(elementId).value = saved[field] ?? "";
         }
         showVehicleSpecs();
@@ -1374,20 +1364,22 @@
         if (!panel) return;
         panel.innerHTML = "A carregar avaliações…";
         try {
-          const [reviews, summary] = await Promise.all([
+          const [legacyReviews, legacySummary, fresh] = await Promise.all([
             getRows(
               "station_reviews",
               "select=id,rating,comment,created_at&station_id=eq." +
                 encodeURIComponent(stationId) +
                 "&order=created_at.desc&limit=8",
-            ),
+            ).catch(()=>[]),
             getRows(
               "station_reliability",
               "select=review_count,average_rating,snapshot_count,availability_rate,last_observed_at&station_id=eq." +
                 encodeURIComponent(stationId),
-            ),
+            ).catch(()=>[]),
+            account.request('/reviews/'+encodeURIComponent(stationId)).catch(()=>null),
           ]);
-          const s = summary[0] || {};
+          const reviews=[...(fresh?.reviews || []),...legacyReviews].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))).slice(0,8);
+          const s = fresh?.summary?.review_count ? fresh.summary : (legacySummary[0] || {});
           const header = s.review_count
             ? "<b>⭐ " +
               Number(s.average_rating).toFixed(1) +
@@ -1431,6 +1423,8 @@
         }
       }
       function showReviewForm(stationId) {
+        const reviewOwner=currentSession?.user?.id;
+        if(!reviewOwner)return;
         openModal(
           "Avaliar posto",
           '<form id="review-form" class="auth-form"><label>Classificação<select id="review-rating"><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select></label><label>Comentário<textarea id="review-comment" maxlength="1000" rows="4" placeholder="Como estava o posto?"></textarea></label><p id="review-message" class="auth-message"></p><button class="primary">Guardar avaliação</button></form>',
@@ -1439,29 +1433,19 @@
           .getElementById("review-form")
           .addEventListener("submit", async (event) => {
             event.preventDefault();
+            if(currentSession?.user?.id!==reviewOwner)return;
             const message = document.getElementById("review-message");
             message.textContent = "A guardar…";
-            const { error } = await authClient.from("station_reviews").upsert(
-              {
-                station_id: stationId,
-                user_id: currentSession.user.id,
-                rating: Number(document.getElementById("review-rating").value),
-                comment:
-                  document.getElementById("review-comment").value.trim() ||
-                  null,
-              },
-              { onConflict: "station_id,user_id" },
-            );
-            if (error) {
-              message.textContent = error.message;
-              return;
-            }
+            try {
+              await account.request('/reviews/'+encodeURIComponent(stationId),{method:'PUT',body:JSON.stringify({rating:Number(document.getElementById('review-rating').value),comment:document.getElementById('review-comment').value.trim() || null})});
+            } catch(error){message.textContent=error.message;return;}
             closeModal();
             await loadStationReviews(stationId);
           });
       }
 
       function saveFavorites() {
+        if(currentSession?.user)return;
         localStorage.setItem(
           "ev-charge-favorites",
           JSON.stringify([...favoriteStationIds]),
@@ -1479,28 +1463,12 @@
           : "☆ Adicionar aos favoritos";
       }
       async function toggleSelectedFavorite() {
-        if (!selectedStation) return;
-        const removing = favoriteStationIds.has(selectedStation.id);
-        if (removing) favoriteStationIds.delete(selectedStation.id);
-        else favoriteStationIds.add(selectedStation.id);
-        saveFavorites();
-        updateFavoriteButton();
-        if (currentSession?.user) {
-          const query = removing
-            ? authClient
-                .from("user_favorites")
-                .delete()
-                .eq("station_id", selectedStation.id)
-            : authClient.from("user_favorites").upsert(
-                {
-                  user_id: currentSession.user.id,
-                  station_id: selectedStation.id,
-                },
-                { onConflict: "user_id,station_id" },
-              );
-          const { error } = await query;
-          if (error) console.error("Sincronização do favorito:", error);
-        }
+        if(!selectedStation)return;
+        const id=selectedStation.id,on=!favoriteStationIds.has(id);
+        try {
+          if(currentSession?.user){favoritesSync.change(id,on);syncUserFavorites();}
+          else {if(on)favoriteStationIds.add(id);else favoriteStationIds.delete(id);saveFavorites();updateFavoriteButton();}
+        } catch(error){notifyUser(currentLanguage === "en" ? "Unable to save favourite on this device." : "Não foi possível guardar o favorito neste dispositivo.",{kind:"error"});}
       }
       function openModal(title, html) {
         document.getElementById("modal-title").textContent = title;
@@ -1516,225 +1484,46 @@
           .getElementById("app-modal")
           .setAttribute("aria-hidden", "true");
       }
-      function isNativeApp() {
-        return Boolean(window.Capacitor?.isNativePlatform?.());
-      }
-      async function handleNativeAuthCallback(url) {
-        if (!url?.startsWith("chargevoy://auth/callback")) return;
-        const callbackUrl = new URL(url);
-        const values = new URLSearchParams(callbackUrl.hash.replace(/^#/, ""));
-        const errorDescription =
-          values.get("error_description") || values.get("error");
-        if (errorDescription) {
-          openModal(
-            "Não foi possível entrar",
-            `<p>${escapeHtml(errorDescription)}</p>`,
-          );
-          return;
-        }
-        const access_token = values.get("access_token"),
-          refresh_token = values.get("refresh_token");
-        if (!access_token || !refresh_token) {
-          openModal(
-            "Não foi possível entrar",
-            "<p>O retorno de autenticação não continha uma sessão válida.</p>",
-          );
-          return;
-        }
-        const { error } = await authClient.auth.setSession({
-          access_token,
-          refresh_token,
-        });
-        if (error) {
-          openModal(
-            "Não foi possível entrar",
-            `<p>${escapeHtml(error.message)}</p>`,
-          );
-          return;
-        }
-        try {
-          await window.Capacitor?.Plugins?.Browser?.close();
-        } catch (_) {}
-        await initAuth();
-        closeModal();
-      }
-      function setupNativeAuth() {
-        if (!isNativeApp()) return;
-        window.Capacitor?.Plugins?.App?.addListener("appUrlOpen", (event) =>
-          handleNativeAuthCallback(event.url),
-        );
+      const account = window.ChargeVoyAccount;
+      let accountEpoch = 0;
+      let favoriteSyncStatus = "local";
+      const accountError = error => openModal(t("Não foi possível entrar"), `<p role="alert">${escapeHtml(error.message)}</p>`);
+      const favoritesSync = window.ChargeVoyFavorites.create({
+        request: account.request, storage: account.cache,
+        apply(ids) { favoriteStationIds = new Set(ids); updateFavoriteButton(); },
+        status(value) { favoriteSyncStatus=value; const node=document.getElementById("account-sync-status"); if(node)node.textContent=accountStatusText(); },
+      });
+      function accountStatusText() {
+        const en=currentLanguage === "en";
+        return ({synced:en?"Favourites synced":"Favoritos sincronizados",syncing:en?"Syncing favourites…":"A sincronizar favoritos…",pending:en?"Favourites saved on this device; sync pending":"Favoritos guardados neste dispositivo; sincronização pendente",local:en?"Checking saved favourites…":"A consultar favoritos guardados…","login-required":en?"Sign in with Google again to sync":"Entre novamente com Google para sincronizar","storage-error":en?"Unable to save on this device":"Não foi possível guardar neste dispositivo"})[favoriteSyncStatus];
       }
       async function signInWithGoogle() {
-        const native = isNativeApp();
-        const redirectTo = native
-          ? "chargevoy://auth/callback"
-          : window.location.origin + window.location.pathname;
-        const { data, error } = await authClient.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo, skipBrowserRedirect: native },
-        });
-        if (error) {
-          openModal(
-            "Não foi possível entrar",
-            `<p>${escapeHtml(error.message)}</p><p>Confirme se o fornecedor Google está ativo na Supabase e se este endereço está autorizado.</p>`,
-          );
-          return;
-        }
-        if (native && data?.url) {
-          const browser = window.Capacitor?.Plugins?.Browser;
-          if (browser?.open) await browser.open({ url: data.url });
-          else window.location.assign(data.url);
-        }
-      }
-      function showEmailAuth(mode = "signin") {
-        const signup = mode === "signup";
-        openModal(
-          signup ? "Criar conta" : "Entrar com email",
-          `<form id="email-auth-form" class="auth-form"><label>Email<input id="auth-email" type="email" autocomplete="email" required></label><label>Palavra-passe<input id="auth-password" type="password" minlength="8" autocomplete="${signup ? "new-password" : "current-password"}" required></label><button class="primary" type="submit">${signup ? "Criar conta" : "Entrar"}</button><button class="secondary" type="button" id="auth-switch">${signup ? "Já tenho conta" : "Criar nova conta"}</button><button class="text-button" type="button" id="auth-forgot">Esqueci-me da palavra-passe</button><p class="auth-message" id="auth-message"></p></form>`,
-        );
-        document
-          .getElementById("email-auth-form")
-          .addEventListener("submit", async (event) => {
-            event.preventDefault();
-            const email = document.getElementById("auth-email").value.trim();
-            const password = document.getElementById("auth-password").value;
-            const message = document.getElementById("auth-message");
-            message.textContent = "A processar…";
-            const result = signup
-              ? await authClient.auth.signUp({
-                  email,
-                  password,
-                  options: {
-                    emailRedirectTo:
-                      window.location.origin + window.location.pathname,
-                  },
-                })
-              : await authClient.auth.signInWithPassword({ email, password });
-            if (result.error) {
-              const code = result.error.code || "";
-              message.textContent =
-                code === "email_address_not_authorized" ||
-                /not authorized|not authorised/i.test(
-                  result.error.message || "",
-                )
-                  ? "A Supabase ainda não está autorizada a enviar email para este endereço. Adicione-o à equipa do projeto para testes ou configure SMTP personalizado."
-                  : result.error.message;
-              return;
-            }
-            if (signup && !result.data.session) {
-              message.textContent =
-                "Conta criada. Confirme o email antes de entrar e verifique também as pastas Spam e Promoções.";
-              return;
-            }
-            closeModal();
-            await initAuth();
-          });
-        document
-          .getElementById("auth-switch")
-          .addEventListener("click", () =>
-            showEmailAuth(signup ? "signin" : "signup"),
-          );
-        document
-          .getElementById("auth-forgot")
-          .addEventListener("click", async () => {
-            const email = document.getElementById("auth-email").value.trim();
-            const message = document.getElementById("auth-message");
-            if (!email) {
-              message.textContent = "Indique primeiro o seu email.";
-              return;
-            }
-            const result = await authClient.auth.resetPasswordForEmail(email, {
-              redirectTo: window.location.origin + window.location.pathname,
-            });
-            message.textContent = result.error
-              ? result.error.message
-              : "Verifique o email para redefinir a palavra-passe. Se não aparecer, veja Spam e Promoções.";
-          });
+        openModal(t("Entrar"), `<p>${currentLanguage === "en" ? "Use the same Google account as in the app to access your favourites." : "Use a mesma conta Google da app para aceder aos seus favoritos."}</p><div id="google-signin-button"></div><p id="google-signin-message" role="alert"></p>`);
+        const element=document.getElementById("google-signin-button");
+        const failure=error=>{const message=document.getElementById("google-signin-message");if(message)message.textContent=error.message;};
+        try{await account.renderSignIn(element,currentLanguage,failure);}catch(error){failure(error);}
       }
       async function signOutUser() {
-        await authClient.auth.signOut();
-        closeModal();
+        try { await account.signOut(); closeModal(); } catch(error) { accountError(error); }
       }
       async function deleteMyAccount() {
-        const user = currentSession?.user;
-        if (!user) return;
-        const label =
-          currentLanguage === "en"
-            ? "Delete your account permanently? Favorites, route history, preferences and reviews will be removed immediately."
-            : "Eliminar a conta de forma permanente? Os favoritos, histórico de rotas, preferências e avaliações serão removidos imediatamente.";
-        if (!window.confirm(label)) return;
-        openModal(
-          currentLanguage === "en" ? "Deleting account" : "A eliminar conta",
-          currentLanguage === "en"
-            ? "<p>Please wait…</p>"
-            : "<p>Por favor aguarde…</p>",
-        );
-        const { error } =
-          await authClient.functions.invoke("delete-my-account");
-        if (error) {
-          openModal(
-            currentLanguage === "en"
-              ? "Unable to delete account"
-              : "Não foi possível eliminar a conta",
-            `<p>${escapeHtml(error.message || "Tente novamente ou contacte chargevoy@chargevoy.pt.")}</p><p><a href="mailto:chargevoy@chargevoy.pt?subject=Pedido%20de%20elimina%C3%A7%C3%A3o%20de%20conta">chargevoy@chargevoy.pt</a></p>`,
-          );
-          return;
-        }
-        await authClient.auth.signOut();
-        currentSession = null;
-        favoriteStationIds = new Set();
-        saveFavorites();
-        updateAuthUI();
-        closeModal();
-        notifyUser(
-          currentLanguage === "en"
-            ? "Your account and associated data have been deleted."
-            : "A sua conta e os dados associados foram eliminados.",
-          { kind: "success" },
-        );
+        const id=currentSession?.user?.id;if(!id)return;
+        if(!window.confirm(currentLanguage === "en" ? "Permanently delete your Google-linked ChargeVoy account, favourites, preferences, routes and reviews? Legacy account data is handled separately." : "Eliminar permanentemente a conta ChargeVoy ligada ao Google, favoritos, preferências, rotas e avaliações? Os dados de contas antigas são tratados separadamente."))return;
+        try {
+          await account.remove();favoritesSync.remove(id);
+          try{for(const key of Object.keys(localStorage))if(key.startsWith('chargevoy-web:'+id+':') || key==='chargevoy-preferences-v1:'+id)localStorage.removeItem(key);}catch{}
+          closeModal();notifyUser(currentLanguage === "en" ? "Account deleted." : "Conta eliminada.",{kind:"success"});
+        } catch(error) { accountError(error); }
       }
-      async function syncUserFavorites() {
-        if (!currentSession?.user) return;
-        const userId = currentSession.user.id;
-        const { data, error } = await authClient
-          .from("user_favorites")
-          .select("station_id");
-        if (error) {
-          console.error("Favoritos:", error);
-          return;
-        }
-        const remoteIds = (data || []).map((item) => item.station_id);
-        const merged = new Set([...favoriteStationIds, ...remoteIds]);
-        favoriteStationIds = merged;
-        saveFavorites();
-        const missing = [...merged]
-          .filter((id) => !remoteIds.includes(id))
-          .map((station_id) => ({ user_id: userId, station_id }));
-        if (missing.length)
-          await authClient
-            .from("user_favorites")
-            .upsert(missing, { onConflict: "user_id,station_id" });
-        updateFavoriteButton();
-      }
+      async function syncUserFavorites() { await favoritesSync.sync(); }
       function updateAuthUI() {
-        const user = currentSession?.user;
-        document.getElementById("account-label").textContent = user
-          ? user.user_metadata?.name?.split(" ")[0] || "Conta"
-          : "Entrar";
+        const user=currentSession?.user;
+        document.getElementById("account-label").textContent=user ? (user.user_metadata?.name || user.name || "Conta").split(" ")[0] : t("Entrar");
       }
       async function showAccount() {
-        const user = currentSession?.user;
-        if (!user) {
-          openModal(
-            "Entrar",
-            `<p>Entre para sincronizar favoritos e guardar o histórico das suas rotas em vários dispositivos.</p><button class="primary" onclick="signInWithGoogle()">Entrar com Google</button><button class="secondary" onclick="showEmailAuth('signin')">Entrar com email</button><button class="secondary" onclick="showEmailAuth('signup')">Criar conta com email</button>${installPrompt ? '<button class="secondary" onclick="installPwa()">Instalar aplicação</button>' : ""}`,
-          );
-          return;
-        }
-        openModal(
-          t("A minha conta"),
-          `<p><b>${escapeHtml(user.user_metadata?.full_name || user.user_metadata?.name || "Utilizador")}</b><br><small>${escapeHtml(user.email || "")}</small></p><p>${t("Os favoritos e as novas rotas ficam associados a esta conta.")}</p>${installPrompt ? '<button class="primary" onclick="installPwa()">Instalar aplicação</button>' : ""}<button class="secondary" onclick="signOutUser()">${t("Terminar sessão")}</button><hr style="border:0;border-top:1px solid #e4eaf0;margin:18px 0"><p><b>${t("Eliminar conta")}</b><br><small>${t("Elimina imediatamente favoritos, histórico, preferências e avaliações associados à conta. Esta ação não pode ser desfeita.")}</small></p><button class="secondary" style="color:#a51c30;border-color:#efb8c0" onclick="deleteMyAccount()">${t("Eliminar a minha conta")}</button>`,
-        );
+        const user=currentSession?.user;
+        if(!user){await signInWithGoogle();return;}
+        openModal(t("A minha conta"), `<p><b>${escapeHtml(user.user_metadata?.full_name || user.name || "Utilizador")}</b><br><small>${escapeHtml(user.email || "")}</small></p><p id="account-sync-status" role="status">${escapeHtml(accountStatusText())}</p><p id="account-preferences-status" role="status">${escapeHtml(window.ChargeVoyWebPreferences?.statusText() || "")}</p><p>${currentLanguage === "en" ? "Google account shared with the Android app. Previous account data has not been imported automatically." : "Conta Google partilhada com a app Android. Os dados da conta anterior não foram importados automaticamente."}</p><button class="secondary" onclick="syncUserFavorites();window.ChargeVoyWebPreferences?.sync()">${currentLanguage === "en" ? "Sync account" : "Sincronizar conta"}</button>${installPrompt ? '<button class="secondary" onclick="installPwa()">'+t('Instalar aplicação')+'</button>' : ""}<button class="secondary" onclick="signOutUser()">${t("Terminar sessão")}</button><hr><button class="secondary" onclick="deleteMyAccount()">${t("Eliminar a minha conta")}</button>`);
       }
       async function installPwa() {
         if (!installPrompt) return;
@@ -1788,20 +1577,11 @@
           return;
         }
         openModal("📊 Histórico", "<p>A carregar as suas rotas…</p>");
-        const { data, error } = await authClient
-          .from("user_route_history")
-          .select(
-            "id,origin_label,destination_label,distance_km,charging_minutes,created_at",
-          )
-          .order("created_at", { ascending: false })
-          .limit(20);
-        if (error) {
-          openModal(
-            "📊 Histórico",
-            `${stationHtml}<p>Não foi possível consultar o histórico.</p>`,
-          );
-          return;
-        }
+        const owner=currentSession.user.id;
+        let data;
+        try { data=(await account.request('/history')).history; }
+        catch(error){if(currentSession?.user?.id===owner)openModal("📊 Histórico",`${stationHtml}<p>${currentLanguage === "en" ? "Could not load route history." : "Não foi possível consultar o histórico."}</p>`);return;}
+        if(currentSession?.user?.id!==owner)return;
         const routes = (data || [])
           .map(
             (route) =>
@@ -2632,7 +2412,7 @@
       // The menu controls remain the source of truth for both filter surfaces.
       function syncQuickFilters() {
         document.querySelectorAll("#power-filter .chip, #quick-power-filter .chip").forEach((button) => {
-          const selected = button.dataset.power === selectedPower;
+          const selected = (selectedPower === "all" ? button.dataset.power === "all" : selectedPower.split(",").includes(button.dataset.power));
           button.classList.toggle("on", selected);
           button.setAttribute("aria-pressed", String(selected));
         });
@@ -2670,11 +2450,8 @@
 
       function matchesPower(power) {
         const value = Number(power) || 0;
-         if (selectedPower === "0-50") return value > 0 && value <= 50;
-        if (selectedPower === "50-150") return value > 50 && value <= 150;
-        if (selectedPower === "150-250") return value > 150 && value <= 250;
-        if (selectedPower === "250+") return value > 250;
-        return true;
+        if(selectedPower === "all")return true;
+        return selectedPower.split(",").some(range=>({"0-50":value>0&&value<=50,"50-150":value>50&&value<=150,"150-250":value>150&&value<=250,"250+":value>250})[range]);
       }
 
       function stationMaxPowerKw(station) {
@@ -2742,7 +2519,7 @@
             matchesPower(stationMaxPowerKw(s)) &&
             connectorMatch &&
             statusMatch &&
-            (selectedOperator === "all" || operatorName === selectedOperator)
+            (window.ChargeVoyWebPreferences?.matchesOperator(operatorName,selectedOperator) ?? (selectedOperator === "all" || operatorName === selectedOperator))
           );
         });
         // Keep map markers separate from the nearby sidebar shortlist.
@@ -3344,23 +3121,10 @@
         }
       }
       async function saveRouteToUserHistory() {
-        if (!currentSession?.user || !lastPlannedRoute) return;
-        const route = lastPlannedRoute;
-        const { error } = await authClient.from("user_route_history").insert({
-          user_id: currentSession.user.id,
-          origin_label: route.origin.label,
-          origin_lat: route.origin.lat,
-          origin_lon: route.origin.lon,
-          destination_label: route.destination.label,
-          destination_lat: route.destination.lat,
-          destination_lon: route.destination.lon,
-          vehicle_id: currentVehicle?.id || null,
-          stops: route.stops,
-          distance_km: route.distanceKm,
-          drive_minutes: Math.round(route.driveMinutes),
-          charging_minutes: Math.round(route.chargingMinutes),
-        });
-        if (error) console.error("Histórico da rota:", error);
+        if(!currentSession?.user || !lastPlannedRoute)return;
+        const route=lastPlannedRoute;
+        try{await account.request('/history',{method:'POST',body:JSON.stringify({origin_label:route.origin.label,destination_label:route.destination.label,distance_km:route.distanceKm,charging_minutes:Math.round(route.chargingMinutes)})});}
+        catch(error){notifyUser(currentLanguage === "en" ? "Route calculated; history could not be saved." : "Rota calculada; não foi possível guardar no histórico.",{kind:"error"});}
       }
 
       async function planRoute() {
@@ -3643,22 +3407,22 @@
             banner.hidden = true;
           });
       }
-      async function initAuth() {
-        if (!authClient) {
-          console.warn("Autenticação indisponível; mapa público continua disponível");
-          updateAuthUI();
-          return;
-        }
-        const { data } = await authClient.auth.getSession();
-        currentSession = data.session;
-        updateAuthUI();
-        if (currentSession) syncUserFavorites();
-        authClient.auth.onAuthStateChange((event, session) => {
-          currentSession = session;
-          updateAuthUI();
-          if (session) syncUserFavorites();
-        });
+      async function applyAccountSession(session) {
+        const previousId=currentSession?.user?.id, id=session?.user?.id;
+        if(previousId===id){currentSession=session;updateAuthUI();return;}
+        accountEpoch++;currentSession=session;favoritesSync.detach();closeModal();
+        favoriteStationIds=new Set();
+        if(id) { favoritesSync.attach(id);syncUserFavorites();closeModal(); }
+        else { try{favoriteStationIds=new Set(JSON.parse(localStorage.getItem("ev-charge-favorites")||"[]"));}catch{} }
+        updateAuthUI();updateFavoriteButton();
+        window.dispatchEvent(new CustomEvent('chargevoy-user-ready',{detail:{id}}));
       }
+      async function initAuth() {
+        window.addEventListener('chargevoy-account-changed',event=>applyAccountSession(event.detail));
+        try { await account.restore(); } catch(error) { console.warn("Conta indisponível; mapa público continua disponível."); }
+      }
+      window.addEventListener('online',()=>{if(currentSession)syncUserFavorites();else account.restore().catch(()=>{});});
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden && currentSession)account.restore().then(()=>syncUserFavorites()).catch(()=>{});});
       window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         installPrompt = event;
@@ -3670,7 +3434,6 @@
             .catch((error) => console.error("PWA:", error)),
         );
       applyTranslations();
-      setupNativeAuth();
       initAuth();
       setupAnalyticsConsent();
       loadRealStations();
@@ -4167,7 +3930,7 @@
             currentLanguage === "en"
               ? "Privacy policy"
               : "Política de privacidade",
-          html: `<div class="legal-demo"><p>${currentLanguage === "en" ? "This notice covers the website. The Android application uses its own Google/Cloudflare account service:" : "Este aviso refere-se ao website. A aplicação Android utiliza o seu próprio serviço de contas Google/Cloudflare:"} <a href="https://chargevoy.pt/privacy.html" target="_blank" rel="noopener noreferrer">${currentLanguage === "en" ? "Android privacy policy" : "Política de privacidade Android"}</a>.</p><h3>${currentLanguage === "en" ? "Controller and contact" : "Responsável e contacto"}</h3><p>Diogo Ferreira — ChargeVoy<br><a href="mailto:chargevoy@chargevoy.pt">chargevoy@chargevoy.pt</a></p><h3>${currentLanguage === "en" ? "Data we process" : "Dados que tratamos"}</h3><p>${currentLanguage === "en" ? "Account email and Google sign-in identity (when chosen), favourites, route history, vehicle and preferences, reviews/comments, and location only when permission is granted." : "Email da conta e identidade Google (quando escolhida), favoritos, histórico de rotas, veículo e preferências, avaliações/comentários e localização apenas quando a autorização é concedida."}</p><h3>${currentLanguage === "en" ? "Why and how long" : "Finalidades e conservação"}</h3><p>${currentLanguage === "en" ? "We use this data to authenticate you, synchronise your account, plan routes and provide requested features. Account data is retained while the account exists and is deleted when you delete the account." : "Usamos estes dados para autenticação, sincronização da conta, planeamento de rotas e funcionalidades pedidas. Os dados da conta são conservados enquanto a conta existir e eliminados quando elimina a conta."}</p><h3>${currentLanguage === "en" ? "Providers and analytics" : "Fornecedores e analítica"}</h3><p>${currentLanguage === "en" ? "Supabase (accounts and database), Cloudflare (hosting), Google (optional sign-in and Analytics only after consent), and public mapping/data providers used by features. No advertising is shown at launch." : "Supabase (contas e base de dados), Cloudflare (alojamento), Google (login opcional e Analytics apenas após consentimento) e fornecedores públicos de mapas/dados usados pelas funcionalidades. Não é apresentada publicidade no lançamento."}</p><h3>${currentLanguage === "en" ? "Your rights" : "Os seus direitos"}</h3><p>${currentLanguage === "en" ? "You may request access, correction or deletion at the contact above. You can delete your account in the app/site; signed-out users may email us." : "Pode pedir acesso, retificação ou eliminação através do contacto acima. Pode eliminar a conta no site/app; se não conseguir entrar, envie-nos um email."}</p></div>`,
+          html: `<div class="legal-demo"><p>${currentLanguage === "en" ? "The website and Android app share the Google/Cloudflare account service:" : "O website e a app Android partilham o serviço de contas Google/Cloudflare:"} <a href="https://chargevoy.pt/privacy.html" target="_blank" rel="noopener noreferrer">${currentLanguage === "en" ? "Privacy policy" : "Política de privacidade"}</a>.</p><h3>${currentLanguage === "en" ? "Controller and contact" : "Responsável e contacto"}</h3><p>Diogo Ferreira — ChargeVoy<br><a href="mailto:chargevoy@chargevoy.pt">chargevoy@chargevoy.pt</a></p><h3>${currentLanguage === "en" ? "Data we process" : "Dados que tratamos"}</h3><p>${currentLanguage === "en" ? "Account email and Google sign-in identity (when chosen), favourites, route history, vehicle and preferences, reviews/comments, and location only when permission is granted." : "Email da conta e identidade Google (quando escolhida), favoritos, histórico de rotas, veículo e preferências, avaliações/comentários e localização apenas quando a autorização é concedida."}</p><h3>${currentLanguage === "en" ? "Why and how long" : "Finalidades e conservação"}</h3><p>${currentLanguage === "en" ? "We use this data to authenticate you, synchronise your account, plan routes and provide requested features. Account data is retained while the account exists and is deleted when you delete the account." : "Usamos estes dados para autenticação, sincronização da conta, planeamento de rotas e funcionalidades pedidas. Os dados da conta são conservados enquanto a conta existir e eliminados quando elimina a conta."}</p><h3>${currentLanguage === "en" ? "Providers and analytics" : "Fornecedores e analítica"}</h3><p>${currentLanguage === "en" ? "Cloudflare (hosting and account data), Supabase (legacy data), Google (optional sign-in and Analytics only after consent), and public mapping/data providers used by features. No advertising is shown at launch." : "Cloudflare (alojamento e dados de conta), Supabase (dados antigos), Google (login opcional e Analytics apenas após consentimento) e fornecedores públicos de mapas/dados usados pelas funcionalidades. Não é apresentada publicidade no lançamento."}</p><h3>${currentLanguage === "en" ? "Your rights" : "Os seus direitos"}</h3><p>${currentLanguage === "en" ? "You may request access, correction or deletion at the contact above. You can delete your account in the app/site; signed-out users may email us." : "Pode pedir acesso, retificação ou eliminação através do contacto acima. Pode eliminar a conta no site/app; se não conseguir entrar, envie-nos um email."}</p></div>`,
         },
         cookies: {
           title:

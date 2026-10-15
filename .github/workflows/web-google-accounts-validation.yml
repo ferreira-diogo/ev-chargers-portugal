@@ -1,0 +1,43 @@
+name: Validate Google-only web accounts
+on:
+  push:
+    branches: [feat/web-google-account-sync]
+  pull_request:
+    paths:
+      - 'ev-charge-portugal-github-ready/assets/account*.js'
+      - 'ev-charge-portugal-github-ready/assets/preferences-sync.js'
+      - 'ev-charge-portugal-github-ready/worker/accounts.js'
+      - 'apps/chargevoy-android/account-worker/**'
+      - 'tests/web-account*.test.mjs'
+      - '.github/workflows/web-google-accounts-validation.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci --prefix apps/chargevoy-android/account-worker
+      - run: npm test --prefix apps/chargevoy-android/account-worker
+      - run: node --test tests/web-account*.test.mjs
+      - run: npm ci --prefix ev-charge-portugal-github-ready
+      - run: npm test --prefix ev-charge-portugal-github-ready
+      - run: npm run build:web --prefix ev-charge-portugal-github-ready
+      - name: Install browser test client
+        working-directory: ev-charge-portugal-github-ready
+        run: npm install --no-save --package-lock=false playwright@1.58.2
+      - name: Verify account and existing public flows
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          node ev-charge-portugal-github-ready/scripts/browser-account-login.mjs
+          node ev-charge-portugal-github-ready/scripts/browser-app-layout.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: google-web-account-ui
+          path: ev-charge-portugal-github-ready/scripts/qa/*.png

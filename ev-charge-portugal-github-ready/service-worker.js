@@ -1,5 +1,5 @@
-const CACHE_NAME='ev-charge-shell-v41';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=24','./assets/web-app-layout.css?v=2','./assets/recommendations.js?v=1','./assets/web-app-ui.js?v=4','./assets/geocoding.css?v=1','./assets/geocoding.js?v=1','./assets/chargevoy.js?v=37','./assets/ceme-cards.json','./assets/vehicle-catalog.json?v=2','./assets/vehicle-images/credits.json?v=20261003-2','./assets/route-corridor.js?v=21'];
+const CACHE_NAME='ev-charge-shell-v42';
+const SHELL=['./assets/account.js?v=1','./assets/account-favorites.js?v=1','./assets/preferences-sync.js?v=1','./assets/account-preferences.js?v=1','./','./index.html','./manifest.webmanifest','./icon.svg','./assets/chargevoy.css?v=24','./assets/web-app-layout.css?v=2','./assets/recommendations.js?v=1','./assets/web-app-ui.js?v=5','./assets/geocoding.css?v=1','./assets/geocoding.js?v=1','./assets/chargevoy.js?v=38','./assets/ceme-cards.json','./assets/vehicle-catalog.json?v=2','./assets/vehicle-images/credits.json?v=20261003-2','./assets/route-corridor.js?v=21'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
