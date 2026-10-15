@@ -102,3 +102,30 @@ bookmark D1/version Worker → schema aditivo → Worker de contas → saúde/40
 A publicação web normal também tem o gate Google/backend, impedindo ativação fora
 de ordem. Nunca exporta conteúdo das contas para artifacts; apenas metadados de
 recuperação. Uma falha nas origens bloqueia todo o deploy, mantendo o website atual.
+
+## Publicação concluída — 2026-10-15
+
+Após configurar as origens no cliente WEB correto, a biblioteca Google real passou
+com HTTP 200 em /gsi/button para chargevoy.pt e www.chargevoy.pt, sem erro de origem.
+PR #55 integrado em main no commit c5faa3e941e518a9ecb0c1851e0d0ffcd1e112e5.
+Workflow de ativação 38783621047 concluído com sucesso (19:14, Europe/Lisbon):
+https://github.com/ferreira-diogo/ev-chargers-portugal/actions/runs/38783621047
+
+- Worker de contas ativo: 0cf006f7-15db-4634-b7cc-abafd5e27212.
+- Schema privado e fronteira anónima 401 verificados; migrações aditivas executadas.
+- Worker web ativo: e5b01468-023c-4b5d-a941-f7c51c73f668.
+- Snapshot nacional publicado preservado; páginas legais e ficheiros estáticos
+  comparados com a candidata após publicar.
+- Recuperação de contas: artifact google-account-recovery-metadata, ID 11996258754
+  (versão anterior e bookmark D1; nenhum conteúdo de conta exportado).
+- Recuperação web: artifact catalogue-web-rollback-38783621047, ID 11995869391.
+- Os artifacts têm retenção de 7 dias; o backup Git continua na branch documentada.
+
+A validação de UI com duas identidades simuladas passou. A verificação adicional
+no domínio público encontrou o desafio Cloudflare "Just a moment..." (HTTP 403)
+para o browser do GitHub Actions, sem executar o JavaScript da aplicação. Isto
+impede essa verificação automática e não demonstra uma falha de login da aplicação.
+Nenhuma proteção Cloudflare foi alterada para contornar o desafio.
+Login completo com uma conta Google real e confirmação dos favoritos entre app e
+website continuam como aceitação pelo utilizador. A app 1.1.9 permanece inalterada;
+a integração das preferências no seu ecrã continua a depender da futura fase 2B.
