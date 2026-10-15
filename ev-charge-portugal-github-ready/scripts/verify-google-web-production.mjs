@@ -9,10 +9,12 @@ try{
   const context=await browser.newContext({viewport:i?{width:1440,height:900}:{width:390,height:844},serviceWorkers:'block'});
   const page=await context.newPage(),errors=[],google=[];
   page.on('pageerror',error=>errors.push(error.message));
+  page.on('response',response=>{const u=new URL(response.url());if(u.hostname.endsWith('chargevoy.pt')&&(u.pathname==='/'||u.pathname.includes('/assets/account')||u.pathname.includes('/assets/chargevoy.js')))console.log(JSON.stringify({resource:u.origin+u.pathname,status:response.status()}));});
   page.on('response',response=>{if(response.url().startsWith('https://accounts.google.com/gsi/button'))google.push(response.status());});
   await page.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:45000});
   const site=new URL(page.url()).origin;
-  await page.waitForFunction(()=>Boolean(window.ChargeVoyAccount&&window.WebChargeVoy),null,{timeout:45000});
+  console.log(JSON.stringify({origin,url:page.url(),title:await page.title()}));
+  try{await page.waitForFunction(()=>Boolean(window.ChargeVoyAccount&&window.WebChargeVoy),null,{timeout:45000});}catch(error){console.log(JSON.stringify({origin,errors,title:await page.title(),scripts:await page.locator('script[src]').evaluateAll(nodes=>nodes.map(x=>x.src))}));await page.screenshot({path:resolve(out,'production-load-failure.png'),fullPage:true});throw error;}
   const me=await page.request.get(site+'/api/account/me');assert.equal(me.status(),401);assert.match(me.headers()['cache-control'],/no-store/);
   assert(!('token' in await me.json()));
   const forbidden=await page.request.post(site+'/api/account/challenge',{headers:{Origin:'https://example.invalid'},data:{}});assert.equal(forbidden.status(),403);
