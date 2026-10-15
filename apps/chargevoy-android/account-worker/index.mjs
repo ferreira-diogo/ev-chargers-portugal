@@ -21,6 +21,11 @@ export function createWorker(verify = verifyGoogle) {
     try {
       if (!env.ACCOUNTS_DB || !env.GOOGLE_CLIENT_ID || !env.AUTH_LIMITER) throw fail('Serviço de contas por configurar.', 503);
       const db = env.ACCOUNTS_DB, path = new URL(request.url).pathname, now = Math.floor(Date.now()/1000);
+      if (path === '/health' && request.method === 'GET') {
+        const rows=await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('user_preferences','account_route_history','account_station_reviews')").all();
+        const ready=rows.results.length===3;
+        return cors(json({ok:ready,service:'chargevoy-accounts-web-v1',schemaReady:ready},ready?200:503));
+      }
       async function body() {
         if (!request.headers.get('Content-Type')?.startsWith('application/json')) throw fail('Pedido inválido.', 400);
         const text = await request.text(); if (text.length > 16000) throw fail('Pedido demasiado grande.', 413);

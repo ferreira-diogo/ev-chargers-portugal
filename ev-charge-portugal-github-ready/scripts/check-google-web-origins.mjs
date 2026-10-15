@@ -2,6 +2,7 @@
 import {chromium} from 'playwright';
 const browser=await chromium.launch({...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{}),headless:true,args:['--no-sandbox']});
 const client='1094158912679-4vs9a9t3lrv54uv4h9lmmmb1aq2h9roo.apps.googleusercontent.com';
+let blocked=false;
 try{
  for(const origin of ['https://chargevoy.pt','https://www.chargevoy.pt']){
   const context=await browser.newContext(),page=await context.newPage(),messages=[],responses=[];
@@ -16,7 +17,12 @@ try{
    await page.waitForTimeout(3500);loaded=true;
   }catch(error){messages.push(error.message.slice(0,300));}
   const rejected=messages.some(x=>/origin.+(?:not allowed|not registered|mismatch)|origin_mismatch/i.test(x));
+  if(rejected || !loaded || !responses.some(x=>x.path==='/gsi/button'&&x.status===200))blocked=true;
   console.log(JSON.stringify({origin,result:rejected?'origin-rejected':loaded?'no-origin-error-observed':'inconclusive',responses,messages}));
   await context.close();
  }
 }finally{await browser.close();}
+if(blocked && process.env.REQUIRE_GOOGLE_ORIGINS==='1'){
+ console.error('Deployment blocked: Google JavaScript origins must be authorized and the Google button must load on both domains.');
+ process.exitCode=1;
+}

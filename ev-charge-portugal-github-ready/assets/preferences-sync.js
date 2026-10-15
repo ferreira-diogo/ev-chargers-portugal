@@ -6,7 +6,7 @@
   function create({request, storage, apply, status = ()=>{}}) {
     let owner = null, generation = 0, state = null, busy = false;
     const key = id => 'chargevoy-preferences-v1:'+id;
-    function save() {storage.setItem(key(owner),JSON.stringify(state));}
+    function save() {try{storage.setItem(key(owner),JSON.stringify(state));}catch(error){throw Object.assign(new Error('Preference storage unavailable',{cause:error}),{code:'storage'});}}
     function view() {
       const values = {...state.preferences};
       for (const [k,v] of Object.entries(state.pending)) {if(v === null)delete values[k];else values[k]=v;}
@@ -57,7 +57,7 @@
           save();view();
         }
         status(Object.keys(state.pending).length?'pending':'synced');
-      } catch(error) {if(active())status(error.status===401?'login-required':error.status===404?'unavailable':'pending');}
+      } catch(error) {if(active())status(error.code==='storage'?'storage-error':error.status===401?'login-required':error.status===404?'unavailable':'pending');}
       finally {if(active())busy=false;}
     }
     function remove(id) {storage.removeItem(key(id));if(owner===id)detach();}

@@ -4,7 +4,7 @@
     let owner=null,epoch=0,state=null,busy=false;
     const key=id=>'chargevoy-favorites-v1:'+id;
     const valid=id=>typeof id==='string'&&/^[a-zA-Z0-9:_-]{1,160}$/.test(id);
-    const save=()=>storage.setItem(key(owner),JSON.stringify(state));
+    const save=()=>{try{storage.setItem(key(owner),JSON.stringify(state));}catch(error){throw Object.assign(new Error('Favourite storage unavailable',{cause:error}),{code:'storage'});}};
     const show=()=>{const ids=new Set(state.remote);for(const [id,on] of Object.entries(state.pending)){if(on)ids.add(id);else ids.delete(id);}apply([...ids]);};
     function detach(){epoch++;owner=null;state=null;busy=false;}
     function attach(id){
@@ -33,7 +33,7 @@
           if(state.pending[id]===on)delete state.pending[id];save();show();
         }
         status(Object.keys(state.pending).length?'pending':'synced');
-      }catch(error){if(active())status(error.status===401?'login-required':'pending');}
+      }catch(error){if(active())status(error.code==='storage'?'storage-error':error.status===401?'login-required':'pending');}
       finally{if(active())busy=false;}
     }
     function remove(id){storage.removeItem(key(id));if(owner===id)detach();}

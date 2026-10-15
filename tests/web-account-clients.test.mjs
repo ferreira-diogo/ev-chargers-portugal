@@ -44,3 +44,10 @@ test('an expired response from the old session cannot clear a newer restored acc
  release(Response.json({error:'expired'},{status:401}));await assert.rejects(old);
  assert.equal(b.account.getSession()?.user?.id,'bob');
 });
+
+test('failed remote cache writes cannot be reported as locally saved or synced',async()=>{
+ const f=favourites(async()=>({favorites:['nap-test']}),{getItem:()=>null,setItem(){throw Error('quota');}});f.client.attach('alice');await f.client.sync();assert.equal(f.status(),'storage-error');
+ const context=vm.createContext({});vm.runInContext(src('preferences-sync.js'),context);let status;
+ const client=context.ChargeVoyPreferences.create({request:async()=>({revision:1,preferences:{language:'en'}}),storage:{getItem:()=>null,setItem(){throw Error('quota');}},apply(){},status:s=>status=s});
+ client.attach('alice');await client.sync();assert.equal(status,'storage-error');
+});

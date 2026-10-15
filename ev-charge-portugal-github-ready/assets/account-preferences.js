@@ -18,7 +18,7 @@
       currentVehicle=null;$('vehicle-select').value='';$('vehicle-specs').textContent=currentLanguage==='en'?'Saved vehicle is not available in this catalogue. Select a vehicle.':'O veículo guardado não está disponível neste catálogo. Selecione um veículo.';
       $('vehicle-image').textContent='🚘';$('vehicle-image-credit').textContent='';return;
     }
-    if(desiredVehicle)account.storage.setItem('chargevoy-vehicle-specs:'+vehicle.id,JSON.stringify(desiredVehicle.specs||{}));
+    if(desiredVehicle){try{account.storage.setItem('chargevoy-vehicle-specs:'+vehicle.id,JSON.stringify(desiredVehicle.specs||{}));}catch{}}
     $('vehicle-brand').value=vehicle.make;
     renderVehicleOptions(vehicle.make,vehicle.id);
   }

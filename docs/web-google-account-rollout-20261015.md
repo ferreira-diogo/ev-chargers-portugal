@@ -84,3 +84,21 @@ no mesmo dia do deploy; o backup Git conserva código, não substitui o backup D
 A candidata não deve ser anunciada como publicada ou como login real validado só
 por passar testes simulados. Registar run CI, versão Worker, bookmark, deploy web
 bem-sucedido e resultado de login real antes de encerrar a ativação.
+
+## Bloqueio confirmado e ativação preparada
+
+Em 2026-10-15, o diagnóstico com a biblioteca Google real devolveu `/gsi/button`
+HTTP 403 e `[GSI_LOGGER]: The given origin is not allowed for the given client ID.`
+para `https://chargevoy.pt` e `https://www.chargevoy.pt`. Não houve login real.
+É necessária a configuração destas duas origens no cliente WEB já utilizado pela
+app, ID `1094158912679-4vs9a9t3lrv54uv4h9lmmmb1aq2h9roo.apps.googleusercontent.com`.
+
+O workflow `Activate Google web accounts` está preparado para testar interface e
+origens antes de tocar na infraestrutura. Só publica a partir de `main`, para não
+permitir que a tarefa diária do main antigo reponha o website anterior depois.
+Após configurar as origens e integrar o PR #55, executa: testes → gate Google →
+bookmark D1/version Worker → schema aditivo → Worker de contas → saúde/401 anónimo
+→ publicação web com catálogo preservado e rollback automático de versões.
+A publicação web normal também tem o gate Google/backend, impedindo ativação fora
+de ordem. Nunca exporta conteúdo das contas para artifacts; apenas metadados de
+recuperação. Uma falha nas origens bloqueia todo o deploy, mantendo o website atual.

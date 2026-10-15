@@ -359,7 +359,7 @@
       }
       function setLanguage(language) {
         currentLanguage = language === "en" ? "en" : "pt";
-        window.ChargeVoyAccount.storage.setItem("ev-charge-language", currentLanguage);
+        try{window.ChargeVoyAccount.storage.setItem("ev-charge-language", currentLanguage);}catch{}
         applyTranslations();
         window.WebChargeVoy?.translate();
         // Do not recreate the map/card grid here: it keeps the language change instant on mobile.
@@ -1485,7 +1485,6 @@
           .setAttribute("aria-hidden", "true");
       }
       const account = window.ChargeVoyAccount;
-      let accountEpoch = 0;
       let favoriteSyncStatus = "local";
       const accountError = error => openModal(t("Não foi possível entrar"), `<p role="alert">${escapeHtml(error.message)}</p>`);
       const favoritesSync = window.ChargeVoyFavorites.create({
@@ -3410,7 +3409,7 @@
       async function applyAccountSession(session) {
         const previousId=currentSession?.user?.id, id=session?.user?.id;
         if(previousId===id){currentSession=session;updateAuthUI();return;}
-        accountEpoch++;currentSession=session;favoritesSync.detach();closeModal();
+        currentSession=session;favoritesSync.detach();closeModal();
         favoriteStationIds=new Set();
         if(id) { favoritesSync.attach(id);syncUserFavorites();closeModal(); }
         else { try{favoriteStationIds=new Set(JSON.parse(localStorage.getItem("ev-charge-favorites")||"[]"));}catch{} }

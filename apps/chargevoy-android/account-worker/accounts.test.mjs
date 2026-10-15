@@ -139,3 +139,10 @@ test('public reviews expose no identities, validate ratings and account deletion
  assert.equal((await env.ACCOUNTS_DB.prepare('SELECT count(*) AS n FROM account_route_history').first()).n,0);
  assert.equal((await (await call(w,env,'/reviews/nap-1')).json()).summary.review_count,1);
 });
+
+test('health is ready only after all additive account tables exist',async()=>{
+ const env=environment(),w=createWorker(fixtureVerify);
+ assert.equal((await call(w,env,'/health')).status,200);
+ await env.ACCOUNTS_DB.prepare('DROP TABLE account_route_history').run();
+ const r=await call(w,env,'/health');assert.equal(r.status,503);assert.equal((await r.json()).schemaReady,false);
+});
