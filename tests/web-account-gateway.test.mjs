@@ -6,7 +6,7 @@ const token='a'.repeat(43),origin='https://chargevoy.pt';
 const req=(path,method='GET',headers={},body)=>new Request(origin+'/api/account'+path,{method,headers:{Origin:origin,'Content-Type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});
 test('published Worker routes login preparation through its service binding, with no public-fetch fallback',async()=>{
  let calls=0;
- const binding={async fetch(url,options){assert.equal(this,binding);calls++;assert.equal(url,'https://chargevoy-android-accounts-staging.zombid.workers.dev/challenge');assert.equal(options.headers.get('Origin'),null);assert.equal(options.headers.get('CF-Connecting-IP'),'192.0.2.44');return Response.json({nonce:'n'.repeat(43)});}};
+ const binding={async fetch(url,options){assert.equal(this,binding);assert.equal(options.redirect,'manual');calls++;assert.equal(url,'https://chargevoy-android-accounts-staging.zombid.workers.dev/challenge');assert.equal(options.headers.get('Origin'),null);assert.equal(options.headers.get('CF-Connecting-IP'),'192.0.2.44');return Response.json({nonce:'n'.repeat(43)});}};
  const response=await website.fetch(req('/challenge','POST',{'CF-Connecting-IP':'192.0.2.44'},{}),{ACCOUNT_SERVICE:binding});
  assert.equal(response.status,200);assert.equal((await response.json()).nonce.length,43);assert.equal(calls,1);
  assert.equal((await website.fetch(req('/me'),{})).status,503);
@@ -45,4 +45,15 @@ test('logout/deletion clear cookies only on success; a late 401 cannot erase a n
  assert.equal(expired.headers.get('Set-Cookie'),null);
  const failure=await accountGateway(req('/me','DELETE'),async()=>{throw Error('offline');});
  assert.equal(failure.status,503);assert.equal(failure.headers.get('Set-Cookie'),null);
+});
+
+test('gateway rejects upstream redirects without exposing credentials or creating a session',async()=>{
+ let calls=0;
+ const response=await accountGateway(req('/google','POST',{Cookie:'__Host-chargevoy_session='+token},{idToken:'google-token',nonce:token}),async(url,options)=>{
+  calls++;assert.equal(options.redirect,'manual');
+  return new Response(JSON.stringify({token,expiresAt:Math.floor(Date.now()/1000)+3600}),{status:302,headers:{Location:'https://other.example', 'Set-Cookie':'unsafe=session'}});
+ });
+ assert.equal(calls,1);assert.equal(response.status,503);
+ assert.equal(response.headers.get('Location'),null);assert.equal(response.headers.get('Set-Cookie'),null);
+ assert.deepEqual(await response.json(),{error:'Serviço de contas temporariamente indisponível.'});
 });

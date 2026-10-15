@@ -29,7 +29,8 @@ export async function accountGateway(request, upstream) {
     if (body.length > 16000) return reply({error:'Pedido demasiado grande.'},413);
   }
   try {
-    const response = await upstream(API + path, {method:request.method,headers,body,redirect:'error',signal:AbortSignal.timeout(15000)});
+    const response = await upstream(API + path, {method:request.method,headers,body,redirect:'manual',signal:AbortSignal.timeout(15000)});
+    if (response.status >= 300 && response.status < 400) throw new Error('Unexpected redirect from account service');
     const data = await response.json();
     const output = {...data};
     delete output.token;
