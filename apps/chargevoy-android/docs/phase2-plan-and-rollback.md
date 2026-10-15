@@ -1,4 +1,4 @@
-# Fase 2 — conta e sincronização Android
+# Fase 2 — conta Google e sincronização app/website
 
 Baseline validada pelo utilizador: 1.1.9 / versionCode 11, commit
 `1d8bf50f3565f60938d9c6a9609f4a510f397463`. AAB e assinatura preservados.
@@ -10,8 +10,10 @@ Sincronizar veículo (incluindo especificações pessoais do veículo selecionad
 filtros múltiplos, bateria inicial/objetivo e idioma entre dispositivos da mesma
 conta Google. Preservar cópia local, favoritos autenticados, mapa, rotas, preços,
 operadores normalizados e indicação de inventário parcial da 1.1.9.
-Histórico de rotas e coordenadas continuam locais. Website, catálogo D1 público,
-disponibilidade KV e fontes Google Maps não são alterados nesta fase Android.
+Histórico de rotas e coordenadas continuam locais na app. O catálogo D1 público,
+disponibilidade KV e fontes Google Maps não são alterados. A fundação 2A não
+altera o website; por instrução do utilizador em 2026-10-15, a integração da fase 2
+inclui login exclusivamente Google no website e conta partilhada com a app.
 
 Unificação futura app/website e migração de favoritos antigos precisam de uma
 prova de controlo de ambas as identidades. Não ligar utilizadores por email,
@@ -57,6 +59,32 @@ migração, nova release distribuída ou alteração da configuração de produ�
    antigos só avança após definir e testar uma prova de identidade para a origem.
 7. Rever textos de privacidade, validar regressões UI/funcionais e só então
    incrementar versão/versionCode e produzir AAB com a chave existente.
+
+
+## 2C — website com login exclusivamente Google (requisito confirmado)
+
+- Apresentar apenas «Entrar com Google»; remover entrada, criação de conta e
+  recuperação por email/palavra-passe. Consultar postos sem conta continua possível.
+- Integrar o website com o mesmo serviço de contas da app. O login Google atual
+  via Supabase não equivale à identidade do Worker Android: retirar botões de email,
+  por si só, não unifica contas nem sincroniza dados.
+- Validar no servidor a identidade Google (emissor, audiência permitida, validade,
+  assinatura e nonce) e resolver o mesmo Google subject para a mesma conta interna.
+  Configurar as origens web e clientes autorizados; nunca aceitar um subject ou
+  proprietário declarado pelo browser como prova de identidade.
+- Adaptar favoritos e preferências ao serviço comum, com caches separadas por conta.
+  Inventariar também avaliações, histórico e eliminação de conta antes de substituir
+  o cliente antigo, para não deixar funcionalidades ligadas a uma sessão incompatível.
+- Preservar dados antigos; importar apenas após prova verificada de controlo da
+  identidade de origem e da conta Google de destino. Não associar por email apenas.
+  Se a origem estiver indisponível, assinalar a migração pendente sem apagar dados.
+- Testar a mesma conta em Android e browser, duas contas distintas, logout, sessões
+  expiradas, offline, sincronização e eliminação, além dos fluxos existentes do site.
+- Antes de publicar: guardar a versão do website e exportar a base privada, validar
+  em preview/staging e preparar reversão independente do website e do Worker.
+
+Esta secção define o trabalho autorizado seguinte. O login web e a sincronização
+app/website **ainda não estão implementados nem publicados** nesta candidata.
 
 ## Recuperação
 
