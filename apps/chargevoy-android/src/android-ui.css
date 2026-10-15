@@ -58,3 +58,5 @@ body.mobile-landscape #filter-menu.side.mobile-open{bottom:var(--android-nav-hei
 .android-operator-choices input{width:20px;height:20px;flex-shrink:0;accent-color:#00a875}
 .android-filter-hint{font-size:12px;margin:6px 0;color:var(--muted,#567568)}
 #operator-search{width:100%;min-height:44px;box-sizing:border-box}
+
+.inventory-panel{margin:16px 0;padding:16px;border:1px solid #456171;border-radius:14px;background:#112b3b;color:#cbd9df;font-size:13px;line-height:1.6}.inventory-panel h3{margin:0 0 8px;font-size:15px;color:#fff}.inventory-panel p{margin:6px 0}.inventory-panel a{color:#52e4c1}.inventory-panel.is-partial{border-color:#c8a65e}.inventory-note{font-size:12px;color:#b8cbd3;margin:8px 0;line-height:1.5}

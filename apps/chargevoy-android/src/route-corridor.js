@@ -151,7 +151,7 @@
         .map(station => ({...station, max_power_kw: routeChargingPower(station)}))
         .filter(station => station.max_power_kw > 0)
         .map(station => ({...station, ...stationRoutePosition(station, routeProfile),
-          route_availability: stationAvailability(stationConnectorRows(station))}))
+          route_availability: stationAvailability(stationConnectorRows(station),station)}))
         .filter((station) => station.distance <= 15 && station.route_km > distance * 0.04 && station.route_km < distance * 0.96);
 
       console.info("ChargeVoy route candidates", { source: corridorSource, stations: routeStations.length, candidates: candidates.length });
