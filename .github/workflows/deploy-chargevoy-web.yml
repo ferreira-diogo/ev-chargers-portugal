@@ -189,6 +189,14 @@ jobs:
         run: |
           set -euo pipefail
           base='https://broken-mud-373e.zombid.workers.dev'
+          # Tail stays in the runner's temporary storage. Only the gateway's sanitized
+          # error message is printed; request headers, cookies and user data are discarded.
+          cd ev-charge-portugal-github-ready
+          wrangler tail --config wrangler-deploy.toml --format json > /tmp/account-gateway-tail.json 2>/tmp/account-gateway-tail-error.txt &
+          tail_pid=$!
+          cd ..
+          trap 'kill "$tail_pid" 2>/dev/null || true' EXIT
+          sleep 4
           verified=false
           for attempt in 1 2 3 4 5 6 7 8; do
             code="$(curl --silent --show-error --max-time 20 -o /tmp/web-account-me.json -w '%{http_code}' "$base/api/account/me")"
@@ -203,6 +211,22 @@ jobs:
             fi
             sleep 5
           done
+          kill "$tail_pid" 2>/dev/null || true
+          python3 - <<'PYDIAG'
+          import json
+          from pathlib import Path
+          data=Path('/tmp/account-gateway-tail.json').read_text()
+          decoder=json.JSONDecoder()
+          while data.strip():
+              data=data.lstrip()
+              try: event,end=decoder.raw_decode(data)
+              except ValueError: break
+              data=data[end:]
+              for log in event.get('logs',[]):
+                  message=log.get('message',[])
+                  if message and message[0]=='Account service invocation failed':
+                      print(json.dumps({'gatewayError':message},ensure_ascii=False))
+          PYDIAG
           test "$verified" = true
           echo "Published account gateway: anonymous session 401; login challenge 200 and valid nonce"
           code="$(curl --silent --show-error --max-time 20 -o /tmp/web-account-csrf.json -w '%{http_code}' -X POST -H 'Origin: https://example.invalid' -H 'Content-Type: application/json' --data '{}' "$base/api/account/challenge")"
