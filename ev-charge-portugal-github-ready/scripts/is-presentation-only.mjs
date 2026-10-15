@@ -5,6 +5,6 @@ const allowed=new Set(['index.html','package.json','privacy.html','account-delet
 let preserve=false;
 if(/^[a-f0-9]{40}$/.test(base||'')&&!/^0+$/.test(base)){
  const paths=execFileSync('git',['diff','--name-only',base,'HEAD','--','ev-charge-portugal-github-ready'],{encoding:'utf8',cwd:resolve(import.meta.dirname,'../..')}).trim().split('\n').filter(Boolean);
- preserve=paths.length>0&&paths.every(path=>allowed.has(path.replace(/^ev-charge-portugal-github-ready\//,'')));
+ preserve=paths.every(path=>allowed.has(path.replace(/^ev-charge-portugal-github-ready\//,'')));
 }
 process.stdout.write(String(preserve));
