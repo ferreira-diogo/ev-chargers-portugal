@@ -1,4 +1,5 @@
 import {createRemoteJWKSet, jwtVerify} from 'jose';
+import {validatePreferencePatch} from './preferences.mjs';
 const jwks = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 const json = (data, status = 200) => Response.json(data, {status, headers: {'Cache-Control': 'no-store'}});
 const fail = (message, status) => Object.assign(new Error(message), {status});
@@ -50,10 +51,29 @@ export function createWorker(verify = verifyGoogle) {
       const tokenHash = await hash(bearer.slice(7));
       const session = await db.prepare('SELECT u.id, u.email, u.name FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?').bind(tokenHash,now).first();
       if (!session) throw fail('Sessão expirada. Entre novamente com Google.',401);
+      if (path === '/preferences' && ['GET','PUT'].includes(request.method)) {
+        const read = async () => {
+          const row = await db.prepare('SELECT revision, data, updated_at FROM user_preferences WHERE user_id=?').bind(session.id).first();
+          return row ? {revision:row.revision, preferences:JSON.parse(row.data), updatedAt:row.updated_at} : {revision:0, preferences:{}, updatedAt:null};
+        };
+        if (request.method === 'GET') return cors(json(await read()));
+        const data = await body();
+        if (!validatePreferencePatch(data)) throw fail('Preferências inválidas.',400);
+        // Limit writes per authenticated owner, independently of login/IP limits.
+        if (!(await env.AUTH_LIMITER.limit({key:'preferences:'+session.id})).success) throw fail('Aguarde antes de voltar a sincronizar.',429);
+        const current = await read();
+        if (data.baseRevision !== current.revision) return cors(json({...current,error:'Preferências alteradas noutro dispositivo.'},409));
+        const next = {...current.preferences};
+        for (const [key,value] of Object.entries(data.changes)) {if(value === null)delete next[key];else next[key]=value;}
+        // Compare and swap is atomic, including concurrent first writes.
+        const row = await db.prepare('INSERT INTO user_preferences (user_id, revision, data, updated_at) SELECT ?, 1, ?, ? WHERE ?=0 OR EXISTS (SELECT 1 FROM user_preferences WHERE user_id=? AND revision=?) ON CONFLICT(user_id) DO UPDATE SET revision=user_preferences.revision+1, data=excluded.data, updated_at=excluded.updated_at WHERE user_preferences.revision=? RETURNING revision, data, updated_at').bind(session.id,JSON.stringify(next),now,current.revision,session.id,current.revision,current.revision).first();
+        if (!row) return cors(json({...await read(),error:'Preferências alteradas noutro dispositivo.'},409));
+        return cors(json({revision:row.revision,preferences:JSON.parse(row.data),updatedAt:row.updated_at}));
+      }
       if (path === '/me' && request.method === 'GET') return cors(json({user:{id:session.id,email:session.email,user_metadata:{name:session.name,full_name:session.name}}}));
       if (path === '/logout' && request.method === 'POST') { await db.prepare('DELETE FROM sessions WHERE token_hash=?').bind(tokenHash).run(); return cors(json({ok:true})); }
       if (path === '/me' && request.method === 'DELETE') {
-        await db.batch([db.prepare('DELETE FROM sessions WHERE user_id=?').bind(session.id),db.prepare('DELETE FROM favorites WHERE user_id=?').bind(session.id),db.prepare('DELETE FROM users WHERE id=?').bind(session.id)]);
+        await db.batch([db.prepare('DELETE FROM sessions WHERE user_id=?').bind(session.id),db.prepare('DELETE FROM favorites WHERE user_id=?').bind(session.id),db.prepare('DELETE FROM user_preferences WHERE user_id=?').bind(session.id),db.prepare('DELETE FROM users WHERE id=?').bind(session.id)]);
         return cors(json({ok:true}));
       }
       if (path === '/favorites' && request.method === 'GET') {

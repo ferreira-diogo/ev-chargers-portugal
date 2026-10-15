@@ -1,0 +1,27 @@
+name: Validate Android account sync
+on:
+  pull_request:
+    paths:
+      - apps/chargevoy-android/account-worker/**
+      - apps/chargevoy-android/src/account.js
+      - apps/chargevoy-android/src/preferences-sync.js
+      - apps/chargevoy-android/*test.mjs
+      - .github/workflows/android-accounts-validation.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  accounts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chargevoy-android/account-worker
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+      - name: Check offline sync and session switching
+        run: node --test ../preferences-sync.test.mjs ../account-request.test.mjs
