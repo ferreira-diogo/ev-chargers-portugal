@@ -17,18 +17,35 @@ jobs:
         working-directory: ev-charge-portugal-github-ready
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v5
         with:
           node-version: 24
       - run: npm ci
+      - name: Identify changes to the tariff importer
+        id: tariffs
+        run: |
+          if git diff --name-only HEAD^ HEAD -- scripts/import-mobie-tariffs.py | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      # UI-only work does not re-import the remote national CSV. Importer changes
+      # still exercise the live source and its unchanged resource/safety limits.
       - name: Validate current official tariff CSV without database writes
+        if: steps.tariffs.outputs.changed == 'true' 
         run: python3 scripts/import-mobie-tariffs.py --out tmp/tariff-validation
       - run: npm test
       - run: node --test scripts/pricing-context.test.mjs
       - run: npm run build:web
       - run: npm install --no-save --package-lock=false playwright@1.58.2
-      - run: npx playwright install --with-deps chromium
-      - run: node scripts/browser-app-layout.mjs
+      - name: Verify public interface and account flows
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          node scripts/browser-app-layout.mjs
+          node scripts/browser-account-login.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
