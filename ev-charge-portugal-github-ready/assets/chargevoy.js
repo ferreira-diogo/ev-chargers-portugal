@@ -1509,7 +1509,7 @@
         const id=currentSession?.user?.id;if(!id)return;
         if(!window.confirm(currentLanguage === "en" ? "Permanently delete your Google-linked ChargeVoy account, favourites, preferences, routes and reviews? Legacy account data is handled separately." : "Eliminar permanentemente a conta ChargeVoy ligada ao Google, favoritos, preferências, rotas e avaliações? Os dados de contas antigas são tratados separadamente."))return;
         try {
-          await account.remove();favoritesSync.remove(id);
+          await account.remove();favoritesSync.remove(id);globalThis.ChargeVoyPayments?.removeOwner(id);
           try{for(const key of Object.keys(localStorage))if(key.startsWith('chargevoy-web:'+id+':') || key==='chargevoy-preferences-v1:'+id)localStorage.removeItem(key);}catch{}
           closeModal();notifyUser(currentLanguage === "en" ? "Account deleted." : "Conta eliminada.",{kind:"success"});
         } catch(error) { accountError(error); }
@@ -1731,6 +1731,15 @@
         return compatible;
       }
 
+      function operatorDisplayName(name) {
+        const normalized = String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        if (/^atlante(?: infra portugal)?(?: s a)?$/.test(normalized)) return "Atlante";
+        return /^(?:modelo )?continente hipermercados(?: s a)?$/.test(normalized) || /^continente plug (?:and )?charge$/.test(normalized) || normalized === "continente"
+          ? "Continente Plug&Charge" : String(name || "");
+      }
+      function isContinenteStation(station) {
+        return operatorDisplayName(station?.operator_name || station?.amenities?.operator_name || operatorMap.get(station?.operator_id)) === "Continente Plug&Charge";
+      }
       function cardEnergyRate(card, period) {
         return Number(period === "vazio" && card.energy_price_vazio_eur_kwh != null
           ? card.energy_price_vazio_eur_kwh : card.energy_price_eur_kwh);
@@ -1750,6 +1759,16 @@
       }
 
       function fixedCardRate(card, opc, stationContext = selectedStation) {
+        if (card.id === "continente-plug-charge") {
+          if (!cardIsActive(card) || !isContinenteStation(stationContext)) return null;
+          const power = Number(opc.power_kw);
+          const ac = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
+          if (!(power > 0)) return null;
+          if (ac && power <= 22) return Number(card.normal_eur_kwh);
+          if (["CCS", "CHAdeMO"].includes(opc.connector_type) && power <= 120) return Number(card.rapid_eur_kwh);
+          // Official simulator and FAQ conflict on ultrafast pricing. Do not rank an uncertain price.
+          return null;
+        }
         if (!cardIsActive(card) || card.fixed_fast_eur_kwh == null || !Number.isFinite(Number(card.fixed_fast_eur_kwh)) || !(Number(opc.power_kw) >= 50) || ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type)) return null;
         const operator = String(operatorMap.get(stationContext?.operator_id) || stationContext?.name || "").toLowerCase();
         if (card.fixed_fast_national_until && portugalPricingDate() > card.fixed_fast_national_until) return null;
@@ -1762,7 +1781,7 @@
       }
 
       function publishedCardRates(period) {
-        return cemeCards.filter((card) => cardIsActive(card)).map((card) => {
+        return cemeCards.filter((card) => cardIsActive(card) && (!globalThis.ChargeVoyPayments || globalThis.ChargeVoyPayments.includes(card.id))).map((card) => {
           const rate = cardEnergyRate(card, period).toFixed(4).replace(".", ",");
           const alternative = card.alternative_energy_price_eur_kwh == null ? "" : `–${Number(card.alternative_energy_price_eur_kwh).toFixed(4).replace(".", ",")}`;
           return `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${rate}${alternative}<small>€/kWh ${card.pricing_mode === "final_fixed" ? "final" : "energia"}</small></div></div>`;
@@ -1771,7 +1790,10 @@
 
       function calculateCardPrice(card, opc, scenario, period, stationContext = selectedStation) {
         if (!cardIsActive(card)) return null;
+        if (card.id && globalThis.ChargeVoyPayments && !globalThis.ChargeVoyPayments.includes(card.id)) return null;
+        if (isContinenteStation(stationContext) && card.id !== "continente-plug-charge") return null;
         const energy = Number(scenario.energyKwh);
+        if (!Number.isFinite(energy) || energy <= 0) return null;
         const isAc = ["Type 2", "Type 1", "Schuko"].includes(opc.connector_type);
         const vehiclePower =
           Number(isAc ? currentVehicle?.max_ac_power_kw : currentVehicle?.max_dc_power_kw) || Number(opc.power_kw) || 22;
@@ -1809,7 +1831,8 @@
             minutes,
             effectiveKwh: rate,
             finalFixed: true,
-            fixedCondition: card.network_scope === "national_fast" ? `Rápidos elegíveis · até ${card.valid_to.split("-").reverse().join("/")}` : card.fixed_fast_national_until && !ownNetwork ? `Campanha até ${card.fixed_fast_national_until.split("-").reverse().join("/")}` : "Rede Atlante",
+            conditionalBenefit: card.id === "continente-plug-charge" ? energy * Number(card.benefit_eur_kwh || 0) : null,
+            fixedCondition: card.id === "continente-plug-charge" ? "Rede Continente Plug&Charge" : card.network_scope === "national_fast" ? `Rápidos elegíveis · até ${card.valid_to.split("-").reverse().join("/")}` : card.fixed_fast_national_until && !ownNetwork ? `Campanha até ${card.fixed_fast_national_until.split("-").reverse().join("/")}` : "Rede Atlante",
             cashback: total * cashbackRate,
             cashbackRate,
           };
@@ -1840,7 +1863,7 @@
         };
       }
 
-      function adHocPriceMarkup() {
+            function adHocPriceMarkup() {
         const freshAfter = Date.now() - 24 * 60 * 60 * 1000;
         const fresh = selectedAdHocPriceComponents.filter(
           (item) => Date.parse(item.observed_at || "") >= freshAfter,
@@ -1897,7 +1920,23 @@
         return `<div class="price-empty"><span class="official-price">${currentLanguage === "en" ? "OFFICIAL AD HOC PRICE" : "PREÇO AD HOC OFICIAL"}</span><br><b>${parts.join(" · ")}</b><br>${text}</div>`;
       }
 
-      function renderPriceComparison() {
+      function renderContinenteComparison(container, headline) {
+        const card = cemeCards.find(card => card.id === "continente-plug-charge");
+        if (!card) { headline.textContent = t("Preço por confirmar"); container.textContent = t("Tarifário Continente a carregar."); return; }
+        const vehicleTypes = currentVehicle?.connector_types || [];
+        const types = Array.isArray(vehicleTypes) ? vehicleTypes : JSON.parse(vehicleTypes || "[]");
+        const connectors = stationConnectorRows(selectedStation).filter(c => !types.length || types.map(connectorCategory).includes(connectorCategory(c.type)));
+        const scenario = pricingScenario();
+        const options = connectors.map(c => calculateCardPrice(card, {connector_type:connectorCategory(c.type),power_kw:c.power_kw}, scenario, "fora_vazio", selectedStation)).filter(Boolean).sort((a,b)=>a.total-b.total);
+        const best = options[0];
+        headline.textContent = best ? `≈ ${best.total.toFixed(2).replace(".", ",")} €` : t("Preço por confirmar");
+        container.innerHTML = (best ? `<div class="price-card"><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(t("Valor a pagar"))} · ${best.effectiveKwh.toFixed(2).replace(".", ",")} €/kWh · ${escapeHtml(best.opc.connector_type)} ${best.opc.power_kw} kW · ${escapeHtml(t("IVA incluído"))}</span></div><div class="price-total">≈ ${best.total.toFixed(2).replace(".", ",")} €</div></div><p>${escapeHtml(t("Benefício condicional em Cartão Continente"))}: ${best.conditionalBenefit.toFixed(2).replace(".", ",")} € · ${escapeHtml(t("Não deduzido ao valor a pagar."))}</p>` : `<p>${escapeHtml(t("Sem preço validado para as tomadas compatíveis."))}</p>`) +
+          (connectors.some(c=>Number(c.power_kw)>120) ? `<p>${escapeHtml(t("Ultrarrápido: fonte oficial apresenta 0,45 e 0,55 €/kWh. Confirma na App Cartão Continente; excluído da comparação automática."))}</p>` : "") +
+          `<p>${escapeHtml(t(card.conditions))}</p><p>${escapeHtml(t("Inatividade: 0,20 €/min após 15 minutos de tolerância depois de terminar a carga. Não incluída na estimativa."))}</p><p>${cardSourceLink(card)}</p>`;
+        applyTranslations(container);
+      }
+
+            function renderPriceComparison() {
         const container = document.getElementById("price-comparison");
         const headline = document.getElementById("price");
         if (!selectedStation) {
@@ -1905,6 +1944,17 @@
           return;
         }
         const directPrice = adHocPriceMarkup();
+        const paymentSelection = globalThis.ChargeVoyPayments?.get();
+        if (paymentSelection?.mode === 'selected' && !paymentSelection.ids.length) {
+          headline.textContent = currentLanguage === 'en' ? 'Select a payment app' : 'Seleciona um cartão/app';
+          container.textContent = currentLanguage === 'en' ? 'Select your payment cards/apps to estimate the cost.' : 'Seleciona os teus cartões/apps de pagamento para estimar o custo.';
+          return;
+        }
+        if (isContinenteStation(selectedStation)) {
+          renderContinenteComparison(container, headline);
+          return;
+        }
+
         if (!["nap", "nap-mobie"].includes(selectedStation.source)) {
           headline.textContent = "Preço oficial indisponível";
           container.innerHTML =
@@ -1952,11 +2002,11 @@
           container.innerHTML =
             directPrice + opcOnly +
             '<div class="price-empty">Ainda não há preços verificados de cartões CEME para calcular e comparar o custo final.</div>';
-          headline.textContent = `OPC desde ${cheapestOpc.opcCost.toFixed(2).replace(".", ",")} €`;
+          headline.textContent = currentLanguage === "en" ? "Price unavailable for your selection" : "Sem preço para a tua seleção";
           return;
         }
         headline.textContent = `≈ ${comparisons[0].total.toFixed(2).replace(".", ",")} €`;
-        const incomplete = cemeCards.filter((card) => card.estimate_enabled === false && cardIsActive(card));
+        const incomplete = cemeCards.filter((card) => card.estimate_enabled === false && cardIsActive(card) && (!globalThis.ChargeVoyPayments || globalThis.ChargeVoyPayments.includes(card.id)));
         container.innerHTML =
           directPrice + opcOnly +
           comparisons
@@ -2346,6 +2396,7 @@
             return response.json();
           }).then((rows) => {
             cemeCards = rows;
+            window.dispatchEvent(new Event("chargevoy-payment-catalogue"));
             if (selectedStation) renderPriceComparison();
           }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));
 
@@ -2812,6 +2863,7 @@
         const button = document.getElementById(
           options.buttonId || "use-location",
         );
+        const originalContent = button?.innerHTML;
         try {
           if (button) {
             button.disabled = true;
@@ -2861,7 +2913,7 @@
         } finally {
           if (button) {
             button.disabled = false;
-            button.textContent = "◎";
+            button.innerHTML = originalContent;
           }
         }
       }
@@ -3515,14 +3567,8 @@
         }
       });
 
-      document.getElementById("show-portugal").addEventListener("click", () => {
-        searchPosition = null;
-        searchLayer.clearLayers();
-        document.getElementById("global-search").value = "";
-        document.getElementById("location-search").value = "";
-        closeStationPanel();
-        renderStations(false);
-        if (allStations.length) map.fitBounds(L.latLngBounds(allStations.map((s) => [s.latitude, s.longitude])), {padding: [35,35], maxZoom: 7});
+      document.getElementById("map-use-location").addEventListener("click", () => {
+        void useMyLocation({buttonId: "map-use-location"}).catch(() => {});
       });
       document.getElementById("retry-national").addEventListener("click", () => loadRemainingNationalStations(nationalLoadGeneration));
 
