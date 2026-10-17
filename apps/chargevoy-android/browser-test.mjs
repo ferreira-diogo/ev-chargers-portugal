@@ -65,6 +65,7 @@ for(const width of [320,390,780,800,1024,1366]) {
  const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+.01&&!e.closest('.leaflet-pane')}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,right:e.getBoundingClientRect().right})));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No horizontal overflow at '+width+': '+JSON.stringify({overflow,dimensions:await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,inner:innerWidth,body:document.body.scrollWidth}))}));
 }
 await page.setViewportSize({width:390,height:844});await page.locator('#android-filter-summary').evaluate(e=>{e.style.fontSize='24px';e.textContent='Powerdot · Disponível · Pesquisa personalizada em Portugal';});
+await page.waitForFunction(()=>document.documentElement.scrollWidth<=innerWidth,{timeout:3000}).catch(async()=>{console.log('Enlarged summary overflow',await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1&&!e.closest('.leaflet-pane')}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,right:e.getBoundingClientRect().right}))));});
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'200% summary wraps');
 assert.equal(errors.length,0,errors.join('\n'));console.log('P1 Android: active filter reset survives reload, viewport matrix and 200% summary passed.');
 
@@ -172,4 +173,21 @@ await page.setViewportSize({width:800,height:1000});await page.screenshot({path:
 for(const width of [320,390,800]){await page.setViewportSize({width,height:900});assert(!(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)),'Inventory detail overflow at '+width);}
 assert.equal(errors.length,0,errors.join('\n'));
 console.log('Inventory: reviewed operator source, scoped AC readings, absent DC availability, PT/EN, retained connectors on upstream failure and viewport matrix passed.');
+// Real controls: selection changes estimates but never filters station operators.
+await page.locator('#nav-map').click();
+await page.evaluate(()=>{currentSession=null;updateAuthUI();});
+await page.locator('.android-payments summary').click();
+await page.waitForFunction(()=>document.querySelectorAll('#payment-choices input').length>0);
+const operatorsBefore=await page.evaluate(()=>selectedOperatorValues().join('|'));
+await page.locator('#payment-all').uncheck();
+await page.waitForFunction(()=>ChargeVoyPayments.get().mode==='selected'&&ChargeVoyPayments.get().ids.length===0);
+assert.equal(await page.evaluate(()=>selectedOperatorValues().join('|')),operatorsBefore);
+assert.equal(await page.locator('#android-hero').getByText(/~.*€/).count(),0);
+const firstPayment=page.locator('#payment-choices input').first();const chosen=await firstPayment.inputValue();await firstPayment.check();
+assert.deepEqual(await page.evaluate(()=>ChargeVoyPayments.get().ids),[chosen]);
+await page.screenshot({path:resolve(out,'android-payment-selection.png'),fullPage:true});
+await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(id=>ChargeVoyPayments.get().ids.includes(id),chosen);
+await page.locator('.android-payments summary').click();assert(await page.locator('#payment-choices input').first().isChecked());
+await page.locator('#payment-all').check();assert.equal(await page.evaluate(()=>ChargeVoyPayments.get().mode),'all');
+assert.equal(errors.length,0,errors.join('\n'));console.log('Payments: selection, no implicit fallback, station filters independent, persistence and All passed.');
 await context.close();const art=await browser.newPage();for(const [name,w,h] of [['icon',512,512],['feature-graphic',1024,500]]){await art.setViewportSize({width:w,height:h});await art.setContent('<style>body{margin:0}</style>'+await readFile(resolve(import.meta.dirname,'play-store/artwork',name+'.svg'),'utf8'));await art.screenshot({path:resolve(out,name+'.png')});}await art.close();}finally{await browser.close();server.close();}
