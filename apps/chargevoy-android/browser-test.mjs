@@ -65,6 +65,7 @@ for(const width of [320,390,780,800,1024,1366]) {
  const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+.01&&!e.closest('.leaflet-pane')}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,right:e.getBoundingClientRect().right})));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'No horizontal overflow at '+width+': '+JSON.stringify({overflow,dimensions:await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,inner:innerWidth,body:document.body.scrollWidth}))}));
 }
 await page.setViewportSize({width:390,height:844});await page.locator('#android-filter-summary').evaluate(e=>{e.style.fontSize='24px';e.textContent='Powerdot · Disponível · Pesquisa personalizada em Portugal';});
+await page.waitForFunction(()=>document.documentElement.scrollWidth<=innerWidth,{timeout:3000}).catch(async()=>{console.log('Enlarged summary overflow',await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1&&!e.closest('.leaflet-pane')}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,right:e.getBoundingClientRect().right}))));});
 assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'200% summary wraps');
 assert.equal(errors.length,0,errors.join('\n'));console.log('P1 Android: active filter reset survives reload, viewport matrix and 200% summary passed.');
 
