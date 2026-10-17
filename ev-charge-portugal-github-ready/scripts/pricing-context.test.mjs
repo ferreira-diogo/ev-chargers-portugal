@@ -1,3 +1,4 @@
+import './web-payments.test.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import vm from 'node:vm';
 test('recommendation prices use candidate operator even when a different station is open',async()=>{
  const web=await readFile(new URL('../assets/chargevoy.js',import.meta.url),'utf8');const cards=JSON.parse(await readFile(new URL('../assets/ceme-cards.json',import.meta.url),'utf8'));
