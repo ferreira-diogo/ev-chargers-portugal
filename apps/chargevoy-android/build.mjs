@@ -15,7 +15,7 @@ cards.push(JSON.parse(await readFile(resolve(app,'src/continente-tariff.json'),'
 await writeFile(resolve(dist,'assets/ceme-cards.json'),JSON.stringify(cards,null,2));
 await cp(resolve(web,'icon.svg'),resolve(dist,'icon.svg'));
 await cp(resolve(app,'src/index.html'),resolve(dist,'index.html'));
-for(const name of ['inventory-evidence.js','inventory.js','chargevoy.js','android-ui.js','android-ui.css','recommendations.js','route-corridor.js','account.js','search-suggestions.js','android-config.js','catalogue-refresh.js'])await cp(resolve(app,'src',name),resolve(dist,'assets',name));
+for(const name of ['payments.js','inventory-evidence.js','inventory.js','chargevoy.js','android-ui.js','android-ui.css','recommendations.js','route-corridor.js','account.js','search-suggestions.js','android-config.js','catalogue-refresh.js'])await cp(resolve(app,'src',name),resolve(dist,'assets',name));
 if(process.env.ANDROID_INCLUDE_CATALOGUE === '1') {
   let failure;
   for(let attempt=1;attempt<=3;attempt++) {
@@ -31,5 +31,5 @@ if(process.env.ANDROID_INCLUDE_CATALOGUE === '1') {
   }
   if(failure)throw failure;
 }
-await writeFile(resolve(dist,'android-build.json'),JSON.stringify({interface:'android-only',version:'1.1.9',built_at:new Date().toISOString()}));
+await writeFile(resolve(dist,'android-build.json'),JSON.stringify({interface:'android-only',version:'1.1.10',built_at:new Date().toISOString()}));
 console.log('Android-only bundle built in apps/chargevoy-android/dist; web bundle untouched.');

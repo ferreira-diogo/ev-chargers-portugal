@@ -182,7 +182,7 @@
         </div>
         <div class="fg">
           <div class="label">Operador</div>
-          <select id="operator-filter" multiple hidden aria-label="Filtrar por operador">
+          <select id="operator-filter" multiple hidden aria-label="Filtrar por operador dos postos">
             <option value="all" selected>Todos os operadores</option>
           </select>
           <p class="android-filter-hint">Podes selecionar vários operadores.</p>
@@ -271,6 +271,7 @@
             <div><i class="dot b"></i>Estado desconhecido</div>
           </div>
         </div>
+<details class="android-payments"><summary id="payment-heading">Cartões/apps de pagamento</summary><p id="payment-help"></p><label><input id="payment-all" type="checkbox"> <span id="payment-all-label"></span></label><div id="payment-choices"></div><p id="payment-status" role="status"></p></details>
 <section id="android-recommendations" aria-live="polite"><div class="android-scenario"><button id="android-vehicle"><span id="android-vehicle-thumbnail" aria-hidden="true"></span><span id="android-vehicle-label">Adicionar veículo</span></button><button id="android-soc">🔋 <span id="android-soc-label">Definir bateria</span> ✎</button></div><article id="android-hero" class="android-hero"><h2>A preparar opções próximas…</h2><p>Permite a localização e seleciona o veículo para personalizar.</p></article><div id="android-alternatives" class="android-alternatives"></div><p class="android-note" id="android-note"></p></section><details class="android-filters"><summary>☷ Filtros <span id="android-filter-summary">Personalizar pesquisa</span></summary>        <section class="quick-filters" aria-labelledby="quick-filter-heading">
           <div class="quick-filters-heading">
             <h2 id="quick-filter-heading">Filtros rápidos</h2>
@@ -311,7 +312,7 @@
             </div>
           </div>
         </section>
-<button id="android-all-filters" type="button">Mais filtros e operadores</button></details>        <div class="head">
+<button id="android-all-filters" type="button">Mais filtros e operadores dos postos</button></details>        <div class="head">
           <h2>Outros postos próximos</h2>
           <select class="sort" id="sort-filter" aria-label="Ordenar postos">
             <option value="power-desc">Maior potência</option>
@@ -577,6 +578,7 @@
     <script src="./assets/geocoding.js?v=1"></script>
     <script src="./assets/android-config.js"></script>
     <script src="./assets/account.js"></script>
+    <script src="./assets/payments.js"></script>
     <script src="./assets/catalogue-refresh.js"></script>
     <script src="./assets/inventory-evidence.js"></script>
     <script src="./assets/inventory.js"></script>

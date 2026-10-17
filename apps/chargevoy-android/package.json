@@ -1,11 +1,11 @@
 {
   "name": "chargevoy-android",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test preferences-sync.test.mjs account-request.test.mjs inventory.test.mjs phase1.test.mjs recommendations.test.mjs android-regressions.test.mjs ../../ev-charge-portugal-github-ready/scripts/station-grouping.test.mjs ../../ev-charge-portugal-github-ready/scripts/geocoding.test.mjs && node verify-isolation.mjs && node --test route-safety.test.mjs && CHARGEVOY_PLATFORM=android node --test ../../tests/p1-ui.test.mjs && node --test catalogue-refresh.test.mjs && CHARGEVOY_PLATFORM=android node --test ../../tests/route-scenarios.test.mjs && node --test translations.test.mjs",
+    "test": "node --test payments.test.mjs preferences-sync.test.mjs account-request.test.mjs inventory.test.mjs phase1.test.mjs recommendations.test.mjs android-regressions.test.mjs ../../ev-charge-portugal-github-ready/scripts/station-grouping.test.mjs ../../ev-charge-portugal-github-ready/scripts/geocoding.test.mjs && node verify-isolation.mjs && node --test route-safety.test.mjs && CHARGEVOY_PLATFORM=android node --test ../../tests/p1-ui.test.mjs && node --test catalogue-refresh.test.mjs && CHARGEVOY_PLATFORM=android node --test ../../tests/route-scenarios.test.mjs && node --test translations.test.mjs",
     "android:sync": "npm run build && npx cap sync android",
     "android:bundle": "npm run android:sync && cd android && ./gradlew bundleRelease"
   },
