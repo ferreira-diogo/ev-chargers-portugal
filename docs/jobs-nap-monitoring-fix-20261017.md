@@ -44,3 +44,17 @@ Não há instalação npm nos monitores que só usam módulos standard do Node.
 Reverter os workflows/scripts deste PR à branch de backup. Não restaurar bases
 de dados: esta correção não escreve em dados de utilizadores, D1 ou KV.
 Não reverter nem republicar a interface web ou o APK para recuperar os jobs.
+
+## Confirmação em main
+
+PR #60 integrado em a1a299dab429661f6645161cf50beb47e7a6d534.
+Os seis workflows da candidata passaram. Execuções posteriores em main também
+passaram com sucesso:
+- NAP DATEX II audit: https://github.com/ferreira-diogo/ev-chargers-portugal/actions/runs/39070986964
+- Validate production live availability: https://github.com/ferreira-diogo/ev-chargers-portugal/actions/runs/39070986918
+- Validate live map production: https://github.com/ferreira-diogo/ev-chargers-portugal/actions/runs/39070986943
+
+Feed validado na candidata: 8711 sites, 38 em quarentena e 63 conectores
+associados excluídos do candidato; 8673 sites e 19266 conectores válidos.
+Monitor em main: 19267 pontos de disponibilidade, leitura com 2,09 minutos de
+idade nessa execução. Nenhum deploy web, Android ou de dados foi desencadeado.
