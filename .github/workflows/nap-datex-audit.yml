@@ -2,94 +2,77 @@ name: NAP DATEX II audit
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - ".github/workflows/nap-datex-audit.yml"
-      - "ev-charge-portugal-github-ready/package.json"
-      - "ev-charge-portugal-github-ready/package-lock.json"
-      - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
+      - '.github/workflows/nap-datex-audit.yml'
+      - 'ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs'
+      - 'ev-charge-portugal-github-ready/scripts/nap-web-quarantine*'
   pull_request:
     paths:
-      - ".github/workflows/nap-datex-audit.yml"
-      - "ev-charge-portugal-github-ready/package.json"
-      - "ev-charge-portugal-github-ready/package-lock.json"
-      - "ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs"
+      - '.github/workflows/nap-datex-audit.yml'
+      - 'ev-charge-portugal-github-ready/scripts/import-nap-datex.mjs'
+      - 'ev-charge-portugal-github-ready/scripts/nap-web-quarantine*'
   workflow_dispatch:
-    inputs:
-      mode:
-        description: "Validate only or upload to protected staging"
-        required: true
-        default: "dry-run"
-        type: choice
-        options:
-          - dry-run
-          - stage
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: '17 */6 * * *'
 
 permissions:
   contents: read
 
 concurrency:
-  group: nap-datex-audit
+  group: nap-datex-audit-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
   cancel-in-progress: false
 
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: ev-charge-portugal-github-ready
     env:
       NAP_SOURCE_URL: https://ev-nap.mobie.pt/integration/nap/evChargingInfra
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      NAP_MIN_SITES: "8000"
-      NAP_MIN_CONNECTORS: "17000"
+      NAP_MIN_SITES: '8000'
+      NAP_MIN_CONNECTORS: '17000'
+      NAP_PREVIOUS_SNAPSHOT: tmp/nap-audit/previous-stations.json
+      NAP_WEB_SNAPSHOT: tmp/nap-audit/candidate-stations.json
+      NAP_QUARANTINE_REPORT: tmp/nap-audit/quarantine.json
     steps:
       - uses: actions/checkout@v5
-
       - uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: 24
           cache: npm
           cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
-
-      - name: Verify required secrets are configured
+      - name: Install pinned parser dependencies
+        run: npm ci --ignore-scripts
+      - name: Test quarantine and coverage safeguards
+        run: node --test scripts/nap-web-quarantine.test.mjs
+      - name: Download the current catalogue for regression checks
         run: |
-          test -n "$SUPABASE_URL" || { echo "SUPABASE_URL is missing"; exit 1; }
-          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "SUPABASE_SERVICE_ROLE_KEY is missing"; exit 1; }
-
-      - name: Install pinned dependencies
-        run: npm ci
-        working-directory: ev-charge-portugal-github-ready
-
-      - name: Validate and stage changed NAP feed
-        if: github.event_name == 'push' || github.event_name == 'schedule' || inputs.mode == 'stage'
-        run: set -o pipefail; npm run nap:stage | tee nap-result.json
-        working-directory: ev-charge-portugal-github-ready
-
-      - name: Validate NAP feed without database writes
-        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
-        run: set -o pipefail; npm run nap:check | tee nap-result.json
-        working-directory: ev-charge-portugal-github-ready
-
-      - name: Validate bounded web quarantine for pull requests
-        if: github.event_name == 'pull_request'
-        working-directory: ev-charge-portugal-github-ready
+          mkdir -p tmp/nap-audit
+          curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > "$NAP_PREVIOUS_SNAPSHOT"
+      - name: Audit current feed with bounded quarantine, without publishing or database writes
         run: |
           set -o pipefail
-          mkdir -p tmp
-          curl --fail --silent --show-error --retry 3 --max-time 45 'https://broken-mud-373e.zombid.workers.dev/assets/stations-snapshot.json' > tmp/previous-stations.json
-          NAP_PREVIOUS_SNAPSHOT=tmp/previous-stations.json NAP_WEB_SNAPSHOT=tmp/audit-snapshot.json node scripts/import-nap-datex.mjs --web-snapshot | tee nap-result.json
-
+          node scripts/import-nap-datex.mjs --web-snapshot 2>&1 | tee tmp/nap-audit/result.log
+      - name: Retain audit and quarantine evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nap-datex-audit-${{ github.run_id }}
+          path: |
+            ev-charge-portugal-github-ready/tmp/nap-audit/result.log
+            ev-charge-portugal-github-ready/tmp/nap-audit/quarantine.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Publish run summary
         if: always()
         run: |
-          echo '## NAP DATEX II audit' >> "$GITHUB_STEP_SUMMARY"
-          if test -f ev-charge-portugal-github-ready/nap-result.json; then
-            echo '```json' >> "$GITHUB_STEP_SUMMARY"
-            tail -n 80 ev-charge-portugal-github-ready/nap-result.json >> "$GITHUB_STEP_SUMMARY"
+          echo '## NAP DATEX II audit — read-only' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No catalogue publication, database writes or availability updates are performed by this audit.' >> "$GITHUB_STEP_SUMMARY"
+          if test -f tmp/nap-audit/result.log; then
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 80 tmp/nap-audit/result.log >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo 'The importer stopped before producing a result.' >> "$GITHUB_STEP_SUMMARY"
           fi

@@ -1,15 +1,29 @@
 name: Validate live map production
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/validate-live-map-production.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/validate-live-map-production.yml'
   workflow_dispatch:
   workflow_run:
     workflows: ["Deploy ChargeVoy web"]
     types: [completed]
 
+permissions:
+  contents: read
+
 jobs:
   validate:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CHARGEVOY_SITE_URL: https://broken-mud-373e.zombid.workers.dev
+      CHARGEVOY_API_URL: https://chargevoy-api.zombid.workers.dev
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
