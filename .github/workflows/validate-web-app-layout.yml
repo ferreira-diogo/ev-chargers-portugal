@@ -34,7 +34,7 @@ jobs:
       # UI-only work does not re-import the remote national CSV. Importer changes
       # still exercise the live source and its unchanged resource/safety limits.
       - name: Validate current official tariff CSV without database writes
-        if: steps.tariffs.outputs.changed == 'true' 
+        if: steps.tariffs.outputs.changed == 'true'
         run: python3 scripts/import-mobie-tariffs.py --out tmp/tariff-validation
       - run: npm test
       - run: node --test scripts/pricing-context.test.mjs
