@@ -52,4 +52,17 @@ await page.setViewportSize({width:390,height:844});await page.screenshot({path:r
 await page.setViewportSize({width:1440,height:900});await page.screenshot({path:resolve(out,'website-payments-desktop.png'),fullPage:true});
 await page.locator('#payment-all').check();assert.equal(await page.evaluate(()=>ChargeVoyPayments.get().mode),'all');
 assert.equal(errors.length,0,errors.join('\n'));console.log('Payments, independent station operators, persistent selection, vehicle thumbnail and GPS icon restoration passed.');
+// Multiple power bands work from both surfaces and survive a guest reload.
+await page.setViewportSize({width:390,height:844});await page.locator('#nav-map').click();
+if(!(await page.locator('.android-filters').evaluate(e=>e.open)))await page.locator('.android-filters summary').click();
+await page.locator('#quick-power-filter [data-power="0-50"]').click();
+await page.locator('#quick-power-filter [data-power="150-250"]').click();
+assert.equal(await page.evaluate(()=>selectedPower),'0-50,150-250');
+for(const id of ['power-filter','quick-power-filter'])for(const value of ['0-50','150-250'])assert.equal(await page.locator('#'+id+' [data-power="'+value+'"]').getAttribute('aria-pressed'),'true');
+await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>selectedPower==='0-50,150-250');
+await page.locator('#nav-vehicle').click();await page.locator('#power-filter [data-power="0-50"]').click();assert.equal(await page.evaluate(()=>selectedPower),'150-250');
+await page.locator('#power-filter [data-power="150-250"]').click();assert.equal(await page.evaluate(()=>selectedPower),'all');
+await page.locator('#power-filter [data-power="250+"]').click();await page.locator('#power-filter [data-power="all"]').click();assert.equal(await page.evaluate(()=>selectedPower),'all');
+await page.locator('#close-mobile-filters').click();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.WebChargeVoy);assert.equal(await page.evaluate(()=>selectedPower),'all');
+console.log('Power multi-selection: OR bands, both control surfaces, toggle off, All and reload passed.');
 await context.close();}finally{await browser.close();server.close();}

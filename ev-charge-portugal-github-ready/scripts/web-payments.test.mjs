@@ -36,3 +36,14 @@ test('actual recommendation and calculator honour selected provider, never fallb
  c.ChargeVoyPayments.save('selected',[]);assert.equal(c.priced(row).total,null);
  c.ChargeVoyPayments.save('selected',['unknown']);assert.equal(c.priced(row).total,null);
 });
+
+test('website power selection toggles ranges independently with OR and restores All',()=>{
+ const c=vm.createContext({selectedPower:'all'});
+ vm.runInContext(app.slice(app.indexOf('function togglePowerSelection('),app.indexOf('function stationMaxPowerKw(')),c);
+ c.togglePowerSelection('0-50');c.togglePowerSelection('150-250');
+ for(const value of [22,50,151,250])assert(c.matchesPower(value),String(value));
+ for(const value of [0,51,150,251])assert(!c.matchesPower(value),String(value));
+ c.togglePowerSelection('0-50');assert(!c.matchesPower(22));assert(c.matchesPower(200));
+ c.togglePowerSelection('150-250');assert.equal(c.selectedPower,'all');assert(c.matchesPower(0));
+ c.togglePowerSelection('250+');c.togglePowerSelection('all');assert.equal(c.selectedPower,'all');
+});
