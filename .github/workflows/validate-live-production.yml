@@ -2,22 +2,35 @@ name: Validate production live availability
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/validate-live-production.yml'
+      - 'ev-charge-portugal-github-ready/scripts/verify-live-snapshot*.mjs'
+  pull_request:
+    paths:
+      - '.github/workflows/validate-live-production.yml'
+      - 'ev-charge-portugal-github-ready/scripts/verify-live-snapshot*.mjs'
   schedule:
-    - cron: "13,43 * * * *"
+    - cron: '13,43 * * * *'
+
+permissions:
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Monitor the deployed service directly, without changing public-domain WAF rules.
+      CHARGEVOY_SITE_URL: https://broken-mud-373e.zombid.workers.dev
+      CHARGEVOY_API_URL: https://chargevoy-api.zombid.workers.dev
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: ev-charge-portugal-github-ready/package-lock.json
-      - name: Install dependencies
-        working-directory: ev-charge-portugal-github-ready
-        run: npm ci --ignore-scripts
-      - name: Verify deployed static map and KV publication
-        working-directory: ev-charge-portugal-github-ready
-        run: node scripts/verify-live-snapshot.mjs
+      - name: Test verifier failure and freshness checks
+        run: node --test ev-charge-portugal-github-ready/scripts/verify-live-snapshot.test.mjs
+      - name: Verify deployed catalogue and shared Android/website availability service
+        run: node ev-charge-portugal-github-ready/scripts/verify-live-snapshot.mjs
