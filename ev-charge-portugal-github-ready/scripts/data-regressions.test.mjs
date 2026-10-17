@@ -15,13 +15,13 @@ function extract(start, end) {
   return source.includes('stationConnectorRows(') && !source.includes('function stationConnectorRows(') ? helper + source : source;
 }
 
-test('six sourced card tariffs preserve period prices and fixed-price eligibility', async () => {
+test('seven sourced card tariffs preserve period prices and fixed-price eligibility', async () => {
   const cards = JSON.parse(await readFile(new URL('../assets/ceme-cards.json', import.meta.url), 'utf8'));
-  assert.equal(new Set(cards.map(card => card.provider_id || card.id)).size, 6);
+  assert.equal(new Set(cards.map(card => card.provider_id || card.id)).size, 7);
   class PricingDate extends Date { constructor(...args) { super(...(args.length ? args : ["2026-10-02T12:00:00Z"])); } }
   const context = vm.createContext({ Date: PricingDate, currentVehicle: {max_dc_power_kw: 100}, operatorMap: new Map([['other', 'Other'], ['atlante', 'Atlante']]), selectedStation: {operator_id:'other'} });
   vm.runInContext(extract('function networkTariff(', 'let simMode ='), context);
-  vm.runInContext(extract('function cardEnergyRate(', 'function cardSourceLink('), context);
+  vm.runInContext(extract('function operatorDisplayName(', 'function cardSourceLink('), context);
   vm.runInContext(extract('function calculateCardPrice(', 'function adHocPriceMarkup('), context);
   const scenario = { energyKwh: 20 };
   const opc = {connector_type:'CCS',power_kw:50,voltage_level:'BT',activation_fee_eur:0,energy_price_eur_kwh:0.20,time_price_eur_min:0};

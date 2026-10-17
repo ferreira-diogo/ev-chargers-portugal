@@ -97,5 +97,26 @@
     "source_url": "https://www.edp.pt/particulares/servicos/mobilidade-eletrica/carregar-fora-de-casa/",
     "alternative_source_url": "https://www.edp.pt/particulares/servicos/mobilidade-eletrica/",
     "last_reviewed_at": "2026-10-02"
+  },
+  {
+    "id": "continente-plug-charge",
+    "name": "Continente Plug&Charge",
+    "pricing_mode": "final_fixed",
+    "network_scope": "continente_only",
+    "normal_eur_kwh": 0.35,
+    "rapid_eur_kwh": 0.41,
+    "energy_price_eur_kwh": 0.35,
+    "benefit_eur_kwh": 0.1,
+    "estimate_enabled": true,
+    "subscription_required": false,
+    "source_url": "https://feed.continente.pt/plug-charge",
+    "alternative_source_url": "https://feed.continente.pt/plug-charge/termos-condicoes",
+    "verified_at": "2026-10-14",
+    "ultrafast_eur_kwh": null,
+    "ultrafast_published_range": [
+      0.45,
+      0.55
+    ],
+    "conditions": "Requer App Cartão Continente, adesão ao Cartão Continente, fatura eletrónica e Continente Pay. Benefício de 0,10 €/kWh em saldo com cupão após compras elegíveis superiores a 30 €; validade de 10 dias e um cupão por dia. Confirma as condições na app do fornecedor."
   }
 ]

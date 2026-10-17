@@ -28,3 +28,13 @@ body{padding-bottom:0;padding-left:210px}.top{height:110px!important;min-height:
 @media(min-width:781px) and (max-width:1100px){.main,.main.station-selected{grid-template-columns:minmax(0,1fr)!important}.layout:not(.sidebar-collapsed){grid-template-columns:minmax(220px,240px) minmax(0,1fr)}.layout:not(.sidebar-collapsed) .mapbox{min-width:0}}
 
 .android-filters[open] .quick-filters{display:block!important}
+
+/* Match the Android vehicle preview, payment selection and GPS controls. */
+#android-vehicle{display:flex;align-items:center;justify-content:center;gap:7px}#android-vehicle-label{min-width:0;text-align:left}#android-vehicle-thumbnail{display:flex;flex:0 0 52px;align-items:center;justify-content:center;height:34px}#android-vehicle-thumbnail:empty{display:none}#android-vehicle-thumbnail img,#android-vehicle-thumbnail svg{width:100%;height:100%;object-fit:contain}.android-power{display:inline-flex;align-items:center;gap:6px}.android-power strong{font-weight:750}.android-power-bolts{display:inline-flex;gap:1px;flex-shrink:0}.android-power-bolts svg{width:10px;height:15px}.power-1{color:#24e3a5}.power-2{color:#ffe377}.power-3{color:#a489ff}.google-sign-in{min-height:44px}.google-sign-in:focus-visible{outline:2px solid #24e3a5;outline-offset:3px}
+#route-planner #route-use-location,#filter-menu #use-location{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 44px!important;width:44px!important;min-width:44px!important;max-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;border:1px solid #29485d;border-radius:10px;background:#10273b;color:#24e3a5}
+#route-use-location svg,#use-location svg{width:22px;height:22px;flex:none}
+#route-use-location:disabled{opacity:.6}
+#map-use-location{display:inline-flex;align-items:center;gap:8px}
+#map-use-location svg{width:18px;height:18px;flex:none}
+.android-payments{margin:12px 0;padding:14px;border:1px solid #29443f;border-radius:16px;background:#102624;color:#eaf4f1}.android-payments summary{cursor:pointer;font-weight:700}.android-payments p{font-size:.9rem;line-height:1.45}.android-payments label{display:flex;align-items:center;gap:10px;min-height:44px}.android-payments input{width:20px;height:20px;flex:none}.android-payments #payment-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px}
+.android-payments,.android-filters{min-width:0;max-width:100%;box-sizing:border-box}.android-payments summary,.android-filters summary{white-space:normal;overflow-wrap:anywhere;min-width:0}.android-payments label{overflow-wrap:anywhere}.android-payments #payment-choices{grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))}

@@ -36,7 +36,7 @@
     />
     <link rel="stylesheet" href="./assets/chargevoy.css?v=24" />
   <link rel="stylesheet" href="./assets/geocoding.css?v=1" />
-  <link rel="stylesheet" href="./assets/web-app-layout.css?v=2" />
+  <link rel="stylesheet" href="./assets/web-app-layout.css?v=3" />
   </head>
   <body class="map-mode">
     <header class="top">
@@ -124,7 +124,7 @@
             aria-label="Pesquisar localização"
             placeholder="Cidade, código postal ou localização"
           /><button id="use-location" type="button" title="Usar a minha localização" aria-label="Usar a minha localização">
-            ◎
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
           </button>
         </div>
         <div class="fg">
@@ -182,7 +182,7 @@
           >
         </div>
         <div class="fg">
-          <div class="label">Operador</div>
+          <div class="label">Operadores dos postos</div>
           <select id="operator-filter" aria-label="Filtrar por operador">
             <option value="all">Todos os operadores</option>
           </select>
@@ -212,7 +212,7 @@
                 title="Usar a minha localização"
                 aria-label="Usar a minha localização"
               >
-                ◎
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
               </button>
             </div>
             <input
@@ -249,7 +249,7 @@
               <small id="station-coverage" aria-live="polite">A carregar o mapa de Portugal…</small>
             </div>
             <div class="map-coverage-actions">
-              <button id="show-portugal" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" /></svg><span>Ver Portugal</span></button>
+              <button id="map-use-location" type="button" title="Usar a minha localização"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg><span>A minha localização</span></button>
               <button id="retry-national" type="button" hidden>Retomar carregamento</button>
             </div>
           </div>
@@ -269,7 +269,8 @@
 
           </div>
         </div>
-</div><div class="web-results-column">        <section id="android-recommendations" aria-live="polite"><div class="android-scenario"><button id="android-vehicle">🚗 <span id="android-vehicle-label">Adicionar veículo</span></button><button id="android-soc">🔋 <span id="android-soc-label">Definir bateria</span> ✎</button></div><article id="android-hero" class="android-hero"><h2>A preparar opções próximas…</h2><p>Permite a localização e seleciona o veículo para personalizar.</p></article><div id="android-alternatives" class="android-alternatives"></div><p class="android-note" id="android-note"></p></section><details class="android-filters"><summary>☷ Filtros <span id="android-filter-summary">Personalizar pesquisa</span></summary>        <section class="quick-filters" aria-labelledby="quick-filter-heading">
+</div><div class="web-results-column">        <details class="android-payments"><summary id="payment-heading">Cartões/apps de pagamento</summary><p id="payment-help"></p><label><input id="payment-all" type="checkbox"> <span id="payment-all-label"></span></label><div id="payment-choices"></div><p id="payment-status" role="status"></p></details>
+<section id="android-recommendations" aria-live="polite"><div class="android-scenario"><button id="android-vehicle"><span id="android-vehicle-thumbnail" aria-hidden="true"></span><span id="android-vehicle-label">Adicionar veículo</span></button><button id="android-soc">🔋 <span id="android-soc-label">Definir bateria</span> ✎</button></div><article id="android-hero" class="android-hero"><h2>A preparar opções próximas…</h2><p>Permite a localização e seleciona o veículo para personalizar.</p></article><div id="android-alternatives" class="android-alternatives"></div><p class="android-note" id="android-note"></p></section><details class="android-filters"><summary>☷ Filtros <span id="android-filter-summary">Personalizar pesquisa</span></summary>        <section class="quick-filters" aria-labelledby="quick-filter-heading">
           <div class="quick-filters-heading">
             <h2 id="quick-filter-heading">Filtros rápidos</h2>
             <button id="reset-all-filters" type="button">Repor todos os filtros</button>
@@ -573,13 +574,14 @@
     <div class="app-toast" id="app-toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="./assets/account.js?v=1"></script>
+    <script src="./assets/payments.js?v=1"></script>
     <script src="./assets/account-favorites.js?v=1"></script>
     <script src="./assets/preferences-sync.js?v=1"></script>
     <script src="./assets/geocoding.js?v=1"></script>
-    <script src="./assets/chargevoy.js?v=38"></script>
+    <script src="./assets/chargevoy.js?v=39"></script>
     <script src="./assets/route-corridor.js?v=21"></script>
 <dialog id="android-scenario-dialog"><form method="dialog"><button class="android-close" aria-label="Fechar">×</button></form><h2>O teu carregamento</h2><p>Preferências guardadas apenas neste dispositivo.</p><label>Bateria atual (%)<input id="android-start" type="number" min="0" max="99" value="32"></label><label>Objetivo (%)<input id="android-target" type="number" min="1" max="100" value="80"></label><label>Período da tarifa<select id="android-period"><option value="fora_vazio">Fora de vazio</option><option value="vazio">Vazio</option></select></label><p id="android-scenario-error" role="alert"></p><button id="android-save-scenario" type="button">Atualizar opções</button></dialog>
-<script src="./assets/recommendations.js?v=1"></script><script src="./assets/web-app-ui.js?v=5"></script>
+<script src="./assets/recommendations.js?v=1"></script><script src="./assets/web-app-ui.js?v=6"></script>
   <script src="./assets/account-preferences.js?v=1"></script>
   </body>
 </html>
