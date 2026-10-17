@@ -8,11 +8,12 @@
   }
   async function request(path, options = {}) {
     const url = endpoint(path);
-    const response = await fetch(url, {...options, headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})}, signal: AbortSignal.timeout(15000)});
+    const requestToken = token;
+    const response = await fetch(url, {...options, headers: {'Content-Type': 'application/json', ...(requestToken ? {Authorization: `Bearer ${requestToken}`} : {})}, signal: AbortSignal.timeout(15000)});
     const data = await response.json();
     if (!response.ok) {
-      if (response.status === 401) await clear();
-      throw Error(data.error || 'Não foi possível concluir o pedido da conta.');
+      if (response.status === 401 && token === requestToken) await clear();
+      throw Object.assign(Error(data.error || 'Não foi possível concluir o pedido da conta.'), {status:response.status, data});
     }
     return data;
   }

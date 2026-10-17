@@ -1551,7 +1551,7 @@
           );
           return;
         }
-        try { localStorage.removeItem(`chargevoy-history:${user.id}`); } catch {}
+        try { localStorage.removeItem(`chargevoy-history:${user.id}`); globalThis.ChargeVoyPayments?.removeOwner(user.id); } catch {}
         await window.ChargeVoyAccount.clear();
         currentSession = null;
         favoriteStationIds = new Set();
@@ -1576,6 +1576,7 @@
         } catch (error) { notifyUser(error.message, {kind: "error"}); }
       }
       function updateAuthUI() {
+        window.dispatchEvent(new CustomEvent("chargevoy-payment-owner", {detail:currentSession?.user?.id || null}));
         const user = currentSession?.user;
         document.getElementById("account-label").textContent = user
           ? user.user_metadata?.name?.split(" ")[0] || "Conta"
@@ -1853,7 +1854,7 @@
       }
 
       function publishedCardRates(period) {
-        return cemeCards.filter((card) => cardIsActive(card)).map((card) => {
+        return cemeCards.filter((card) => cardIsActive(card) && (!globalThis.ChargeVoyPayments || globalThis.ChargeVoyPayments.includes(card.id))).map((card) => {
           const rate = cardEnergyRate(card, period).toFixed(4).replace(".", ",");
           const alternative = card.alternative_energy_price_eur_kwh == null ? "" : `–${Number(card.alternative_energy_price_eur_kwh).toFixed(4).replace(".", ",")}`;
           return `<div class="price-card"><span class="price-rank">·</span><div class="price-name">${escapeHtml(card.name)}<span class="price-breakdown">${escapeHtml(card.conditions)} · ${cardSourceLink(card)}</span></div><div class="price-total">${rate}${alternative}<small>€/kWh ${card.pricing_mode === "final_fixed" ? "final" : "energia"}</small></div></div>`;
@@ -1862,6 +1863,7 @@
 
       function calculateCardPrice(card, opc, scenario, period, stationContext = selectedStation) {
         if (!cardIsActive(card)) return null;
+        if (card.id && globalThis.ChargeVoyPayments && !globalThis.ChargeVoyPayments.includes(card.id)) return null;
         if (isContinenteStation(stationContext) && card.id !== "continente-plug-charge") return null;
         const energy = Number(scenario.energyKwh);
         if (!Number.isFinite(energy) || energy <= 0) return null;
@@ -2015,6 +2017,12 @@
           return;
         }
         const directPrice = adHocPriceMarkup();
+        const paymentSelection = globalThis.ChargeVoyPayments?.get();
+        if (paymentSelection?.mode === 'selected' && !paymentSelection.ids.length) {
+          headline.textContent = currentLanguage === 'en' ? 'Select a payment app' : 'Seleciona um cartão/app';
+          container.textContent = currentLanguage === 'en' ? 'Select your payment cards/apps to estimate the cost.' : 'Seleciona os teus cartões/apps de pagamento para estimar o custo.';
+          return;
+        }
         if (isContinenteStation(selectedStation)) {
           renderContinenteComparison(container, headline);
           return;
@@ -2066,11 +2074,11 @@
           container.innerHTML =
             directPrice + opcOnly +
             '<div class="price-empty">Ainda não há preços verificados de cartões CEME para calcular e comparar o custo final.</div>';
-          headline.textContent = `OPC desde ${cheapestOpc.opcCost.toFixed(2).replace(".", ",")} €`;
+          headline.textContent = currentLanguage === "en" ? "Price unavailable for your selection" : "Sem preço para a tua seleção";
           return;
         }
         headline.textContent = `≈ ${comparisons[0].total.toFixed(2).replace(".", ",")} €`;
-        const incomplete = cemeCards.filter((card) => card.estimate_enabled === false && cardIsActive(card));
+        const incomplete = cemeCards.filter((card) => card.estimate_enabled === false && cardIsActive(card) && (!globalThis.ChargeVoyPayments || globalThis.ChargeVoyPayments.includes(card.id)));
         container.innerHTML =
           directPrice + opcOnly +
           comparisons
@@ -2517,6 +2525,7 @@
             return response.json();
           }).then((rows) => {
             cemeCards = rows;
+            window.dispatchEvent(new Event("chargevoy-payment-catalogue"));
             renderStations(false);
             if (selectedStation) renderPriceComparison();
           }).catch((error) => console.warn("Tarifários CEME indisponíveis", error));

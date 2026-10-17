@@ -60,3 +60,7 @@ body.mobile-landscape #filter-menu.side.mobile-open{bottom:var(--android-nav-hei
 #operator-search{width:100%;min-height:44px;box-sizing:border-box}
 
 .inventory-panel{margin:16px 0;padding:16px;border:1px solid #456171;border-radius:14px;background:#112b3b;color:#cbd9df;font-size:13px;line-height:1.6}.inventory-panel h3{margin:0 0 8px;font-size:15px;color:#fff}.inventory-panel p{margin:6px 0}.inventory-panel a{color:#52e4c1}.inventory-panel.is-partial{border-color:#c8a65e}.inventory-note{font-size:12px;color:#b8cbd3;margin:8px 0;line-height:1.5}
+
+.android-payments{margin:12px 0;padding:14px;border:1px solid #29443f;border-radius:16px;background:#102624;color:#eaf4f1}.android-payments summary{cursor:pointer;font-weight:700}.android-payments p{font-size:.9rem;line-height:1.45}.android-payments label{display:flex;align-items:center;gap:10px;min-height:44px}.android-payments input{width:20px;height:20px;flex:none}.android-payments #payment-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px}
+
+.android-payments,.android-filters{min-width:0;max-width:100%;box-sizing:border-box}.android-payments summary,.android-filters summary{white-space:normal;overflow-wrap:anywhere;min-width:0}.android-payments label{overflow-wrap:anywhere}.android-payments #payment-choices{grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))}

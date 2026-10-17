@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {SignJWT, generateKeyPair} from 'jose';
 import {createWorker, verifyGoogle} from './index.mjs';
 function environment() {
-  const sqlite = new DatabaseSync(':memory:'); sqlite.exec(readFileSync(new URL('./migrations/0001_accounts.sql', import.meta.url),'utf8'));
+  const sqlite = new DatabaseSync(':memory:'); sqlite.exec(readFileSync(new URL('./migrations/0001_accounts.sql', import.meta.url),'utf8')); sqlite.exec(readFileSync(new URL('./migrations/0002_preferences.sql', import.meta.url),'utf8'));
   const db = {prepare(sql) {let args=[]; const statement=sqlite.prepare(sql); return {bind(...values){args=values;return this;}, async first(){return statement.get(...args)||null;},async all(){return {results:statement.all(...args)};},async run(){return statement.run(...args);}};}, async batch(statements){sqlite.exec('BEGIN');try{const result=[];for(const statement of statements)result.push(await statement.run());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}};
   return {ACCOUNTS_DB:db,GOOGLE_CLIENT_ID:'client-id',AUTH_LIMITER:{async limit(){return {success:true};}}};
 }
@@ -63,4 +63,40 @@ test('expired sessions, forbidden methods, malformed IDs and favourite limits fa
  assert.equal((await call(w,env,'/favorites/nap-0','PUT',a)).status,200);
  await env.ACCOUNTS_DB.prepare('UPDATE sessions SET expires_at=0').run();
  assert.equal((await call(w,env,'/favorites','GET',a)).status,401);
+});
+test('preferences require login and remain isolated by verified account, never by supplied owner',async()=>{
+ const env=environment(),w=createWorker(fixtureVerify);
+ assert.equal((await call(w,env,'/preferences')).status,401);
+ const a=await login(w,env,'alice'),b=await login(w,env,'bob');
+ assert.equal((await call(w,env,'/preferences','PUT',a,{baseRevision:0,changes:{language:'en'}})).status,200);
+ assert.deepEqual(await (await call(w,env,'/preferences','GET',b)).json(),{revision:0,preferences:{},updatedAt:null});
+ assert.equal((await call(w,env,'/preferences','PUT',b,{userId:'alice',baseRevision:0,changes:{language:'pt'}})).status,400);
+});
+test('preferences CAS rejects stale devices, including simultaneous initial writes, and preserves other fields',async()=>{
+ const env=environment(),w=createWorker(fixtureVerify),a=await login(w,env,'alice');
+ const put=(baseRevision,changes)=>call(w,env,'/preferences','PUT',a,{baseRevision,changes});
+ const initial=await Promise.all([put(0,{language:'en'}),put(0,{battery:{start:20,target:80}})]);
+ assert.deepEqual(initial.map(r=>r.status).sort(),[200,409]);
+ const first=await (await call(w,env,'/preferences','GET',a)).json();
+ assert.equal(first.revision,1);
+ assert.equal((await put(0,{language:'pt'})).status,409);
+ const second=await (await put(1,{vehicle:{id:'tesla-model-3',specs:{consumption_wh_km:160}}})).json();
+ assert.equal(second.revision,2);assert.deepEqual(second.preferences,{...first.preferences,vehicle:{id:'tesla-model-3',specs:{consumption_wh_km:160}}});
+ const cleared=await (await put(2,{vehicle:null})).json();assert.equal(cleared.revision,3);assert(!('vehicle' in cleared.preferences));
+});
+test('invalid preference fields, types, unknown keys and battery/spec limits cannot be persisted',async()=>{
+ const env=environment(),w=createWorker(fixtureVerify),a=await login(w,env,'alice');
+ for(const changes of [{language:'es'},{owner:'bob'},{battery:{start:80,target:20}},{battery:{start:20.5,target:80}},{vehicle:{id:'x',specs:{max_dc_power_kw:999}}},{vehicle:{id:'x',specs:{},google_sub:'bob'}},{filters:{powers:['500+'],operators:[],connectors:[],statuses:[]}},{filters:{powers:[],operators:[],connectors:[],statuses:['bad']}},{}])assert.equal((await call(w,env,'/preferences','PUT',a,{baseRevision:0,changes})).status,400,JSON.stringify(changes));
+ assert.equal((await call(w,env,'/preferences','PUT',a,{baseRevision:-1,changes:{language:'en'}})).status,400);
+ assert.equal((await call(w,env,'/preferences','PUT',a,{baseRevision:0,changes:{filters:{powers:['0-50','50-150'],operators:['Powerdot'],connectors:['CCS'],statuses:['available','unknown']}}})).status,200);
+});
+test('preference writes are throttled and deletion removes account data without harming another account',async()=>{
+ const env=environment(),w=createWorker(fixtureVerify),a=await login(w,env,'alice'),b=await login(w,env,'bob');
+ await call(w,env,'/preferences','PUT',a,{baseRevision:0,changes:{language:'en'}});
+ await call(w,env,'/preferences','PUT',b,{baseRevision:0,changes:{language:'pt'}});
+ env.AUTH_LIMITER.limit=async()=>({success:false});
+ assert.equal((await call(w,env,'/preferences','PUT',a,{baseRevision:1,changes:{language:'pt'}})).status,429);
+ assert.equal((await call(w,env,'/me','DELETE',a)).status,200);
+ assert.equal((await env.ACCOUNTS_DB.prepare('SELECT count(*) AS n FROM user_preferences').first()).n,1);
+ assert.equal((await (await call(w,env,'/preferences','GET',b)).json()).preferences.language,'pt');
 });
