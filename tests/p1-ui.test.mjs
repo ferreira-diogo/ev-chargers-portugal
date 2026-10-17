@@ -23,6 +23,6 @@ test('reset all clears operator/text/power/status/connector filters while retain
 });
 test('filter summary exposes operator and availability restrictions',()=>{
  const nodes=new Map(['android-filter-summary','android-vehicle-label','android-soc-label','operator-filter','global-search'].map(id=>[id,{value:''}]));nodes.get('operator-filter').value='Powerdot';
- const c=vm.createContext({$:id=>nodes.get(id),selectedPower:'all',selectedValues:s=>s==='.status-filter'?['available']:[],document:{querySelectorAll:()=>[1,2,3]},currentVehicle:{make:'Tesla',model:'Model 3'},scenario:{start:32,target:80},syncVehicleThumbnail(){},t:x=>x});
+ const c=vm.createContext({$:id=>nodes.get(id),selectedPower:'all',selectedValues:s=>s==='.status-filter'?['available']:[],document:{querySelectorAll:()=>[1,2,3]},currentVehicle:{make:'Tesla',model:'Model 3'},scenario:{start:32,target:80},syncVehicleThumbnail(){},tr:(pt,en)=>pt,t:x=>x});
  vm.runInContext(extract(ui,'summary','function compatibleConnectors'),c);c.summary();assert.match(nodes.get('android-filter-summary').textContent,/Powerdot.*Disponível/);
 });
