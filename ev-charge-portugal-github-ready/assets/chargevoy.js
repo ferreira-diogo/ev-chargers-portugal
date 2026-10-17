@@ -2482,6 +2482,7 @@
 
       function clearQuickFilters() {
         selectedPower = "all";
+        globalThis.ChargeVoyWebPreferences?.savePowerSelection();
         document.querySelectorAll(".connector-filter").forEach((input) => { input.checked = false; });
         document.querySelectorAll(".status-filter").forEach((input) => { input.checked = true; });
         renderStations(false);
@@ -2489,6 +2490,7 @@
 
       function resetAllFilters() {
         selectedPower = "all";
+        globalThis.ChargeVoyWebPreferences?.savePowerSelection();
         document.querySelectorAll(".connector-filter").forEach(input => { input.checked = false; });
         document.querySelectorAll(".status-filter").forEach(input => { input.checked = true; });
         document.getElementById("operator-filter").value = "all";
@@ -2496,6 +2498,15 @@
         document.getElementById("sort-filter").selectedIndex = 0;
         window.dispatchEvent(new Event("chargevoy-filters-reset"));
         renderStations(false);
+      }
+
+      function togglePowerSelection(value) {
+        const ranges = new Set(selectedPower === "all" ? [] : selectedPower.split(","));
+        if (value === "all") ranges.clear();
+        else if (["0-50","50-150","150-250","250+"].includes(value)) {
+          if (ranges.has(value)) ranges.delete(value); else ranges.add(value);
+        }
+        selectedPower = ranges.size ? [...ranges].join(",") : "all";
       }
 
       function matchesPower(power) {
@@ -2566,7 +2577,7 @@
             !statuses.length || statuses.includes(effectiveStationStatus(s));
           return (
             (!search || haystack.includes(search)) &&
-            matchesPower(stationMaxPowerKw(s)) &&
+            (stationConnectors.length ? stationConnectors.some(c=>matchesPower(c.power_kw) && (!connectors.filter(type=>type!=="Tesla").length || connectors.includes(connectorCategory(c.type)))) : matchesPower(stationMaxPowerKw(s))) &&
             connectorMatch &&
             statusMatch &&
             (window.ChargeVoyWebPreferences?.matchesOperator(operatorName,selectedOperator) ?? (selectedOperator === "all" || operatorName === selectedOperator))
@@ -3575,7 +3586,8 @@
       // Simulator controls are initialized above with energy/time modes.
       document.querySelectorAll("#power-filter .chip, #quick-power-filter .chip").forEach((button) =>
         button.addEventListener("click", () => {
-          selectedPower = button.dataset.power;
+          togglePowerSelection(button.dataset.power);
+          globalThis.ChargeVoyWebPreferences?.savePowerSelection();
           renderStations(false);
         }),
       );

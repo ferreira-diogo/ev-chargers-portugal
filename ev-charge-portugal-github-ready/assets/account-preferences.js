@@ -48,11 +48,20 @@
     try{const value=snapshot()[group];if(value===undefined)return;engine.change({[group]:value});clearTimeout(timer);timer=setTimeout(()=>engine.sync(),650);}
     catch{syncStatus='storage-error';}
   }
+  const powerKey='chargevoy-power-ranges-v1';
+  function guestPowers(){
+    try {const values=JSON.parse(account.storage.getItem(powerKey)||'[]');return Array.isArray(values)?[...new Set(values)].filter(x=>['0-50','50-150','150-250','250+'].includes(x)):[];}catch{return [];}
+  }
+  function savePowerSelection(){
+    if(owner)return; // Signed-in filters already use the existing sync engine.
+    try{account.storage.setItem(powerKey,JSON.stringify(selectedPower==='all'?[]:selectedPower.split(',')));}
+    catch{notifyUser(currentLanguage==='en'?'Unable to save power filters on this device.':'Não foi possível guardar as potências neste dispositivo.',{kind:'error'});}
+  }
   function attach(id){
     clearTimeout(timer);owner=id;engine.detach();sharedOperators=[];
     if(id){engine.attach(id);engine.sync();}
     else{
-      const guest={...defaults};
+      const guest={...defaults,filters:{...defaults.filters,powers:guestPowers()}};
       try{guest.language=account.storage.getItem('ev-charge-language')||'pt';guest.battery=JSON.parse(account.storage.getItem('chargevoy-android-scenario')||'null')||defaults.battery;const id=account.storage.getItem('ev-charge-vehicle');if(id)guest.vehicle={id,specs:JSON.parse(account.storage.getItem('chargevoy-vehicle-specs:'+id)||'{}')};}catch{}
       apply(guest);
     }
@@ -62,6 +71,6 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)engine.sync();});
   document.addEventListener('change',event=>{if(event.target.matches('#vehicle-select,#vehicle-brand,#vehicle-battery,#vehicle-consumption,#vehicle-dc'))changed('vehicle');if(event.target.matches('#operator-filter,.connector-filter,.status-filter,.quick-filter-input'))changed('filters');});
   document.addEventListener('click',event=>{if(event.target.closest('#language-toggle'))changed('language');if(event.target.closest('#power-filter .chip,#quick-power-filter .chip,#clear-quick-filters,#reset-all-filters'))changed('filters');if(event.target.closest('#android-save-scenario'))changed('battery');if(event.target.closest('#save-vehicle-specs'))changed('vehicle');});
-  window.ChargeVoyWebPreferences={statusText,sync:engine.sync,matchesOperator(name,value){return value==='__shared__'?sharedOperators.some(x=>identity(x)===identity(name)):value==='all'||identity(name)===identity(value);},catalogueReady(){if(desiredVehicle){applying=true;try{chooseVehicle();}finally{applying=false;}}}};
-  const initial=account.getSession()?.user?.id;if(initial)attach(initial);
+  window.ChargeVoyWebPreferences={savePowerSelection,statusText,sync:engine.sync,matchesOperator(name,value){return value==='__shared__'?sharedOperators.some(x=>identity(x)===identity(name)):value==='all'||identity(name)===identity(value);},catalogueReady(){if(desiredVehicle){applying=true;try{chooseVehicle();}finally{applying=false;}}}};
+  const initial=account.getSession()?.user?.id;if(initial)attach(initial);else{const powers=guestPowers();selectedPower=powers.length?powers.join(','):'all';renderStations(false);}
 })();
