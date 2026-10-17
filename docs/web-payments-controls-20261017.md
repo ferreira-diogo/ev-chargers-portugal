@@ -30,3 +30,14 @@ Publicação: preservar o snapshot nacional existente, guardar versão Worker
 anterior e snapshot antes do deploy; verificar assets/snapshot e gateway de contas.
 Reversão automática da versão Worker se a verificação falhar. Código pode ser
 revertido à baseline com novo cache PWA; não restaurar DB nem apagar preferências.
+
+## Publicação confirmada
+
+PR #58 integrado em 28994dd6be6d3be33092260123f4dcfa7511db4e.
+Os quatro workflows da candidata final passaram, incluindo interface mobile/desktop,
+fluxos de conta, regressões P0, mapa e agrupamento.
+Deploy: https://github.com/ferreira-diogo/ev-chargers-portugal/actions/runs/39028431036
+Worker publicado: 4ef126c0-78cf-4f7d-9530-789f2288f0b0.
+Assets, páginas legais e snapshot nacional verificados; gateway publicado devolveu
+401 para sessão anónima e 200 com nonce válido para preparação de login Google.
+Backup anterior: catalogue-web-rollback-39028431036, artefacto 12099312596.
