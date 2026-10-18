@@ -9,6 +9,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{}),headless:true,args:['--no-sandbox']});
 try{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),page=await context.newPage(),errors=[];
+ const supabaseCalls=[];page.on('request',request=>{const host=new URL(request.url()).hostname;if(/(^|\.)supabase\.(co|in|net)$/i.test(host))supabaseCalls.push(request.url());});
  page.on('pageerror',e=>errors.push(e.message));
  const car={id:'account-test-car',make:'Tesla',model:'Model 3',variant:'RWD',battery_capacity_kwh:60,max_ac_power_kw:11,max_dc_power_kw:170,consumption_wh_km:150,connector_types:['CCS','Type 2'],active:1};
  const now=new Date().toISOString(),stations=['alice','bob','guest'].map((name,i)=>({id:'nap-'+name,name:name+' station',operator_id:'op-'+i,operator_name:'Powerdot',source:'nap-mobie',latitude:39.74+i*.01,longitude:-8.8,max_power_kw:150,status:'available'}));
@@ -42,7 +43,7 @@ try{
   if(path==='/api/availability')return route.fulfill({json:{publication_time:now,statuses:{}}});
   if(path==='/api/catalog'){const table=url.searchParams.get('table');return route.fulfill({json:{rows:table==='vehicle_models'?(Number(url.searchParams.get('offset')||0)===0?[car]:[]):table==='operators'?stations.map(s=>({id:s.operator_id,name:s.operator_name})):[]}});}
   if(path.endsWith('/stations-snapshot.json'))return route.fulfill({status:404,body:''});
-  if(url.hostname.endsWith('supabase.co'))return route.fulfill({json:[]});
+  if(url.hostname.endsWith('supabase.co'))return route.abort('blockedbyclient');
   return route.continue();
  });
  await page.goto('http://127.0.0.1:'+server.address().port,{waitUntil:'domcontentloaded'});
@@ -66,5 +67,6 @@ try{
  await page.locator('#nav-account').click();await page.setViewportSize({width:1440,height:900});
  await page.screenshot({path:resolve(out,'google-account-desktop.png'),fullPage:true});
  assert.equal(errors.length,0,errors.join('\n'));
+ assert.equal(supabaseCalls.length,0,'Unexpected Supabase requests: '+JSON.stringify(supabaseCalls));console.log('SUPABASE AUDIT: account flows attempted zero Supabase requests.');
  console.log('Google-only web UI: two account sessions, isolated guest/favourites/preferences, battery sync, power ranges and responsive account modal passed. Google provider itself is mocked; real OAuth origins and two-device login remain acceptance checks.');
 }finally{await browser.close();server.close();}

@@ -1,0 +1,42 @@
+name: Audit production website Supabase independence
+on:
+  push:
+    branches: [audit/web-supabase-independence-20261018]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Compare deployed production frontend bytes with the audited source
+        run: |
+          node --input-type=module - <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {createHash} from 'node:crypto';
+          import assert from 'node:assert/strict';
+          const base='https://broken-mud-373e.zombid.workers.dev';
+          for(const path of ['index.html','assets/chargevoy.js','assets/web-app-ui.js','assets/account.js','assets/account-preferences.js','assets/account-favorites.js','assets/preferences-sync.js','assets/payments.js']){
+            const response=await fetch(base+'/'+path,{signal:AbortSignal.timeout(30000)});assert.equal(response.status,200,path);
+            const actual=Buffer.from(await response.arrayBuffer()),expected=await readFile('ev-charge-portugal-github-ready/'+path);
+            const hash=x=>createHash('sha256').update(x).digest('hex');assert.equal(hash(actual),hash(expected),'Production source mismatch: '+path);
+            console.log(JSON.stringify({path,productionMatchesAuditedSource:true,sha256:hash(actual)}));
+          }
+          for(const [url,status] of [['https://chargevoy-api.zombid.workers.dev/api/health',200],[base+'/api/account/me',401]]){
+            const response=await fetch(url,{signal:AbortSignal.timeout(30000)});assert.equal(response.status,status,url);console.log(JSON.stringify({url,status:response.status}));
+          }
+          NODE
+      - run: npm ci --ignore-scripts --prefix ev-charge-portugal-github-ready
+      - run: npm run build:web --prefix ev-charge-portugal-github-ready
+      - run: npm install --no-save --package-lock=false --prefix ev-charge-portugal-github-ready playwright@1.58.2
+      - name: Exercise public and account UI while blocking Supabase
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          node ev-charge-portugal-github-ready/scripts/browser-app-layout.mjs
+          node ev-charge-portugal-github-ready/scripts/browser-account-login.mjs
